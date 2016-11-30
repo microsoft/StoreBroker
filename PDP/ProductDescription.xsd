@@ -1,0 +1,387 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xs:schema 
+  attributeFormDefault="unqualified" 
+  elementFormDefault="qualified" 
+  targetNamespace="http://schemas.microsoft.com/appx/2012/ProductDescription" 
+  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  xmlns:tns="http://schemas.microsoft.com/appx/2012/ProductDescription">
+
+  <xs:attributeGroup name="LocIdAttribute">
+    <xs:attribute name="_locID" type="xs:string" use="optional"/>
+  </xs:attributeGroup>
+  
+  <xs:simpleType name="ReleaseString">
+    <xs:restriction base="xs:normalizedString">
+      <xs:pattern value="\s*(\S(\r|\n|.){0,254}\s*)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="KeywordString">
+    <xs:restriction base="xs:normalizedString">
+      <xs:pattern value="\s*(\S(\r|\n|.){0,44}\s*)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="DescriptionString">
+    <xs:restriction base="tns:NonNullNormalizedString">
+      <xs:pattern value="\s*(\S(\r|\n|.){0,9999}\s*)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="NotesString">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="\s*(\S(\r|\n|.){0,1499}\s*)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="AppFeatureString">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="\s*(\S(\r|\n|.){0,199}\s*)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:attributeGroup name="ScreenshotImageGroup">
+    <xs:attribute name="DesktopImage">
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:maxLength value="255" />
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="MobileImage">
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:maxLength value="255" />
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="XboxImage">
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:maxLength value="255" />
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="SurfaceHubImage">
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:maxLength value="255" />
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="HoloLensImage">
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:maxLength value="255" />
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:attributeGroup>
+  
+  <xs:simpleType name="CaptionStringContent">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="\s*(\S(\r|\n|.){0,199}\s*)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+  
+  <xs:complexType name="CaptionString">
+    <xs:simpleContent>
+      <xs:extension base="tns:CaptionStringContent">
+        <xs:attributeGroup ref="tns:ScreenshotImageGroup" />
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  
+  <xs:simpleType name="RecommendationString">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="\s*(\S(\r|\n|.){0,199}\s*)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="CopyrightString">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="\s*(\S(\r|\n|.){0,199}\s*)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="LicencseTermsString">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="\s*(\S(\r|\n|.){0,9999}\s*)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="SupportContactInfoString">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="\s*(\S(\r|\n|.){0,2047}\s*)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="URLString">
+    <xs:restriction base="xs:anyURI">
+      <xs:pattern value="\s*(\S(\r|\n|.){0,2047}\s*)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="PrivacyPolicyURLString">
+    <xs:restriction base="xs:anyURI">
+      <xs:pattern value="\s*(\S(\r|\n|.){0,2047}\s*)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="NonNullNormalizedString">
+    <xs:restriction base="xs:normalizedString">
+      <xs:minLength value="1" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="AppStoreNameString">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+
+  <xs:element name="ProductDescription">
+    <xs:annotation>
+      <xs:documentation>
+        Root element of ProductDescription document type. For content guidance on all required and optional fields in the product description, see http://go.microsoft.com/fwlink/p/?linkid=221134.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:all>
+
+        <!-- COMMON section-->
+
+        <xs:element name="AppStoreName" minOccurs="0">
+          <xs:complexType>
+            <xs:annotation>
+              <xs:documentation>
+                Optional, the localized name for the application's Store listing if not available in the application package.
+                This name must be reserved in the Developer Center for this application.
+              </xs:documentation>
+            </xs:annotation>
+            <xs:simpleContent>
+              <xs:extension base="tns:AppStoreNameString">
+                <xs:attributeGroup ref="tns:LocIdAttribute"/>
+              </xs:extension>
+            </xs:simpleContent>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="Keywords" minOccurs="0">
+          <xs:annotation>
+            <xs:documentation>
+              Optional, may contain up to 7 Keyword elements (previous Phone limit was 5)
+            </xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Keyword" minOccurs="0" maxOccurs="7">
+                <xs:complexType>
+                  <xs:annotation>
+                    <xs:documentation>
+                      Each keyword may not exceed 30 characters. Modified for Phone, WinStore is 45 sharacters.
+                    </xs:documentation>
+                  </xs:annotation>
+                  <xs:simpleContent>
+                    <xs:extension base="tns:KeywordString">
+                      <xs:attributeGroup ref="tns:LocIdAttribute"/>
+                    </xs:extension>
+                  </xs:simpleContent>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="Description">
+          <xs:complexType>
+            <xs:annotation>
+              <xs:documentation>
+                Required, may not exceed 10000 characters (previous Phone limit was 2000).
+              </xs:documentation>
+            </xs:annotation>
+            <xs:simpleContent>
+              <xs:extension base="tns:DescriptionString">
+                <xs:attributeGroup ref="tns:LocIdAttribute"/>
+              </xs:extension>
+            </xs:simpleContent>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="ReleaseNotes" minOccurs="0">
+          <xs:complexType>
+              <xs:annotation>
+                <xs:documentation>
+                  Optional, may not exceed 1500 characters
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleContent>
+              <xs:extension base="tns:NotesString">
+                <xs:attributeGroup ref="tns:LocIdAttribute"/>
+              </xs:extension>
+            </xs:simpleContent>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="ScreenshotCaptions" minOccurs="0">
+          <xs:annotation>
+            <xs:documentation>
+              Optional, contains up to 9 elements per platform.
+            </xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Caption" minOccurs="0" maxOccurs="45">
+                <xs:complexType>
+                    <xs:annotation>
+                      <xs:documentation>
+                        Each Caption may not exceed 200 characters
+                      </xs:documentation>
+                  </xs:annotation>
+                  <xs:simpleContent>
+                    <xs:extension base="tns:CaptionString">
+                      <xs:attributeGroup ref="tns:LocIdAttribute"/>
+                    </xs:extension>
+                  </xs:simpleContent>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+
+        <!-- Windows client only section-->
+
+        <xs:element name="AppFeatures" minOccurs="0">
+          <xs:annotation>
+            <xs:documentation>
+              Optional, may contain up to 20 feature elements
+            </xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="AppFeature" minOccurs="0" maxOccurs="20">
+                <xs:complexType>
+                  <xs:annotation>
+                    <xs:documentation>
+                      Each Feature description may not exceed 200 characters
+                    </xs:documentation>
+                  </xs:annotation>
+                  <xs:simpleContent>
+                    <xs:extension base="tns:AppFeatureString">
+                      <xs:attributeGroup ref="tns:LocIdAttribute"/>
+                    </xs:extension>
+                  </xs:simpleContent>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        
+   
+        <xs:element name="RecommendedHardware" minOccurs="0">
+          <xs:annotation>
+            <xs:documentation>
+              Optional, may contain up to 20 feature elements
+            </xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Recommendation" minOccurs="0" maxOccurs="10">
+                <xs:complexType>
+                  <xs:annotation>
+                    <xs:documentation>
+                      Each recommendation may not exceed 200 characters
+                    </xs:documentation>
+                  </xs:annotation>
+                  <xs:simpleContent>
+                    <xs:extension base="tns:RecommendationString">
+                      <xs:attributeGroup ref="tns:LocIdAttribute"/>
+                    </xs:extension>
+                  </xs:simpleContent>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="CopyrightAndTrademark" minOccurs="0">
+          <xs:complexType>
+            <xs:annotation>
+              <xs:documentation>
+                Optional, may not exceed 200 characters.
+              </xs:documentation>
+            </xs:annotation>
+            <xs:simpleContent>
+              <xs:extension base="tns:CopyrightString">
+                <xs:attributeGroup ref="tns:LocIdAttribute"/>
+              </xs:extension>
+            </xs:simpleContent>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="AdditionalLicenseTerms" minOccurs="0">
+          <xs:complexType>
+            <xs:annotation>
+              <xs:documentation>
+                Optional, may not exceed 10000 characters
+              </xs:documentation>
+            </xs:annotation>
+            <xs:simpleContent>
+              <xs:extension base="tns:LicencseTermsString">
+                <xs:attributeGroup ref="tns:LocIdAttribute"/>
+              </xs:extension>
+            </xs:simpleContent>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="WebsiteURL" minOccurs="0">
+          <xs:complexType>
+            <xs:annotation>
+              <xs:documentation>
+                Optional, may not exceed 2048 characters
+              </xs:documentation>
+            </xs:annotation>
+            <xs:simpleContent>
+              <xs:extension base="tns:URLString">
+                <xs:attributeGroup ref="tns:LocIdAttribute"/>
+              </xs:extension>
+            </xs:simpleContent>
+          </xs:complexType>
+        </xs:element>
+        
+        <xs:element name="SupportContactInfo" minOccurs="0">
+          <xs:complexType>
+            <xs:annotation>
+              <xs:documentation>
+                Optional, may not exceed 2048 characters
+              </xs:documentation>
+            </xs:annotation>
+            <xs:simpleContent>
+              <xs:extension base="tns:SupportContactInfoString">
+                <xs:attributeGroup ref="tns:LocIdAttribute"/>
+              </xs:extension>
+            </xs:simpleContent>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="PrivacyPolicyURL" minOccurs="0">
+          <xs:complexType>
+            <xs:annotation>
+              <xs:documentation>
+                Optional, may not exceed 2048 characters.
+                Any app that enables the Internet capability (or otherwise collects or transmits any user's personal information) requires a privacy policy.
+              </xs:documentation>
+            </xs:annotation>
+            <xs:simpleContent>
+              <xs:extension base="tns:PrivacyPolicyURLString">
+                <xs:attributeGroup ref="tns:LocIdAttribute"/>
+              </xs:extension>
+            </xs:simpleContent>
+          </xs:complexType>
+        </xs:element>
+
+      </xs:all>
+      <xs:attribute name="language" type="xs:language" use="required" />
+      <xs:attribute name="Release" type="tns:ReleaseString" use="required" />
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

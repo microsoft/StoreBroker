@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>6CAFC0C6-A428-4d30-A9F9-700E829FEA51</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>StoreBroker</RootNamespace>
+    <AssemblyName>StoreBroker</AssemblyName>
+    <Name>StoreBroker</Name>
+    <DebugArguments>
+    </DebugArguments>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Folder Include="Documentation\" />
+    <Folder Include="Extensions\" />
+    <Folder Include="PDP\" />
+    <Folder Include="StoreBroker\" />
+    <Folder Include="Tests\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="CHANGELOG.md" />
+    <Compile Include="CONTRIBUTING.md" />
+    <Compile Include="Documentation\GOVERNANCE.md" />
+    <Compile Include="Documentation\USAGE.md" />
+    <Compile Include="Documentation\PDP.md" />
+    <Compile Include="Documentation\RESTPROXY.md" />
+    <Compile Include="Documentation\SETUP.md" />
+    <Compile Include="Extensions\ConvertFrom-ExistingSubmission.ps1" />
+    <Compile Include="LICENSE" />
+    <Compile Include="PDP\ProductDescription.xml" />
+    <Compile Include="PDP\ProductDescription.xsd" />
+    <Compile Include="README.md" />
+    <Compile Include="StoreBroker\AppConfigTemplate.json" />
+    <Compile Include="StoreBroker\Helpers.ps1" />
+    <Compile Include="StoreBroker\NugetTools.ps1" />
+    <Compile Include="StoreBroker\PackageTool.ps1" />
+    <Compile Include="StoreBroker\StoreBroker.psd1" />
+    <Compile Include="StoreBroker\StoreIngestionApi.psm1" />
+    <Compile Include="StoreBroker\StoreIngestionApplicationApi.ps1" />
+    <Compile Include="StoreBroker\StoreIngestionIapApi.ps1" />
+    <Compile Include="StoreBroker\StoreIngestionFlightingApi.ps1" />
+    <Compile Include="StoreBroker\Telemetry.ps1" />
+    <Compile Include="Tests\PackageTool.Tests.ps1" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <Target Name="Build" />
+</Project>

@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{F5034706-568F-408A-B7B3-4D38C6DB8A32}") = "StoreBroker", "StoreBroker.pssproj", "{6CAFC0C6-A428-4D30-A9F9-700E829FEA51}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RESTProxy", "RESTProxy\RESTProxy.csproj", "{D6FAFB1D-3B56-4332-A76F-E132A1891169}"
+EndProject
+Project("{CC5FD16D-436D-48AD-A40C-5A424C6E3E79}") = "AzureService", "AzureService\AzureService.ccproj", "{EC8AA218-B675-4003-B2E0-685BD96F8609}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6CAFC0C6-A428-4D30-A9F9-700E829FEA51}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6CAFC0C6-A428-4D30-A9F9-700E829FEA51}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6CAFC0C6-A428-4D30-A9F9-700E829FEA51}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6CAFC0C6-A428-4D30-A9F9-700E829FEA51}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D6FAFB1D-3B56-4332-A76F-E132A1891169}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D6FAFB1D-3B56-4332-A76F-E132A1891169}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D6FAFB1D-3B56-4332-A76F-E132A1891169}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D6FAFB1D-3B56-4332-A76F-E132A1891169}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EC8AA218-B675-4003-B2E0-685BD96F8609}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EC8AA218-B675-4003-B2E0-685BD96F8609}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EC8AA218-B675-4003-B2E0-685BD96F8609}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EC8AA218-B675-4003-B2E0-685BD96F8609}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

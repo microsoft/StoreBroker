@@ -1,0 +1,110 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>2.9</ProductVersion>
+    <ProjectGuid>ec8aa218-b675-4003-b2e0-685bd96f8609</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>AzureService</RootNamespace>
+    <AssemblyName>AzureService</AssemblyName>
+    <StartDevelopmentStorage>True</StartDevelopmentStorage>
+    <Name>AzureService</Name>
+    <PackageEnableRemoteDebugger>False</PackageEnableRemoteDebugger>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <!-- Items for the project -->
+  <ItemGroup>
+    <ServiceDefinition Include="ServiceDefinition.csdef" />
+    <ServiceConfiguration Include="ServiceConfiguration.Local.cscfg" />
+    <ServiceConfiguration Include="ServiceConfiguration.Cloud.cscfg" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\RESTProxy\RESTProxy.csproj">
+      <Name>RESTProxy</Name>
+      <Project>{d6fafb1d-3b56-4332-a76f-e132a1891169}</Project>
+      <Private>True</Private>
+      <RoleType>Web</RoleType>
+      <RoleName>RESTProxy</RoleName>
+      <UpdateDiagnosticsConnectionStringOnPublish>True</UpdateDiagnosticsConnectionStringOnPublish>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Profiles" />
+    <Folder Include="RESTProxyContent\" />
+    <Folder Include="RESTProxyContent\bin" />
+    <Folder Include="RESTProxyContent\bin\StartupTasks" />
+    <Folder Include="RESTProxyContent\bin\StartupTasks\DomainJoined" />
+    <Folder Include="RESTProxyContent\bin\StartupTasks\Helpers" />
+    <Folder Include="RESTProxyContent\bin\StartupTasks\LocalAdmin" />
+    <Folder Include="RESTProxyContent\bin\StartupTasks\FixAuth" />
+    <Folder Include="RESTProxyContent\bin\StartupTasks\TimeZone" />
+    <Folder Include="RESTProxyContent\bin\StartupTasks\RemoteDesktop" />
+  </ItemGroup>
+  <ItemGroup>
+    <DiagnosticsConfiguration Include="RESTProxyContent\diagnostics.wadcfgx" />
+  </ItemGroup>
+  <ItemGroup>
+    <PublishProfile Include="Profiles\StoreBrokerProxyStaging.azurePubxml" />
+    <PublishProfile Include="Profiles\StoreBrokerProxyProduction.azurePubxml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="RESTProxyContent\bin\StartupTasks\DomainJoined\Ensure-DomainJoined.ps1">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="RESTProxyContent\bin\StartupTasks\DomainJoined\EnsureDomainJoined.cmd">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="RESTProxyContent\bin\StartupTasks\FixAuth\FixAuthentication.cmd">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="RESTProxyContent\bin\StartupTasks\Helpers\GroupManagement.ps1">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="RESTProxyContent\bin\StartupTasks\Helpers\Encryption.ps1">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="RESTProxyContent\bin\StartupTasks\LocalAdmin\Ensure-LocalAdmin.ps1">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="RESTProxyContent\bin\StartupTasks\LocalAdmin\EnsureLocalAdmin.cmd">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="RESTProxyContent\bin\StartupTasks\RemoteDesktop\Ensure-RemoteDesktopEnabled.ps1">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="RESTProxyContent\bin\StartupTasks\RemoteDesktop\EnsureRemoteDesktopEnabled.cmd">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="RESTProxyContent\bin\StartupTasks\TimeZone\Ensure-TimeZone.ps1">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="RESTProxyContent\bin\StartupTasks\TimeZone\EnsureTimeZone.cmd">
+      <SubType>Content</SubType>
+    </Content>
+  </ItemGroup>
+  <!-- Import the target files for this project template -->
+  <PropertyGroup>
+    <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
+    <CloudExtensionsDir Condition=" '$(CloudExtensionsDir)' == '' ">$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Windows Azure Tools\2.9\</CloudExtensionsDir>
+  </PropertyGroup>
+  <Import Project="$(CloudExtensionsDir)Microsoft.WindowsAzure.targets" />
+</Project>

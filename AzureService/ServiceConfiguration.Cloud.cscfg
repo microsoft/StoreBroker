@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ServiceConfiguration serviceName="AzureService" xmlns="http://schemas.microsoft.com/ServiceHosting/2008/10/ServiceConfiguration" osFamily="4" osVersion="*" schemaVersion="2015-04.2.6">
+  <Role name="RESTProxy">
+    <Instances count="2" />
+    <ConfigurationSettings>
+      <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" value="DefaultEndpointsProtocol=https" />
+      <Setting name="LocalAdminAccountUserName" value="" />
+      <Setting name="LocalAdminAccountSecret" value="" />
+      <Setting name="LocalAdminAccountCertThumbprint" value="" />
+      <Setting name="LocalAdminAccountCertStore" value="cert:\LocalMachine\My" />
+      <Setting name="DomainJoinName" value="" />
+      <Setting name="DomainJoinAccountUserName" value="" />
+      <Setting name="DomainJoinAccountSecret" value="" />
+      <Setting name="DomainJoinAccountCertThumbprint" value="" />
+      <Setting name="DomainJoinAccountCertStore" value="cert:\LocalMachine\My" />
+      <Setting name="TimeZone" value="Pacific Standard Time" />
+      <Setting name="TenantId" value="" />
+      <Setting name="ClientIdProd" value="" />
+      <Setting name="ClientSecretProd" value="" />
+      <Setting name="ClientSecretProdCertThumbprint" value="" />
+      <Setting name="ClientSecretProdCertStore" value="cert:\LocalMachine\My" />
+      <Setting name="ClientIdInt" value="" />
+      <Setting name="ClientSecretInt" value="" />
+      <Setting name="ClientSecretIntCertThumbprint" value="" />
+      <Setting name="ClientSecretIntCertStore" value="cert:\LocalMachine\My" />
+      <Setting name="ROSecurityGroupAlias" value="" />
+      <Setting name="RWSecurityGroupAlias" value="" />
+      <Setting name="APPINSIGHTS_INSTRUMENTATIONKEY" value="" />
+      <Setting name="EnableAnonymousAuthentication" value="false" />
+      <Setting name="EnableWindowsAuthentication" value="true" />
+    </ConfigurationSettings>
+    <Certificates>
+      <Certificate name="StoreBroker Proxy Authentication" thumbprint="" thumbprintAlgorithm="sha1" />
+      <Certificate name="StoreBroker Proxy HTTPS" thumbprint="" thumbprintAlgorithm="sha1" />
+    </Certificates>
+  </Role>
+</ServiceConfiguration>

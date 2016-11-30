@@ -1,0 +1,124 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ServiceDefinition name="AzureService" xmlns="http://schemas.microsoft.com/ServiceHosting/2008/10/ServiceDefinition" schemaVersion="2015-04.2.6">
+  <WebRole name="RESTProxy" vmsize="ExtraSmall">
+    <Sites>
+      <Site name="Web">
+        <Bindings>
+          <Binding name="HttpIn" endpointName="HttpIn" />
+          <Binding name="HttpsIn" endpointName="HttpsIn" />
+        </Bindings>
+      </Site>
+    </Sites>
+    <ConfigurationSettings>
+      <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" />
+      <Setting name="LocalAdminAccountUserName" />
+      <Setting name="LocalAdminAccountSecret" />
+      <Setting name="LocalAdminAccountCertThumbprint" />
+      <Setting name="LocalAdminAccountCertStore" />
+      <Setting name="DomainJoinName" />
+      <Setting name="DomainJoinAccountUserName" />
+      <Setting name="DomainJoinAccountSecret" />
+      <Setting name="DomainJoinAccountCertThumbprint" />
+      <Setting name="DomainJoinAccountCertStore" />
+      <Setting name="TimeZone" />
+      <Setting name="TenantId" />
+      <Setting name="ClientIdProd" />
+      <Setting name="ClientSecretProd" />
+      <Setting name="ClientSecretProdCertThumbprint" />
+      <Setting name="ClientSecretProdCertStore" />
+      <Setting name="ClientIdInt" />
+      <Setting name="ClientSecretInt" />
+      <Setting name="ClientSecretIntCertThumbprint" />
+      <Setting name="ClientSecretIntCertStore" />
+      <Setting name="ROSecurityGroupAlias" />
+      <Setting name="RWSecurityGroupAlias" />
+      <Setting name="APPINSIGHTS_INSTRUMENTATIONKEY" />
+      <Setting name="EnableAnonymousAuthentication" />
+      <Setting name="EnableWindowsAuthentication" />
+    </ConfigurationSettings>
+    <Endpoints>
+      <InputEndpoint name="HttpIn" protocol="http" port="80" loadBalancer="StoreBrokerProxy-ILB" idleTimeoutInMinutes="30" loadBalancerDistribution="sourceIP" />
+      <InputEndpoint name="HttpsIn" protocol="https" port="443" certificate="StoreBroker Proxy HTTPS" loadBalancer="StoreBrokerProxy-ILB" idleTimeoutInMinutes="30" loadBalancerDistribution="sourceIP" />
+    </Endpoints>
+    <Certificates>
+      <Certificate name="StoreBroker Proxy Authentication" storeLocation="LocalMachine" storeName="My" />
+      <Certificate name="StoreBroker Proxy HTTPS" storeLocation="LocalMachine" storeName="CA" permissionLevel="limitedOrElevated" />
+    </Certificates>
+    <Startup>
+      <Task commandLine="StartupTasks\FixAuth\FixAuthentication.cmd" executionContext="elevated" taskType="simple">
+        <Environment>
+          <Variable name="PathToStartupLogs">
+            <RoleInstanceValue xpath="/RoleEnvironment/CurrentInstance/LocalResources/LocalResource[@name='StartupLogs']/@path" />
+          </Variable>
+          <Variable name="ENABLE_WINDOWS_AUTHENTICATION">
+            <RoleInstanceValue xpath="/RoleEnvironment/CurrentInstance/ConfigurationSettings/ConfigurationSetting[@name='EnableWindowsAuthentication']/@value" />
+          </Variable>
+          <Variable name="ENABLE_ANONYMOUS_AUTHENTICATION">
+            <RoleInstanceValue xpath="/RoleEnvironment/CurrentInstance/ConfigurationSettings/ConfigurationSetting[@name='EnableAnonymousAuthentication']/@value" />
+          </Variable>
+        </Environment>
+      </Task>
+      <Task commandLine="StartupTasks\RemoteDesktop\EnsureRemoteDesktopEnabled.cmd" executionContext="elevated" taskType="simple">
+        <Environment>
+          <Variable name="PathToStartupLogs">
+            <RoleInstanceValue xpath="/RoleEnvironment/CurrentInstance/LocalResources/LocalResource[@name='StartupLogs']/@path" />
+          </Variable>
+        </Environment>
+      </Task>
+      <Task commandLine="StartupTasks\LocalAdmin\EnsureLocalAdmin.cmd" executionContext="elevated" taskType="simple">
+        <Environment>
+          <Variable name="LOCAL_ADMIN_USERNAME">
+            <RoleInstanceValue xpath="/RoleEnvironment/CurrentInstance/ConfigurationSettings/ConfigurationSetting[@name='LocalAdminAccountUserName']/@value" />
+          </Variable>
+          <Variable name="LOCAL_ADMIN_SECRET">
+            <RoleInstanceValue xpath="/RoleEnvironment/CurrentInstance/ConfigurationSettings/ConfigurationSetting[@name='LocalAdminAccountSecret']/@value" />
+          </Variable>
+          <Variable name="LOCAL_ADMIN_CERT_THUMBPRINT">
+            <RoleInstanceValue xpath="/RoleEnvironment/CurrentInstance/ConfigurationSettings/ConfigurationSetting[@name='LocalAdminAccountCertThumbprint']/@value" />
+          </Variable>
+          <Variable name="LOCAL_ADMIN_CERT_STORE">
+            <RoleInstanceValue xpath="/RoleEnvironment/CurrentInstance/ConfigurationSettings/ConfigurationSetting[@name='LocalAdminAccountCertStore']/@value" />
+          </Variable>
+          <Variable name="PathToStartupLogs">
+            <RoleInstanceValue xpath="/RoleEnvironment/CurrentInstance/LocalResources/LocalResource[@name='StartupLogs']/@path" />
+          </Variable>
+        </Environment>
+      </Task>
+      <Task commandLine="StartupTasks\DomainJoined\EnsureDomainJoined.cmd" executionContext="elevated" taskType="simple">
+        <Environment>
+          <Variable name="DOMAIN_NAME">
+            <RoleInstanceValue xpath="/RoleEnvironment/CurrentInstance/ConfigurationSettings/ConfigurationSetting[@name='DomainJoinName']/@value" />
+          </Variable>
+          <Variable name="DOMAIN_USERNAME">
+            <RoleInstanceValue xpath="/RoleEnvironment/CurrentInstance/ConfigurationSettings/ConfigurationSetting[@name='DomainJoinAccountUserName']/@value" />
+          </Variable>
+          <Variable name="DOMAIN_SECRET">
+            <RoleInstanceValue xpath="/RoleEnvironment/CurrentInstance/ConfigurationSettings/ConfigurationSetting[@name='DomainJoinAccountSecret']/@value" />
+          </Variable>
+          <Variable name="DOMAIN_CERT_THUMBPRINT">
+            <RoleInstanceValue xpath="/RoleEnvironment/CurrentInstance/ConfigurationSettings/ConfigurationSetting[@name='DomainJoinAccountCertThumbprint']/@value" />
+          </Variable>
+          <Variable name="DOMAIN_CERT_STORE">
+            <RoleInstanceValue xpath="/RoleEnvironment/CurrentInstance/ConfigurationSettings/ConfigurationSetting[@name='DomainJoinAccountCertStore']/@value" />
+          </Variable>
+          <Variable name="PathToStartupLogs">
+            <RoleInstanceValue xpath="/RoleEnvironment/CurrentInstance/LocalResources/LocalResource[@name='StartupLogs']/@path" />
+          </Variable>
+        </Environment>
+      </Task>
+      <Task commandLine="StartupTasks\TimeZone\EnsureTimeZone.cmd" executionContext="elevated" taskType="simple">
+        <Environment>
+          <Variable name="PathToStartupLogs">
+            <RoleInstanceValue xpath="/RoleEnvironment/CurrentInstance/LocalResources/LocalResource[@name='StartupLogs']/@path" />
+          </Variable>
+          <Variable name="TimeZone">
+            <RoleInstanceValue xpath="/RoleEnvironment/CurrentInstance/ConfigurationSettings/ConfigurationSetting[@name='TimeZone']/@value" />
+          </Variable>
+        </Environment>
+      </Task>
+    </Startup>
+    <LocalResources>
+      <LocalStorage name="StartupLogs" cleanOnRoleRecycle="false" sizeInMB="15" />
+    </LocalResources>
+  </WebRole>
+</ServiceDefinition>

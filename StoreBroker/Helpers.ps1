@@ -225,7 +225,7 @@ function Format-SimpleTableString
     }
 }
 
-function DeepCopy-Object
+function Copy-ObjectDeep
 <#
     .SYNOPSIS
         Creates a deep copy of a serializable object.
@@ -253,7 +253,7 @@ function DeepCopy-Object
 #>
 {
     [CmdletBinding()]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseApprovedVerbs", "", Justification="Intentional.  This isn't exported, and needed to be explicit relative to Copy-Object.")]
+    [Alias('DeepCopy-Object')]
     param(
         [Parameter(Mandatory)]
         [PSCustomObject] $Object

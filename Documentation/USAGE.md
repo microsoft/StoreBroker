@@ -260,28 +260,37 @@ manually.
 
  * Clone the existing published submission so that you can generate an update.
  
-       $sub = New-ApplicationSubmission -IapId <iapId> [-Force]
+          $sub = New-ApplicationSubmission -AppId <appId> [-Force]
 
     * By using the `-Force` switch, it will call `Remove-ApplicationSubmission` behind the
       scenes if it finds that there's an existing pending submission for your app.
 
  * Read in the content of the json file from your `New-SubmissionPackage` payload:
  
-       $json = (Get-Content .\submission.json -Encoding UTF8) | ConvertFrom-Json
+          $json = (Get-Content .\submission.json -Encoding UTF8) | ConvertFrom-Json
 
- * At this point we'd "patch in" the changes requested based on the switches provided into `$sub`.
+ * If you need to update any content for the cloned submission, here is where you'd "patch in"
+   applicable values from `$json` into `$sub`.
+
+    * For example, here's how you can change a simple content that has a single value:
+
+             $sub.hardwarePreferences = $json.hardwarePreferences
+
+    * For nested content, you will need to use `DeepCopy-Object` so that all nested values are applied:
+
+             $sub.allowTargetFutureDeviceFamilies = DeepCopy-Object $json.allowTargetFutureDeviceFamilies
 
  * Send the updated submission content so that the API knows what should be updated:
 
-       Set-ApplicationSubmission -AppId $appId -UpdatedSubmission $sub
+          Set-ApplicationSubmission -AppId $appId -UpdatedSubmission $sub
 
  * If you're updating screenshots or packages, you'll need to upload the supporting .zip file:
 
-       Set-SubmissionPackage -PackagePath <pathToYourZip> -UploadUrl ($sub.fileUploadUrl)
+          Set-SubmissionPackage -PackagePath <pathToYourZip> -UploadUrl ($sub.fileUploadUrl)
 
  * Tell the API that you're done with the submission and to start validation / certification:
 
-       Complete-ApplicationSubmission -AppId $appId -SubmissionId ($sub.id)
+          Complete-ApplicationSubmission -AppId $appId -SubmissionId ($sub.id)
 
 The `-AutoCommit` switch should not be confused with publishing of the submission.  A submission
 won't enter into certification until it has been "committed", and a submission can only be committed

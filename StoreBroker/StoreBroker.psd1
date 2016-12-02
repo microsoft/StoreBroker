@@ -6,7 +6,7 @@
     CompanyName = 'Microsoft Corporation'
     Copyright = 'Copyright (C) Microsoft Corporation.  All rights reserved.'
 
-    ModuleVersion = '1.0.0'
+    ModuleVersion = '1.0.1'
     Description = 'Provides command-line access to the Windows Store Submission REST API.'
 
     RootModule = 'StoreIngestionApi'
@@ -29,6 +29,7 @@
         'Complete-ApplicationFlightSubmission',
         'Complete-ApplicationSubmission',
         'Complete-InAppProductSubmission',
+        'Copy-ObjectDeep',
         'Format-Application',
         'Format-ApplicationFlight',
         'Format-ApplicationFlightSubmission',
@@ -88,6 +89,7 @@
         'Commit-IapSubmission',
         'Commit-InAppProductSubmission',
         'Complete-InAppProductSubmission',
+        'DeepCopy-Object',
         'Format-ApplicationIaps',
         'Format-Iap',
         'Format-IapSubmission',

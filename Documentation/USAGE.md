@@ -276,9 +276,13 @@ manually.
 
              $sub.hardwarePreferences = $json.hardwarePreferences
 
-    * For nested content, you will need to use `DeepCopy-Object` so that all nested values are applied:
+    * For nested content, you will need to ensure that all nested values are applied. The easiest way to do this
+      is to inspect the json and then manually assign the nested values. For a more generic way, you can implement
+      a function similar to `DeepCopy-Object` in Helpers.ps1.
 
-             $sub.allowTargetFutureDeviceFamilies = DeepCopy-Object $json.allowTargetFutureDeviceFamilies
+             $sub.allowTargetFutureDeviceFamilies.Xbox = $json.allowTargetFutureDeviceFamilies.Xbox
+             $sub.allowTargetFutureDeviceFamilies.Team = $json.allowTargetFutureDeviceFamilies.Team
+             ... repeat for all nested values ...
 
  * Send the updated submission content so that the API knows what should be updated:
 

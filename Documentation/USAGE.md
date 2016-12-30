@@ -775,7 +775,7 @@ us for analysis.  We expose it here for complete transparency.
 
     > After you've updated all the packages that you want, just run the following commands:
 
-        Set-ApplicationSubmission -AppId $appId -UpdatedSubmissionId $sub
+        Set-ApplicationSubmission -AppId $appId -UpdatedSubmission $sub
         Commit-ApplicationSubmission -AppId $appId -SubmissionId ($sub.id)
 
 * **Does StoreBroker support adding region-specific listings for languages that the app itself

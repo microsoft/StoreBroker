@@ -1007,7 +1007,7 @@ function Update-ApplicationSubmission
         $output += "Please update your app's StoreBroker config file by adding an ""appId"" property with"
         $output += "your app's AppId to the ""appSubmission"" section.  If you're unclear on what change"
         $output += "needs to be done, you can re-generate your config file using"
-        $output += "   ""New-PackageToolConfigFile -AppId $AppId"" -Path ""`$home\desktop\newconfig.json"""
+        $output += "   ""New-StoreBrokerConfigFile -AppId $AppId"" -Path ""`$home\desktop\newconfig.json"""
         $output += "and then diff the new config file against your current one to see the requested appId change."
         Write-Log $($output -join [Environment]::NewLine) -Level Warning
     }

@@ -34,7 +34,7 @@
         Each of these sub-folders will have region-specific subfolders for their file content.
 
     .EXAMPLE
-        .\ConvertFromExistingSubmission -AppId 0ABCDEF12345 -Release "March Release" -OutPath "C:\NewPDPs"
+        .\ConvertFrom-ExistingSubmission -AppId 0ABCDEF12345 -Release "March Release" -OutPath "C:\NewPDPs"
 #>
 [CmdletBinding()]
 param(
@@ -54,7 +54,12 @@ param(
 
 # Import Write-Log
 $rootDir = Split-Path -Path $PSScriptRoot -Parent
-. $rootDir\StoreBroker\Helpers.ps1
+$helpers = "$rootDir\StoreBroker\Helpers.ps1"
+if (-not (Test-Path -Path $helpers -PathType Leaf))
+{
+    throw "Script execution requires Helpers.ps1 which is part of the git repo.  Please execute this script from within your cloned repo."
+}
+. $helpers
 
 #region Comment Constants
 $script:LocIdAttribute = "_locID"
@@ -1012,19 +1017,20 @@ function Show-ImageFileNames
 
     # Quick analysis to help teams out if they need to do anything special with their PDP's
 
-    $seenImages = $LangImageNames[$langs[0].Name]
+    $langs = $LangImageNames.Keys | ConvertTo-Array
+    $seenImages = $LangImageNames[$langs[0]]
     $imagesDiffer = $false
     for ($i = 1; ($i -lt $langs.Count) -and (-not $imagesDiffer); $i++)
     {
-        if (($LangImageNames[$langs[$i].Name].Count -ne $seenImages.Count))
+        if (($LangImageNames[$langs[$i]].Count -ne $seenImages.Count))
         {
             $imagesDiffer = $true
             break
         }
 
-        foreach ($image in $LangImageNames[$langs[$i].Name])
+        foreach ($image in $LangImageNames[$langs[$i]])
         {
-            if (-not $seenImages.Contains($image))
+            if ($seenImages -notcontains $image)
             {
                 $imagesDiffer = $true
                 break
@@ -1054,7 +1060,7 @@ function Show-ImageFileNames
     else
     {
         $output = @()
-        $output += "Every language that has a PDP that references the following images:"
+        $output += "Every language that has a PDP references the following images:"
         $output += "`t$($seenImages -join `"`n`t`")"
         Write-Log $($output -join [Environment]::NewLine)
     }

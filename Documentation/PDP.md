@@ -9,6 +9,7 @@
 *   [Sections](#sections)
     *   [Screenshots and Captions](#screenshots-and-captions)
         *   [Folder Structure](#folder-structure)
+    *   [Icons](#icons)
 *   [Schemas And Samples](#schemas-and-samples)
 *   [Loc Attributes and Comments](#loc-attributes-and-comments)
     *   [Marking A String To Not Be Localized](#marking-a-string-to-not-be-localized)
@@ -43,6 +44,8 @@ localize the relevant content.
 The main sections that you'll find in the PDP (depending on which schema version is in use)
 are as follows:
 
+**For Application Submissions**
+ * AppStoreName
  * Keywords
  * Description
  * ReleaseNotes
@@ -55,11 +58,18 @@ are as follows:
  * SupportContactInfo
  * PrivacyPolicyURL
 
+**For In-App Product (IAP) ("add-on") Submissions**
+ * Title
+ * Description
+ * Icon
+
 These should map fairly clearly to the sections you're already familiar with in the DevPortal.
 For additional requirements on number of elements or length of individual elements, refer to
 the schema (or sample file).
 
 ### Screenshots and Captions
+
+> Only relevant for Application submissions
 
 It's worth a little bit of additional time to explain how screenshots and captions work.
 
@@ -103,16 +113,32 @@ where:
     looking recusively for the specific filename
  * `img.png`: the filename that you specified in the caption's platform-specific image attribute
 
+### Icons
+
+> Only relevant for In-App Product (IAP) ("add-on") submissions
+
+Unlike screenshots, icons have no associated captions with them.  However, it is possible that
+your IAP may need to use a different icon based on the region (maybe a different symbol or color
+is needed based on that region's culture), and so the icon is part of the PDP.
+
+The only thing that can be specified for the Icon is the filename of that icon.  It is expected
+that the filename will be found within the defined [folder structure](#folder-structure).
 
 ----------
 
 ## Schemas and Samples
 
-At this time, StoreBroker only has a single PDP schema in use:
+At this time, StoreBroker has two PDP schemas in use:
 
+### Application Submissions
  * **Uri**: `http://schemas.microsoft.com/appx/2012/ProductDescription`
  * **XSD**: [PDP\ProductDescription.xsd](..\PDP\ProductDescription.xsd)
  * **Sample XML**: [PDP\ProductDescription.xml](..\PDP\ProductDescription.xml)
+
+### In-App Product (IAP) ("add-on") Submissions
+ * **Uri**: `http://schemas.microsoft.com/appx/2012/InAppProductDescription`
+ * **XSD**: [PDP\InAppProductDescription.xsd](..\PDP\InAppProductDescription.xsd)
+ * **Sample XML**: [PDP\InAppProductDescription.xml](..\PDP\InAppProductDescription.xml)
 
 ----------
 

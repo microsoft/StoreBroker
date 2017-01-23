@@ -23,6 +23,11 @@
     *   [Getting Your PDPs](#getting-your-pdps)
         *   [Collecting Your Screenshots](#collecting-your-screenshots)
     *   [Getting Your Config](#getting-your-config)
+*   [IAP Setup](#iap-setup)
+    *   [Getting Your IapId](#getting-your-iapid)
+    *   [Getting Your IAP PDPs](#getting-your-iap-pdps)
+        *   [Collecting Your Icons](#collecting-your-icons)
+    *   [Getting Your IAP Config](#getting-your-iap-config)
 *   [Other Convenience Changes](#other-convenience-changes)
 *   [Using StoreBroker](#using-storebroker)
 
@@ -196,7 +201,7 @@ to authenticate against the developer account that you are trying to modify.
 
 #### Getting Credentials
 
->  You only need to perform this task once per user.  You'll re-use these credentials as if they
+> You only need to perform this task once per user.  You'll re-use these credentials as if they
 > were your username and password.
 
 First you have to get three key pieces of information:
@@ -393,11 +398,12 @@ Every project should have its own StoreBroker config file.  The config file has 
    to name this file whatever you want).
 
 2. Once you have the config, review all of the app properties at the bottom half of the file.
-   These are the values for these properties as they are configured for your app in the store today.
-   Some users have realized that the values in the store (and thus in this file) are not what they
+   These are the values for these properties as they are configured for your app in the Store today.
+   Some users have realized that the values in the Store (and thus in this file) are not what they
    expected, so it's worth checking them here and fixing them if need be.  (If you do change any of
-   these properties, you'll need to use the appropriate _switch_ to the `Update-ApplicationSubmission`
-   later on to make sure that your changes are applied).
+   these properties, you'll need to use the appropriate _switch_ to
+   [`Update-ApplicationSubmission`](USAGE.md#creating-a-new-application-submission) later on
+   to make sure that your changes are applied).
 
 3. Now you need to set the `New-SubmissionPackage` parameter values at the top half of the file.
    These parameter values are very well documented within the config file, but here's an additional
@@ -481,6 +487,105 @@ Every project should have its own StoreBroker config file.  The config file has 
 
 4. [Optional] Check this file in side-by-side with your code for version control support.
 
+----------
+
+## IAP Setup
+
+The [prerequisites](#prerequisites) and [authentication steps](#authentication) are identical here
+as they are for applications (as explained above), and so they will not be repeated here.
+
+### Getting Your IapId
+
+The next steps require you to know the IapId for the In-App Product ("add on") that you are trying
+to use with StoreBroker.
+
+To run the next command, you'll need your [AppId](#getting-your-appid) from above.
+Run the following and get the `ID` that is shown there (it looks like this: `0ABCDEF12345`).
+That's your `IapId`.
+
+    Get-ApplicationInAppProducts -AppId <appId> -GetAll | Format-ApplicationInAppProducts
+
+> The Windows Store Submission API does not currently support IAP's that are "Store Managed Consumables."
+> You will not be able to use StoreBroker to manage that type of IAP until the API has been updated.
+> Additionally, if your application _has_ one of those IAPS's, the above command will fail with
+> a `409` error.  In this scenario, you'll need to manually get the `IapId` by copying it from the
+> URL of the Dev Center web portal when trying to edit that IAP.
+
+### Getting Your IAP PDPs
+
+A major benefit of using the StoreBroker to do your updates, is that it can submit all of the
+metadata (title, description, icons, etc...) automatically.
+However, in order to create the "payload" (json and zip) required to use the API, it needs to have
+a uniform way of getting that metadata content.
+
+Enter the [PDP](PDP.md) XML format.  PDP stands for Product Description Page, and the PDP.xml file
+is a schema that Microsoft uses internally to store all of the localizable metadata for an
+In-App Product.  That XML file then gets localized into every language that the application has a
+Store listing for.
+
+> You don't _have_ to use PDP files to store your metadata in the event that you already have a
+> different method of localization.  However, if you don't choose to use the PDP format, then
+> you will have to write your own version of `New-InAppProductSubmissionPackage` in order to
+> create the payload (json and zip) that the other StoreBroker commands require.
+
+You can read [PDP.md](PDP.md) for greater detail on PDP files.  Right now, we just need to get you
+started by generating your IAP's PDP files based on your current published (or pending) submission.
+
+    .\Extensions\ConvertFrom-ExistingIapSubmission.ps1 -IapId <iapId> -Release <release> -PdpFileName <pdpFileName> -OutPath <outPath>
+
+Where:
+  * `<iapId>` is your IAP's ID.
+  
+  * `<release>` is the name of this release.  Many teams name their releases as `YYMM`
+    (depending on how often they release).  This value will be added to each of the PDP's that are
+    generated, and will impact the expected location of the screenshots being referenced.  More on
+    that folder structure in the [next section](#getting-your-config).
+
+  * `<pdpFileName>` - The name you want to give to the PDP files -- people often use `PDP.xml`.
+
+  * `<outPath>` - The folder that the PDP files should be stored in.  _Langcode_ sub-folders will
+    be created for storing the PDP files, as `New-InAppProductSubmissionPackage` depends on
+    that folder structure for determining what _langcode_ a PDP file is associated with.
+
+#### Collecting Your Icons
+
+The API does not provide any ability to download the existing icons for an IAP listing.  When
+the script completes, it will tell you what icons it expects you to gather up manually, and the
+folder structure that you should be putting them in to.
+
+### Getting Your IAP Config
+
+Every IAP should have its own StoreBroker config file.  The config file has two parts to it:
+
+ * The top part lets you specify parameters to `New-InAppProductSubmissionPackage` that remain
+   static, so that you don't have to specify them at the commandline each time.
+ * The bottom part lets you specify In-App Product submission properties that generally remain static
+   between submissions and aren't localized.
+
+#### IAP Config Setup Steps
+
+1. Now run `New-StoreBrokerInAppProductConfigFile -Path $home\desktop\SBConfig.json -IapId <IapId>`,
+   substituting in your [IapId](#getting-your-iapid), and that will generate a pre-populated config
+   file to your desktop, based on the current configuration of your IAP in the Store. (Feel free
+   to name this file whatever you want).
+
+2. Once you have the config, review all of the properties at the bottom half of the file.
+   These are the values for these properties as they are configured for your IAP in the Store today.
+   Some users have realized that the values in the Store (and thus in this file) are not what they
+   expected, so it's worth checking them here and fixing them if need be.  (If you do change any of
+   these properties, you'll need to use the appropriate _switch_ to
+   [`Update-InAppProductSubmission`](USAGE.cmd#iap-commands) later on to make sure that your
+   changes are applied).
+
+3. Now you need to set the `New-InAppProductSubmissionPackage` parameter values at the top half
+   of the file.  These parameter values are very well documented within the config file, but for
+   more detailed information on what you'll _likely_ want to change, refer to **step 3** in
+   [Config Setup Steps](#config-setup-steps) above.
+
+4. [Optional] Check this file in side-by-side with your code for version control support.
+
+----------
+
 ## Other Convenience Changes
 
 Well, you did it.  You're now _fully_ setup to start using StoreBroker.
@@ -504,6 +609,8 @@ While not required, there are other things that you can do to make your usage ev
 * **Global variable for other Ids or paths**: Following similar logic as above, you might want to
   create global variables to reference other common Ids (flightId, IapId), paths (like the path to
   your StoreBroker config file), etc...
+
+----------
 
 ## Using StoreBroker
 

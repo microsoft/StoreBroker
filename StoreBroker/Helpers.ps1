@@ -303,6 +303,51 @@ function Get-SHA512Hash
     return [System.BitConverter]::ToString($sha512.ComputeHash($utf8.GetBytes($PlainText))) -replace '-', ''
 }
 
+function ConvertTo-Array
+{
+<#
+    .SYNOPSIS
+        Converts a value (or pipeline input) into an array.
+
+    .DESCRIPTION
+        Converts a value (or pipeline input) into an array.
+
+        The Git repo for this module can be found here: http://aka.ms/StoreBroker
+
+    .PARAMETER Value
+        The value to convert into an array
+
+    .EXAMPLE
+        $foo = @{ "a" = 1; "b" = 2}; $foo.Keys | ConvertTo-Array
+
+        Returns back an array of the keys (as opposed to a KeyCollection)
+
+    .OUTPUTS
+        [Object[]]
+#>
+    param(
+        [Parameter(
+            Mandatory,
+            ValueFromPipeline)]
+        [Object] $Value
+    )
+
+    Begin
+    {
+        $output = @(); 
+    }
+
+    Process
+    {
+        $output += $_; 
+    }
+
+    End
+    {
+        return ,$output; 
+    }
+}
+
 function Write-Log
 {
 <#

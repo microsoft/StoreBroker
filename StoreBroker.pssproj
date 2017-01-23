@@ -43,13 +43,17 @@
     <Compile Include="Documentation\PDP.md" />
     <Compile Include="Documentation\RESTPROXY.md" />
     <Compile Include="Documentation\SETUP.md" />
+    <Compile Include="Extensions\ConvertFrom-ExistingIapSubmission.ps1" />
     <Compile Include="Extensions\ConvertFrom-ExistingSubmission.ps1" />
     <Compile Include="LICENSE" />
+    <Compile Include="PDP\InAppProductDescription.xml" />
+    <Compile Include="PDP\InAppProductDescription.xsd" />
     <Compile Include="PDP\ProductDescription.xml" />
     <Compile Include="PDP\ProductDescription.xsd" />
     <Compile Include="README.md" />
     <Compile Include="StoreBroker\AppConfigTemplate.json" />
     <Compile Include="StoreBroker\Helpers.ps1" />
+    <Compile Include="StoreBroker\IapConfigTemplate.json" />
     <Compile Include="StoreBroker\NugetTools.ps1" />
     <Compile Include="StoreBroker\PackageTool.ps1" />
     <Compile Include="StoreBroker\StoreBroker.psd1" />

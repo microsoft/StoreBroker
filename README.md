@@ -81,13 +81,6 @@ At this time, we don't have support for these newest additions to the API, but t
   - Package Rollout
   - Mandatory Update
 
-Also of note:
-
-We have full support for IAP's, but unlike App Submissions and Flights, we do not yet have
-a [PDP](Documentation/PDP.md) format for IAP metadata, nor a function like `New-SubmissionPackage`
-to generate the json/zip payload that the IAP functions require.  This is
-[on our backlog](https://github.com/Microsoft/StoreBroker/issues/3) as well.
-
 ### Prerequisites
 
 This module requires PowerShell [version 4](https://en.wikipedia.org/wiki/PowerShell#PowerShell_4.0)

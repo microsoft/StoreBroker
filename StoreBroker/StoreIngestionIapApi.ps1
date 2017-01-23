@@ -607,7 +607,7 @@ function Remove-InAppProduct
 
     Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
 
-    $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::Iap = $IapId }
+    $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::IapId = $IapId }
 
     $params = @{
         "UriFragment" = "inappproducts/$IapId"
@@ -692,7 +692,7 @@ function Get-InAppProductSubmission
     Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
 
     $telemetryProperties = @{
-        [StoreBrokerTelemetryProperty]::Iap = $IapId
+        [StoreBrokerTelemetryProperty]::IapId = $IapId
         [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
     }
     
@@ -921,7 +921,7 @@ function Get-InAppProductSubmissionStatus
     Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
 
     $telemetryProperties = @{
-        [StoreBrokerTelemetryProperty]::Iap = $IapId
+        [StoreBrokerTelemetryProperty]::IapId = $IapId
         [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
     }
     
@@ -998,7 +998,7 @@ function Remove-InAppProductSubmission
     Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
 
     $telemetryProperties = @{
-        [StoreBrokerTelemetryProperty]::Iap = $IapId
+        [StoreBrokerTelemetryProperty]::IapId = $IapId
         [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
     }
     
@@ -1107,7 +1107,7 @@ function New-InAppProductSubmission
         }
 
         # Finally, we can POST with a null body to create a clone of the currently published submission
-        $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::Iap = $IapId }
+        $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::IapId = $IapId }
 
         $params = @{
             "UriFragment" = "inappproducts/$IapId/submissions"
@@ -1188,7 +1188,7 @@ function Update-InAppProductSubmission
         existing pending submission (that was likely cloned previously).
 
     .PARAMETER Force
-        If this switch is specified, any existing pending submission for AppId
+        If this switch is specified, any existing pending submission for IapId
         will be removed before continuing with creation of the new submission.
 
     .PARAMETER UpdateListings
@@ -1300,6 +1300,41 @@ function Update-InAppProductSubmission
 
     Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
 
+    Write-Log "Reading in the submission content from: $SubmissionDataPath" -Level Verbose
+    if ($PSCmdlet.ShouldProcess($SubmissionDataPath, "Get-Content"))
+    {
+        $submission = [string](Get-Content $SubmissionDataPath -Encoding UTF8) | ConvertFrom-Json
+    }
+
+    # Extra layer of validation to protect users from trying to submit a payload to the wrong IAP
+    if ([String]::IsNullOrWhiteSpace($submission.iapId))
+    {
+        $output = @()
+        $output += "The config file used to generate this submission did not have an IapId defined in it."
+        $output += "The IapId entry in the config helps ensure that payloads are not submitted to the wrong In-App Product."
+        $output += "Please update your app's StoreBroker config file by adding an ""iapId"" property with"
+        $output += "your IAP's IapId to the ""iapSubmission"" section.  If you're unclear on what change"
+        $output += "needs to be done, you can re-generate your config file using"
+        $output += "   ""New-StoreBrokerInAppProductConfigFile -IapId $IapId"" -Path ""`$home\desktop\newconfig.json"""
+        $output += "and then diff the new config file against your current one to see the requested iapId change."
+        Write-Log $($output -join [Environment]::NewLine) -Level Warning
+    }
+    else
+    {
+        if ($IapId -ne $submission.iapId)
+        {
+            $output = @()
+            $output += "The IapId [$($submission.iapId)] in the submission content [$SubmissionDataPath] does not match the intended IapId [$IapId]."
+            $output += "You either entered the wrong IapId at the commandline, or you're referencing the wrong submission content to upload."
+            Write-Log $($output -join [Environment]::NewLine) -Level Error
+            throw $($output -join [Environment]::NewLine)
+        }
+    }
+
+    # Now, we'll remove the iapId property since it's not really valid in submission content.
+    # We can safely call this method without validating that the property actually exists.
+    $submission.PSObject.Properties.Remove('iapId')
+
     # Identify potentially incorrect usage of this method by checking to see if no modification
     # switch was provided by the user
     if ((-not $UpdateListings) -and
@@ -1341,12 +1376,6 @@ function Update-InAppProductSubmission
 
         if ($PSCmdlet.ShouldProcess("Patch-InAppProductSubmission"))
         {
-            Write-Log "Reading in the submission content from: $SubmissionDataPath" -Level Verbose
-            if ($PSCmdlet.ShouldProcess($SubmissionDataPath, "Get-Content"))
-            {
-                $submission = [string](Get-Content $SubmissionDataPath -Encoding UTF8) | ConvertFrom-Json
-            }
-
             $params = @{}
             $params.Add("ClonedSubmission", $submissionToUpdate)
             $params.Add("NewSubmission", $submission)
@@ -1413,7 +1442,7 @@ function Update-InAppProductSubmission
         {
             $output = @()
             $output += "When you're ready to commit, run this command:"
-            $output += "  Commit-InAppProductSubmission -AppId $AppId -SubmissionId $submissionId"
+            $output += "  Commit-InAppProductSubmission -IapId $IapId -SubmissionId $submissionId"
             Write-Log $($output -join [Environment]::NewLine)
         }
 
@@ -1738,7 +1767,7 @@ function Set-InAppProductSubmission
     $submissionId = $UpdatedSubmission.id
     $body = [string]($UpdatedSubmission | ConvertTo-Json -Depth $script:jsonConversionDepth)
 
-    $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::Iap = $IapId }
+    $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::IapId = $IapId }
 
     $params = @{
         "UriFragment" = "inappproducts/$IapId/submissions/$submissionId"
@@ -1824,7 +1853,7 @@ function Complete-InAppProductSubmission
     try
     {
         $telemetryProperties = @{
-            [StoreBrokerTelemetryProperty]::Iap = $IapId
+            [StoreBrokerTelemetryProperty]::IapId = $IapId
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
         }
 
@@ -1849,7 +1878,7 @@ function Complete-InAppProductSubmission
         $output += "or by running this command:"
         $output += "    Get-InAppProductSubmission -IapId $IapId -SubmissionId $submissionId | Format-InAppProductSubmission"
         $output += "You can automatically monitor this submission with this command:"
-        $output += "    Start-InAppProductSubmissionMonitor -IapId $AppId -SubmissionId $submissionId -EmailNotifyTo $env:username"
+        $output += "    Start-InAppProductSubmissionMonitor -IapId $IapId -SubmissionId $submissionId -EmailNotifyTo $env:username"
         $output += ""
         $output += "PLEASE NOTE: Due to the nature of how the Store API works, you won't see any of your changes in the"
         $output += "dev portal until your submission has entered into certification.  It doesn't have to *complete*"

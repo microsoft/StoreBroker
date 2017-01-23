@@ -1,0 +1,105 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xs:schema 
+  attributeFormDefault="unqualified" 
+  elementFormDefault="qualified" 
+  targetNamespace="http://schemas.microsoft.com/appx/2012/InAppProductDescription" 
+  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  xmlns:tns="http://schemas.microsoft.com/appx/2012/InAppProductDescription">
+
+  <xs:simpleType name="NonNullNormalizedString">
+    <xs:restriction base="xs:normalizedString">
+      <xs:minLength value="1" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:attributeGroup name="LocIdAttribute">
+    <xs:attribute name="_locID" type="xs:string" use="optional"/>
+  </xs:attributeGroup>
+
+  <xs:simpleType name="TitleString">
+    <xs:restriction base="tns:NonNullNormalizedString">
+      <xs:pattern value="\s*(\S(.){0,100}\s*)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="DescriptionString">
+    <xs:restriction base="xs:normalizedString">
+      <xs:pattern value="\s*(\S(\r|\n|.){0,200}\s*)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:attributeGroup name="IconAttribute">
+    <xs:attribute name="Filename" use="required">
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:pattern value="\s*(\S(.){0,96}\.png\s*)?"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:attributeGroup>
+
+  <xs:simpleType name="ReleaseString">
+    <xs:restriction base="xs:normalizedString">
+      <xs:pattern value="\s*(\S(\r|\n|.){0,254}\s*)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:element name="InAppProductDescription">
+    <xs:annotation>
+      <xs:documentation>
+        Root element of InAppProductDescription document type. For content guidance on all required and optional fields in the product description, see http://go.microsoft.com/fwlink/p/?linkid=221134.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:all>
+
+        <!-- COMMON section-->
+
+        <xs:element name="Title" minOccurs="1" maxOccurs="1">
+          <xs:complexType>
+            <xs:annotation>
+              <xs:documentation>
+                Required, the title for the add-on listing. May not exceed 100 characters.
+              </xs:documentation>
+            </xs:annotation>
+            <xs:simpleContent>
+              <xs:extension base="tns:TitleString">
+                <xs:attributeGroup ref="tns:LocIdAttribute"/>
+              </xs:extension>
+            </xs:simpleContent>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="Description" minOccurs="0" maxOccurs="1">
+          <xs:complexType>
+            <xs:annotation>
+              <xs:documentation>
+                Optional, the description for the add-on listing. May not exceed 200 characters.
+              </xs:documentation>
+            </xs:annotation>
+            <xs:simpleContent>
+              <xs:extension base="tns:DescriptionString">
+                <xs:attributeGroup ref="tns:LocIdAttribute"/>
+              </xs:extension>
+            </xs:simpleContent>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="Icon" minOccurs="0" maxOccurs="1">
+          <xs:complexType>
+            <xs:annotation>
+              <xs:documentation>
+                Optional, the icon for the listing.
+                The icon should be a 300 x 300 png file.
+              </xs:documentation>
+            </xs:annotation>
+            <xs:attributeGroup ref="tns:IconAttribute"/>
+          </xs:complexType>
+        </xs:element>
+
+      </xs:all>
+      <xs:attribute name="language" type="xs:language" use="required" />
+      <xs:attribute name="Release" type="tns:ReleaseString" use="required" />
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

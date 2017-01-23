@@ -9,7 +9,7 @@
     *   [Logging](#logging)
     *   [Common Switches](#common-switches)
     *   [Accessing the Portal](#accessing-the-portal)
-*   [Creating Your Payload](#creating-your-payload)
+*   [Creating Your Application Payload](#creating-your-application-payload)
 *   [Creating A New Application Submission](#creating-a-new-application-submission)
     *    [The Easy Way](#the-easy-way)
     *    [Manual Submissions](#manual-submissions)
@@ -20,6 +20,7 @@
     *   [Flighting Commands](#flighting-commands)
 *   [In App Products](#in-app-products)
     *   [IAP Overview](#iap-overview)
+    *   [Creating Your IAP Payload](#creating-your-iap-payload)
     *   [IAP Commands](#iap-commands)
 *   [Using INT vs PROD](#using-int-vs-prod)
 *   [Telemetry](#telemetry)
@@ -95,7 +96,7 @@ to the appropriate page on the dev portal for what you're looking for, make use 
    you'll be taken to the page where you can view/edit the flight that the flight submission is
    associated with.
 
-## Creating Your Payload
+## Creating Your Application Payload
 
 In StoreBroker, a "payload" is a combination of a json file and a zip file.  The **json** file
 has the entire content of a Windows Store Submission.  This content _could_ be submitted as-is,
@@ -115,7 +116,7 @@ following the instructions in [SETUP.md](SETUP.md):
 
 Generating the submission request JSON/zip package is done with
 
-    New-SubmissionPackage <config-path> -PDPRootPath <path> [[-Release] <string>] -PDPInclude <filename> [-PDPExclude <filename>] -ImagesRootPath <path> -AppxPath <full-path>[, <additional-path>]+ -OutPath <output-dir> -OutName <output-name>  
+    New-SubmissionPackage -ConfigPath <config-path> -PDPRootPath <path> [[-Release] <string>] -PDPInclude <filename> [-PDPExclude <filename>] -ImagesRootPath <path> -AppxPath <full-path>[, <additional-path>]+ -OutPath <output-dir> -OutName <output-name>  
 
 > Items in brackets ('[]') are optional.
 
@@ -474,7 +475,7 @@ submissions).
 **Return Values**:
 `Update-ApplicationFlightSubmission` returns back two values to you at its completion:
 the new submission id, and the UploadURL.  You can use that UploadUrl to upload your submission's
-.zip with `Upload-SubmissionPackage`, in the event that you didn't specify the `PackagePath`
+.zip with `Upload-SubmissionPackage` in the event that you didn't specify the `PackagePath`
 or want to upload it again.
 
 #### Other Common Flight-related Tasks:
@@ -534,20 +535,57 @@ In-App Products (IAP's) are additional features that are offered to users of you
 In the Store, IAP's are considered siblings to Applications, as opposed to children,
 because the same IAP can be associated with more than one Application.
 
-### IAP Commands
+### Creating Your IAP Payload
 
-> As noted in [limitations](../README.md#limitations), we have full support for IAP's, but unlike
-> App Submissions and Flights, we do not yet have a [PDP](PDP.md) format for IAP
-> metadata, nor a function like `New-SubmissionPackage` to generate the json/zip payload that the
-> IAP functions require.  This is [on our backlog](https://github.com/Microsoft/StoreBroker/issues/3).
-> If you use IAP's and would like to help, please refer to [CONTRIBUTING.md](../CONTRIBUTING.md).
+> These instructions very closely mirror those for [Creating Your Application Payload](#creating-your-application-payload),
+> by design.
+
+In StoreBroker, a "payload" is a combination of a json file and a zip file.  The **json** file
+has the entire content of a Windows Store Submission.  This content _could_ be submitted as-is,
+but usually only selected portions of it are "patched" into a new submission.  The **zip** file
+usually has the icons for the localized listings, although depending on how you create your payload,
+those might be missing.
+
+To create your payload, you need to have the following (which you should already have from
+following the instructions in [SETUP.md](SETUP.md):
+ * [StoreBroker config file](SETUP.md#getting-your-iap-config)
+ * [PDP files](SETUP.md#getting-your-iap-pdps)
+ * Icons (if you use them in your listing)
+
+> In order to use New-InAppProductSubmissionPackage, it is highly recommended that you read the
+> documentation (`Get-Help New-InAppProductSubmissionPackage -Full`) and read the
+> documentation in the configuration file.
+
+Generating the submission request JSON/zip package is done with
+
+    New-InAppProductSubmissionPackage -ConfigPath <config-path> -PDPRootPath <path> [[-Release] <string>] -PDPInclude <filename> [-PDPExclude <filename>] -ImagesRootPath <path> -OutPath <output-dir> -OutName <output-name>  
+
+> Items in brackets ('[]') are optional.
+
+The `-Release` parameter is technically optional, depending on how you choose to store your PDP
+files. For more info, run:
+
+    Get-Help New-InAppProductSubmissionPackage -Parameter PdpRootPath
+    Get-Help New-InAppProductSubmissionPackage -Parameter Release
+    
+> If one of your parameters does not change often, you can specify a value in the config file and
+> leave out this parameter at runtime. In this case, you should specify the remaining parameters
+> to `New-InAppProductSubmissionPackage` with their parameter names.  As an example, it is
+> possible to leave out `OutPath` but if you don't specify the remaining parameters by name,
+> then the value of the next parameter, `OutName`, will be mapped to the `OutPath` parameter,
+> causing a failure.
+    
+As part of its input, `New-InAppProductSubmissionPackage` expects a configuration file, which
+you should have [already created](SETUP.md#getting-your-iap-config).
+
+### IAP Commands
 
 You'll find the layout of these commands to mimic those for Applications and Flights.
 For every Get-* command there is a corresponding Format-* command that you can leverage.
 
 > All IAP commands use the fully-spelled-out "InAppProduct".  Even though PowerShell supports tab
 > completion at the commandline, aliases also exist for all of these commands as well.  Any time
-> you see a command that has the phrase "InAppProduct", there exits an alias for that same command
+> you see a command that has the phrase "InAppProduct", there exists an alias for that same command
 > that replaces that phrase with "Iap" (e.g. Get-InAppProducts -> Get-Iaps).
 
 The basic syntax looks of the update command looks like this:
@@ -619,13 +657,13 @@ fully override the publication and visibility of your IAP submission.
 
 `Update-InAppProductSubmission` is a convenience method that wraps a number of individual
 commands into a single command.  If you want to understand exactly what it does, refer to the
-previous section on ["manual submissions."](#manual-submissions) (similar methods exist for IAP
-submissions).
+previous section on ["manual submissions"](#manual-submissions) for applications (similarly-named
+methods exist for IAP submissions).
 
 **Return Values**:
 `Update-InAppProductSubmission` returns back two values to you at its completion:
 the new submission id, and the UploadURL.  You can use that UploadUrl to upload your submission's
-.zip with `Upload-SubmissionPackage`, in the event that you didn't specify the `PackagePath`
+.zip with `Upload-SubmissionPackage` in the event that you didn't specify the `PackagePath`
 or want to upload it again.
 
 #### Other Common IAP-related Tasks:
@@ -648,10 +686,15 @@ To create a new IAP:
     New-InAppProduct -ProductId <productId> -ProductType <productType> -ApplicationIds <applicationIds>
 
 where
- * **`<applicationIds>`** is a comma-separated list of ApplicationIds that should be able to offer
-   this IAP.
  * **`<productId>`** is a unique name that you provide to refer to this IAP in this API and in your
    actual application sourcecode.
+ * **`<productType>`** is either `Consumable` for a "Developer managed consumable", or
+   `Durable` for a "durable managed consumable".  Please note that at this time, although the
+   Developer Web Portal supports the creation of "Store Managed Consumables", the Store Submission
+   API _does not_.  For more information on these types, see the online
+   [documentation](http://go.microsoft.com/fwlink/?LinkId=787042).
+ * **`<applicationIds>`** is a comma-separated list of ApplicationIds that should be able to offer
+   this IAP.
 
 To delete an IAP:
 

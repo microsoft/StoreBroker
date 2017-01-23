@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<InAppProductDescription language="en-us"
+    xmlns="http://schemas.microsoft.com/appx/2012/InAppProductDescription"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    Release="1611">
+
+  <!-- Valid length: 100 character limit -->
+  <Title _locID="Iap_Title">
+    <!-- _locComment_text="{MaxLength=100} IAP Title"-->
+    <!-- [required] -->My Localized App Add-on IAP
+  </Title>
+
+   <!-- Valid length: 200 character limit -->
+   <Description _locID="Iap_Description">
+     <!-- _locComment_text="{MaxLength=200} IAP Description" -->
+     <!-- [optional] -->This add-on will provide you with 200 extra coins.
+   </Description>
+
+  <!-- [optional] Specifying an icon is optional. If provided, the icon must be a 300 x 300 png file. -->
+  <Icon Filename="icon.png"/>
+
+</InAppProductDescription>

@@ -149,7 +149,7 @@
         // This isn't required, but adding this will help protect you from submitting something
         // to the wrong application when working at the commandline.
         //
-        // Ex: "AppId": "0ABCDEF12345"
+        // Ex: "appId": "0ABCDEF12345"
         "appId": "",
 
         /////////////////////////////////

@@ -105,7 +105,6 @@ function Wait-JobWithAnimation
         set of configuration options that Wait-Job does.
 #>
     [CmdletBinding()]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingWriteHost", "", Justification="This function is intended for human interaction, not for scripting.  Write-Host makes the most sense for visible feedback.")]
     Param(
         [Parameter(Mandatory)]
         [string] $JobName,
@@ -125,27 +124,27 @@ function Wait-JobWithAnimation
     $iteration = 0
     while (((Get-Job -Name $JobName).state -eq 'Running'))
     {
-        Write-Host "`r$($animationFrames[$($iteration % $($animationFrames.Length))])  Elapsed: $([int]($iteration / $framesPerSecond)) second(s) $Description" -NoNewline -f Yellow
+        Write-InteractiveHost "`r$($animationFrames[$($iteration % $($animationFrames.Length))])  Elapsed: $([int]($iteration / $framesPerSecond)) second(s) $Description" -NoNewline -f Yellow
         Start-Sleep -Milliseconds ([int](1000/$framesPerSecond))
         $iteration++
     }
 
     if ((Get-Job -Name $JobName).state -eq 'Completed')
     {
-        Write-Host "`rDONE - Operation took $([int]($iteration / $framesPerSecond)) second(s) $Description" -NoNewline -f Green
+        Write-InteractiveHost "`rDONE - Operation took $([int]($iteration / $framesPerSecond)) second(s) $Description" -NoNewline -f Green
 
         # We forcibly set Verbose to false here since we don't need it printed to the screen, since we just did above -- we just need to log it.
         Write-Log "DONE - Operation took $([int]($iteration / $framesPerSecond)) second(s) $Description" -Level Verbose -Verbose:$false
     }
     else
     {
-        Write-Host "`rDONE (FAILED) - Operation took $([int]($iteration / $framesPerSecond)) second(s) $Description" -NoNewline -f Red
+        Write-InteractiveHost "`rDONE (FAILED) - Operation took $([int]($iteration / $framesPerSecond)) second(s) $Description" -NoNewline -f Red
 
         # We forcibly set Verbose to false here since we don't need it printed to the screen, since we just did above -- we just need to log it.
         Write-Log "DONE (FAILED) - Operation took $([int]($iteration / $framesPerSecond)) second(s) $Description" -Level Verbose -Verbose:$false
     }
 
-    Write-Host ""
+    Write-InteractiveHost ""
 }
 
 function Format-SimpleTableString
@@ -401,7 +400,6 @@ function Write-Log
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars", "", Justification="We use global variables sparingly and intentionally for module configuration, and employ a consistent naming convention.")]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingWriteHost", "", Justification="We'd like to use Write-Information instead, but it's not supported on PS 4.0 which we need to support.")]
     param(
         [Parameter(
             Mandatory,
@@ -442,21 +440,21 @@ function Write-Log
 
         switch ($Level)
         {
-            'Error'   { Write-Error $ConsoleMessage }
-            'Warning' { Write-Warning $ConsoleMessage }
-            'Verbose' { Write-Verbose $ConsoleMessage }
-            'Debug'   { Write-Debug $ConsoleMessage }
+            'Error'   { Write-Error $consoleMessage }
+            'Warning' { Write-Warning $consoleMessage }
+            'Verbose' { Write-Verbose $consoleMessage }
+            'Debug'   { Write-Debug $consoleMessage }
             'Info'    {
                 # We'd prefer to use Write-Information to enable users to redirect that pipe if
                 # they want, unfortunately it's only available on v5 and above.  We'll fallback to
                 # using Write-Host for earlier versions (since we still need to support v4).
                 if ($PSVersionTable.PSVersion.Major -ge 5)
                 {
-                    Write-Information $ConsoleMessage -InformationAction Continue
+                    Write-Information $consoleMessage -InformationAction Continue
                 }
                 else
                 {
-                    Write-Host $ConsoleMessage
+                    Write-InteractiveHost $consoleMessage
                 }
             }
         }
@@ -479,7 +477,7 @@ function Write-Log
                 # Let's do best effort here and if we can't log something, just report
                 # it and move on.
                 $output += "This is non-fatal, and your command will continue.  Your log file will be missing this entry:"
-                $output += $ConsoleMessage
+                $output += $consoleMessage
                 Write-Warning ($output -join [Environment]::NewLine)
             }
             else
@@ -644,5 +642,64 @@ function Send-SBMailMessage
                 }
             }
         }
+    }
+}
+
+function Write-InteractiveHost
+{
+<#
+    .SYNOPSIS
+        Forwards to Write-Host only if the host is interactive, else does nothing.
+
+    .DESCRIPTION
+        A proxy function around Write-Host that detects if the host is interactive
+        before calling Write-Host. Use this instead of Write-Host to avoid failures in
+        non-interactive hosts.
+
+        The Git repo for this module can be found here: http://aka.ms/StoreBroker
+
+    .EXAMPLE
+        Write-InteractiveHost "Test"
+        Write-InteractiveHost "Test" -NoNewline -f Yellow
+
+    .NOTES
+        Boilerplate is generated using these commands:
+        # $Metadata = New-Object System.Management.Automation.CommandMetaData (Get-Command Write-Host)
+        # [System.Management.Automation.ProxyCommand]::Create($Metadata) | Out-File temp
+#>
+
+    [CmdletBinding(
+        HelpUri='http://go.microsoft.com/fwlink/?LinkID=113426',
+        RemotingCapability='None')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingWriteHost", "", Justification="This provides a wrapper around Write-Host. In general, we'd like to use Write-Information, but it's not supported on PS 4.0 which we need to support.")]
+    param(
+        [Parameter(
+            Position=0,
+            ValueFromPipeline,
+            ValueFromRemainingArguments)]
+        [System.Object] $Object,
+
+        [switch] $NoNewline,
+
+        [System.Object] $Separator,
+
+        [System.ConsoleColor] $ForegroundColor,
+
+        [System.ConsoleColor] $BackgroundColor
+    )
+
+    # Determine if the host is interactive
+    if ([Environment]::UserInteractive -and `
+        ![Bool]([Environment]::GetCommandLineArgs() -like '-noni*') -and `
+        (Get-Host).Name -ne 'Default Host')
+    {
+        # Special handling for OutBuffer (generated for the proxy function)
+        $outBuffer = $null
+        if ($PSBoundParameters.TryGetValue('OutBuffer', [ref]$outBuffer))
+        {
+            $PSBoundParameters['OutBuffer'] = 1
+        }
+
+        Write-Host @PSBoundParameters
     }
 }

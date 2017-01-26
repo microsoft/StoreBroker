@@ -71,6 +71,11 @@ function Initialize-HelpersGlobalVariables
     {
         $global:SBNotifyCredential = [PSCredential]$null
     }
+
+    if (!(Get-Variable -Name SBUseUTC -Scope Global -ValueOnly -ErrorAction SilentlyContinue))
+    {
+        $global:SBUseUTC = $false
+    }
 }
 
 # We need to be sure to call this explicitly so that the global variables get initialized.
@@ -415,16 +420,23 @@ function Write-Log
 
     Process
     {
+        $date = Get-Date
+        $dateString = $date.ToString("yyyy-MM-dd HH:mm:ss")
+        if ($global:SBUseUTC)
+        {
+            $dateString = $date.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ssZ")
+        }
+
         $logFileMessage = '{0}{1} : {2} : {3} : {4}' -f
             (" " * $Indent),
-            (Get-Date -Format "yyyy-MM-dd HH:mm:ss"),
+            $dateString,
             $env:username,
             $Level.ToUpper(),
             $Message
             
         $consoleMessage = '{0}{1} : {2} : {3}' -f
             (" " * $Indent),
-            (Get-Date -Format "yyyy-MM-dd HH:mm:ss"),
+            $dateString,
             $env:username,
             $Message
 
@@ -433,7 +445,7 @@ function Write-Log
             'Error'   { Write-Error $ConsoleMessage }
             'Warning' { Write-Warning $ConsoleMessage }
             'Verbose' { Write-Verbose $ConsoleMessage }
-            'Debug'   { Write-Degbug $ConsoleMessage }
+            'Debug'   { Write-Debug $ConsoleMessage }
             'Info'    {
                 # We'd prefer to use Write-Information to enable users to redirect that pipe if
                 # they want, unfortunately it's only available on v5 and above.  We'll fallback to

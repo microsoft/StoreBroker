@@ -56,7 +56,7 @@ into the corresponding `Format-*` command.
 ### Logging
 
 All commands will log to the console, as well as to a log file, by default.
-The logging is affected by two global variables.  The pre-existing values of these
+The logging is affected by three global variables.  The pre-existing values of these
 variables will be honored if they already exist, otherwise they will be created (with defaults)
 when the module is loaded.
 
@@ -65,6 +65,10 @@ when the module is loaded.
     
  **`$global:SBLoggingEnabled`** [bool] Defaults to `$true`. To disable file-based logging,
     set to `$false`
+
+ **`$global:SBUseUTC`** [bool] Defaults to `$false`. If `$false`, times are logged in local time.
+    When `$true`, times are logged using UTC (and those timestamps will end with a Z per the
+    [W3C standard](http://www.w3.org/TR/NOTE-datetime))
 
 > **PowerShell Tip**
 >

@@ -135,6 +135,11 @@ with a justification explaining why it's ok to suppress that rule within that pa
 Refer to the [PSScriptAnalyzer documentation](https://github.com/PowerShell/PSScriptAnalyzer/) for
 more information on how to use that attribute, or look at other existing examples within this module.
 
+> Please ensure that your installation of PSScriptAnalyzer is up-to-date by running:
+> `Update-Module -Name PSScriptAnalyzer`
+> You should close and re-open your console window if the module was updated as a result of running
+> that command.
+
 ----------
 
 ### Visual Studio

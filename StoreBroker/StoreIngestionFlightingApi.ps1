@@ -544,7 +544,7 @@ function Remove-ApplicationFlight
         "NoStatus" = $NoStatus
     }
 
-    $result = Invoke-SBRestMethod @params
+    $null = Invoke-SBRestMethod @params
 }
 
 function Get-ApplicationFlightSubmission
@@ -896,7 +896,7 @@ function Remove-ApplicationFlightSubmission
         "NoStatus" = $NoStatus
     }
 
-    $result = Invoke-SBRestMethod @params
+    $null = Invoke-SBRestMethod @params
 }
 
 function New-ApplicationFlightSubmission
@@ -1738,7 +1738,7 @@ function Complete-ApplicationFlightSubmission
             "NoStatus" = $NoStatus
         }
 
-        $result = Invoke-SBRestMethod @params
+        $null = Invoke-SBRestMethod @params
 
         $output = @()
         $output += "The submission has been successfully committed."

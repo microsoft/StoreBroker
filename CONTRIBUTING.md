@@ -61,7 +61,7 @@ into the source.
 
 StoreBroker is maintained by:
 
-- **[@HowardWolosky-MSFT](http://github.com/HowardWolosky-MSFT)**
+- **[@TheHoward](http://github.com/TheHoward)**
 - **[@DanBelcher-MSFT](http://github.com/DanBelcher-MSFT)**
 
 As StoreBroker is a production dependency for Microsoft, we have a couple workflow restrictions:
@@ -134,6 +134,11 @@ either fix the issues that it calls out, or add a `[Diagnostics.CodeAnalysis.Sup
 with a justification explaining why it's ok to suppress that rule within that part of the script.
 Refer to the [PSScriptAnalyzer documentation](https://github.com/PowerShell/PSScriptAnalyzer/) for
 more information on how to use that attribute, or look at other existing examples within this module.
+
+> Please ensure that your installation of PSScriptAnalyzer is up-to-date by running:
+> `Update-Module -Name PSScriptAnalyzer`
+> You should close and re-open your console window if the module was updated as a result of running
+> that command.
 
 ----------
 

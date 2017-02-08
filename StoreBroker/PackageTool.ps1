@@ -1568,6 +1568,7 @@ function Remove-DeprecatedProperties
 #>
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification="This is intended to be where all deprecated properties are removed.  It's an accurate name.")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "", Justification="Does not cause any change to system state. No value gained from ShouldProcess in this specific instance.")]
     param(
         [Parameter(Mandatory)]
         [PSCustomObject] $SubmissionRequestBody
@@ -2125,7 +2126,7 @@ filter Remove-Comment
 
         "example", "test "
 #>
-
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "", Justification="Does not cause any change to system state. No value gained from ShouldProcess in this specific instance.")]
     param(
         [string] $CommentDelimiter = "//",
 

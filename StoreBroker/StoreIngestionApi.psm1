@@ -390,7 +390,7 @@ function Get-AccessToken
                     Invoke-RestMethod $url -Method Post -Body $body
                 }
 
-                $job = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($url, $body)
+                $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($url, $body)
 
                 if ($PSCmdlet.ShouldProcess($jobName, "Wait-JobWithAnimation"))
                 {
@@ -677,7 +677,7 @@ function Set-SubmissionPackage
                     $cloudBlockBlob.UploadFromFile($PackagePath, [System.IO.FileMode]::Open)
                 }
 
-                $job = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($UploadUrl, $PackagePath, $azureStorageDll)
+                $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($UploadUrl, $PackagePath, $azureStorageDll)
 
                 if ($PSCmdlet.ShouldProcess($jobName, "Wait-JobWithAnimation"))
                 {
@@ -839,7 +839,7 @@ function Get-SubmissionPackage
                     $cloudBlockBlob.DownloadToFile($PackagePath, [System.IO.FileMode]::OpenOrCreate)
                 }
 
-                $job = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($UploadUrl, $PackagePath, $azureStorageDll)
+                $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($UploadUrl, $PackagePath, $azureStorageDll)
 
                 if ($PSCmdlet.ShouldProcess($jobName, "Wait-JobWithAnimation"))
                 {
@@ -1521,7 +1521,7 @@ function Invoke-SBRestMethod
                     Invoke-RestMethod @params
                 }
 
-                $job = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($url, $Method, $headers, $Body)
+                $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($url, $Method, $headers, $Body)
 
                 if ($PSCmdlet.ShouldProcess($jobName, "Wait-JobWithAnimation"))
                 {

@@ -620,7 +620,7 @@ function Remove-InAppProduct
         "NoStatus" = $NoStatus
     }
 
-    $result = Invoke-SBRestMethod @params
+    $null = Invoke-SBRestMethod @params
 }
 
 function Get-InAppProductSubmission
@@ -1012,7 +1012,7 @@ function Remove-InAppProductSubmission
         "NoStatus" = $NoStatus
     }
 
-    $result = Invoke-SBRestMethod @params
+    $null = Invoke-SBRestMethod @params
 }
 
 function New-InAppProductSubmission
@@ -1867,7 +1867,7 @@ function Complete-InAppProductSubmission
             "NoStatus" = $NoStatus
         }
 
-        $result = Invoke-SBRestMethod @params
+        $null = Invoke-SBRestMethod @params
 
         $output = @()
         $output += "The submission has been successfully committed."

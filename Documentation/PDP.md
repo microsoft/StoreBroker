@@ -132,13 +132,13 @@ At this time, StoreBroker has two PDP schemas in use:
 
 ### Application Submissions
  * **Uri**: `http://schemas.microsoft.com/appx/2012/ProductDescription`
- * **XSD**: [PDP\ProductDescription.xsd](..\PDP\ProductDescription.xsd)
- * **Sample XML**: [PDP\ProductDescription.xml](..\PDP\ProductDescription.xml)
+ * **XSD**: [PDP\ProductDescription.xsd](../PDP/ProductDescription.xsd)
+ * **Sample XML**: [PDP\ProductDescription.xml](../PDP/ProductDescription.xml)
 
 ### In-App Product (IAP) ("add-on") Submissions
  * **Uri**: `http://schemas.microsoft.com/appx/2012/InAppProductDescription`
- * **XSD**: [PDP\InAppProductDescription.xsd](..\PDP\InAppProductDescription.xsd)
- * **Sample XML**: [PDP\InAppProductDescription.xml](..\PDP\InAppProductDescription.xml)
+ * **XSD**: [PDP\InAppProductDescription.xsd](../PDP/InAppProductDescription.xsd)
+ * **Sample XML**: [PDP\InAppProductDescription.xml](../PDP/InAppProductDescription.xml)
 
 ----------
 

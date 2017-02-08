@@ -669,7 +669,7 @@ function Remove-ApplicationSubmission
         "NoStatus" = $NoStatus
     }
 
-    $result = Invoke-SBRestMethod @params
+    $null = Invoke-SBRestMethod @params
 }
 
 function New-ApplicationSubmission
@@ -1666,7 +1666,7 @@ function Complete-ApplicationSubmission
             "NoStatus" = $NoStatus
         }
 
-        $result = Invoke-SBRestMethod @params 
+        $null = Invoke-SBRestMethod @params 
 
         $output = @()
         $output += "The submission has been successfully committed."

@@ -290,7 +290,6 @@ function Add-Icon
     $elementName = "Icon"
     [System.Xml.XmlElement] $elementNode = Ensure-RootChild -Xml $Xml -Element $elementName
 
-    $maxChars = 200
     $paramSet = @{
         "Element" = $elementNode;
         "Attribute" = @{ 'Filename' = $iconFilename };

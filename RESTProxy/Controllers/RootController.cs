@@ -4,11 +4,13 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Controllers
 {
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
+    using System.Linq;
     using System.Net.Http;
     using System.Text;
     using System.Threading.Tasks;
     using System.Web.Http;
     using Models;
+    using static Models.Endpoint;
 
     /// <summary>
     /// This controller is designed to handle all requests that come into the web service.
@@ -22,7 +24,7 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Controllers
         /// <returns>HttpResponseMessage to be seen by the user.</returns>
         /// <remarks>
         /// A Uri that will match this method looks like this:
-        /// v1.0/my/{command}/{commandId}/{subCommand}/{subCommandId}/{subCommand2}/{subCommandId2}/{subCommand3}/{subCommandId3}/{subCommand4}/{subCommandId4}/{subCommand5}/{subCommandId5}
+        /// v1.0/my/{command}/{commandId}/{subCommand}/{subCommandId}/{subCommand2}/{subCommandId2}/{subCommand3}/{subCommandId3}/{subCommand4}/{subCommandId4}/{subCommand5}/{subCommandId5}/{subCommand6}/{subCommandId6}/{subCommand7}/{subCommandId7}
         /// (this is defined in WebApiConfig.cs).
         /// <para />
         /// We don't care at all about the parameters because all we end up doing is grabbing the
@@ -54,6 +56,10 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Controllers
             string subCommandId4 = null,
             string subCommand5 = null,
             string subCommandId5 = null,
+            string subCommand6 = null,
+            string subCommandId6 = null,
+            string subCommand7 = null,
+            string subCommandId7 = null,
             int skip = -1,
             int top = -1)
         {
@@ -63,16 +69,32 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Controllers
             // Check to see if this should use the INT endpoint or stay with PROD.
             // We don't care about the value of the header...just its existence.
             IEnumerable<string> headerValues;
-            ProxyManager.EndpointType endpointType = Request.Headers.TryGetValues("UseINT", out headerValues) ?
-                ProxyManager.EndpointType.Int :
-                ProxyManager.EndpointType.Prod;
+            EndpointType endpointType = Request.Headers.TryGetValues("UseINT", out headerValues) ?
+                EndpointType.Int :
+                EndpointType.Prod;
+
+            // To support multi-tenant proxy servers, we need to check if the user provided a
+            // tenantId or tenantName as well.
+            string tenantId = null;
+            if (Request.Headers.TryGetValues("TenantId", out headerValues))
+            {
+                tenantId = headerValues.FirstOrDefault();
+            }
+
+            string tenantName = null;
+            if (Request.Headers.TryGetValues("TenantName", out headerValues))
+            {
+                tenantName = headerValues.FirstOrDefault();
+            }
 
             // Now, just proxy the request over to the real API.
-            return await ProxyManager.PerformRequest(
+            return await ProxyManager.PerformRequestAsync(
                 pathAndQuery: Request.RequestUri.PathAndQuery,
                 method: Request.Method,
                 onBehalfOf: Request.GetRequestContext().Principal,
                 body: body,
+                tenantId: tenantId,
+                tenantName: tenantName,
                 endpointType: endpointType);
         }
    }

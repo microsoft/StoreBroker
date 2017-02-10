@@ -61,7 +61,7 @@ into the source.
 
 StoreBroker is maintained by:
 
-- **[@TheHoward](http://github.com/TheHoward)**
+- **[@HowardWolosky](http://github.com/HowardWolosky)**
 - **[@DanBelcher-MSFT](http://github.com/DanBelcher-MSFT)**
 
 As StoreBroker is a production dependency for Microsoft, we have a couple workflow restrictions:

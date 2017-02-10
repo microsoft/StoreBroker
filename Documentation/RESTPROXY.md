@@ -26,6 +26,7 @@ _use_ the REST Proxy need only read
         *   [Classic vs ARM](#classic-vs-arm)
         *   [Configuration](#configuration)
     *   [Remote Desktop](#remote-desktop)
+    *   [Endpoint JSON Configuration](#endpoint-json-configuration)
     *   [Maintenance Items](#maintenance-items)
         *   [Service Account Password](#service-account-password)
         *   [Authentication Certificate](#authentication-certificate)
@@ -335,6 +336,56 @@ First, get the IP address of the machine you want to remote into.
 Once armed with the IP address, you can remote desktop into that IP address, and log in with the
 service account username and password.
 
+### Endpoint JSON Configuration
+
+The Proxy supports managing multiple tenants in a single Proxy instance.  Because of this,
+the tenant-related configuration for the proxy is done within a JSON object that is stored as
+a string property (`EndpointJsonConfig`) within the AzureService configuration
+(`ServiceConfiguration.Cloud.cscfg`).
+
+This JSON consists of an **array** of `Endpoint`s.
+
+A single, full `Endpoint` looks like this:
+
+    {
+        "tenantId": "12324567-890a-bcde-f123-4567890abcde",
+        "tenantFriendlyName": "myName",
+        "type": "Prod",
+        "clientId": "abcdef01-2345-6789-abcd-ef0123456789",
+        "clientSecretEncrypted": "<a very long string>",
+        "clientSecretCertificateThumbprint": "1234567890ABCDEF1234567890ABCDEF12345678",
+        "readOnlySecurityGroupAlias": "proxyro",
+        "readWriteSecurityGroupAlias": "proxyrw"
+    }    
+
+Discussing the individual values:
+
+ * `tenantId` - The TenantId as determined when you initially [setup](SETUP.md#getting-credentials)
+   StoreBroker.
+ * `tenantFriendlyName` - A friendly name that StoreBroker users can use to reference this
+   tenant, as opposed to needing the full `tenantId`.
+ * `type`: This value should **always** be set to `Prod` (case-sensitive), unless you are adding
+   an INT endpoint for the Microsoft first-party account.
+ * `clientId`: The ClientId as determined when you initially [setup](SETUP.md#getting-credentials)
+   StoreBroker.
+ * `clientSecretEncrypted`: The ClientSecret as determined when you initially
+  [setup](SETUP.md#getting-credentials) StoreBroker.  As the name implies, it's expected that you
+  are [encrypting](#client-secrets) this value for security reasons.  If you don't encyrpt this
+  value, then the next property (`clientSecretCertificateThumbprint`) should be left blank.
+ * `clientSecretCertificateThumbprint` - The thumbprint of the certificate in Azure that was
+  used for encrypting the ClientSecret into the value stored in `clientSecretEncrypted`.  If
+  that value is _not_ encrypted, then this value should be left blank.
+ * `readOnlySecurityGroupAlias` - The Windows Security group that is used to permit users to
+  perform GET requests on this endpoint.
+ * `readWriteSecurityGroupAlias` - The Windows Security group that is used to permit users to
+  perform GET, POST, PUT and DELETE requests on this endpoint.
+
+When storing the JSON in the `EndpointJsonConfig` config value, keep in mind two things:
+ * It is expecting an **array** of `Endpoint` objects.  So, even if you only have a single
+   `Endpoint`, it should still be wrapped within `[ ... ]` to make it an array.
+ * You should "minify" the JSON to remove all line-feeds and extra spaces, and then escape all
+   double-quotes (`"`) as `&quot;`.
+
 ### Maintenance items
 
 Some of the elements of the Proxy will require occasional maintenance, like renewals, etc...
@@ -457,12 +508,14 @@ one that you just created.
 Now, open `AzureService\ServiceConfiguration.Cloud.cscfg`, and you'll want to update the
 following setting values:
 
-  * LocalAdminAccountCertThumbprint
-  * DomainJoinAccountCertThumbprint
-  * ClientSecretProdCertThumbprint
-  * ClientSecretIntCertThumbprint
-  * And you'll need to update the `certificate` entry for the one named
-  `StoreBroker Proxy Authentication`
+  * `LocalAdminAccountCertThumbprint`
+  * `DomainJoinAccountCertThumbprint`
+
+You should also update the `clientSecretCertificateThumbprint` for the PROD and INT endpoints
+within your [`EndpointJsonConfig`](#tenant-json-configuration).
+
+You'll also need to update the `certificate` entry for the one named
+`StoreBroker Proxy Authentication`.
 
 It should also be noted that if you are replacing the certificate, you'll also need to update
 the encrypted values of those secrets as well.  In PowerShell:
@@ -644,9 +697,25 @@ There are a couple things to note when doing local development:
     `ProxyManager.GetClientSecret`.   
 
  * When developing locally, you will need to tell StoreBroker to use a different endpoint for
-   the proxy.  You can achieve that by running
+   the proxy.  By default, this local endpoint value will be `http://localhost:1034`.  You can
+   achieve that by running:
 
-       Set-StoreBrokerAuthentication -UseProxy -ProxyEndpoint <local endpoint>
+       Set-StoreBrokerAuthentication -UseProxy -ProxyEndpoint 'http://localhost:1034'
+
+ * When running the `RESTProxy` project directly (not using the `AzureService` project),
+   it won't be reading the values from your `ServiceConfiguration.[Cloud|Local].cscfg` files.  That
+   means that the calls to get the `DefaultTenantId` and `EndpointJsonConfig` configuration values
+   in `ConfigureProxyManager` within `WebApiConfig.cs` will come back empty.  To unblock yourself
+   while debugging, you'll need to temporarily set the values from your configuration file directly
+   into the code.
+      * Replace any `&quot;` with `\"`.
+      * Since you're not running in Azure, you won't have access to the decryption
+        certificates, which means you'll need to modify the `EndpointJsonConfig` value by changing 
+        `clientSecretEncrypted` to the unecrypted values, and clearing out the values for the
+        `clientSecretCertificateThumbprint`s.
+
+ * You may also need to temporarily modify `TryHasPermission` in `Endpoint.cs` to always
+   return `true` if your machine isn't able to do the security group resolution.
 
 ----------
 
@@ -690,6 +759,10 @@ specific differences:
 
    * If you want to use _INT_ instead of _PROD_, provide this additional header value:
      `UseINT = true`
+
+   * If the proxy being used is multi-tenant aware, you can either pass in the tenantId in the
+     header value `TenantId` or the friendly name of the tenant (as configured in the proxy)
+     with the header value `TenantName`.
 
 ----------
 

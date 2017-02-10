@@ -38,7 +38,7 @@ StoreBroker.
 
 ### Current Committee Members
 
- * Howard Wolosky ([@TheHoward](https://github.com/TheHoward))
+ * Howard Wolosky ([@HowardWolosky](https://github.com/HowardWolosky))
  * Daniel Belcher ([@DanBelcher-MSFT](https://github.com/DanBelcher-MSFT)).
 
 ### Committee Member Responsibilities

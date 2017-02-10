@@ -14,17 +14,8 @@
       <Setting name="DomainJoinAccountCertThumbprint" value="" />
       <Setting name="DomainJoinAccountCertStore" value="cert:\LocalMachine\My" />
       <Setting name="TimeZone" value="Pacific Standard Time" />
-      <Setting name="TenantId" value="" />
-      <Setting name="ClientIdProd" value="" />
-      <Setting name="ClientSecretProd" value="" />
-      <Setting name="ClientSecretProdCertThumbprint" value="" />
-      <Setting name="ClientSecretProdCertStore" value="cert:\LocalMachine\My" />
-      <Setting name="ClientIdInt" value="" />
-      <Setting name="ClientSecretInt" value="" />
-      <Setting name="ClientSecretIntCertThumbprint" value="" />
-      <Setting name="ClientSecretIntCertStore" value="cert:\LocalMachine\My" />
-      <Setting name="ROSecurityGroupAlias" value="" />
-      <Setting name="RWSecurityGroupAlias" value="" />
+      <Setting name="DefaultTenantId" value="" />
+      <Setting name="EndpointJsonConfig" value="" />
       <Setting name="APPINSIGHTS_INSTRUMENTATIONKEY" value="" />
       <Setting name="EnableAnonymousAuthentication" value="false" />
       <Setting name="EnableWindowsAuthentication" value="true" />

@@ -7,6 +7,7 @@ $script:proxyEndpoint = $null
 # authentication credential for the current PowerShell session.
 [string]$script:authTenantId = $null
 [PSCredential]$script:authCredential = $null
+[string]$script:authTenantName = $null
 
 # By default, ConvertTo-Json won't expand nested objects further than a depth of 2
 # We always want to expand as deep as possible, so set this to a much higher depth
@@ -111,6 +112,10 @@ function Set-StoreBrokerAuthentication
         The REST endpoint that will be used to authenticate user requests and then proxy those
         requests to the real Store REST API endpoint.
 
+    .PARAMETER TenantName
+        The friendly name for the tenant that can be used with a Proxy that supports multiple
+        tenants.
+
     .EXAMPLE
         Set-StoreBrokerAuthentication "abcdef01-2345-6789-0abc-def123456789"
 
@@ -156,6 +161,9 @@ function Set-StoreBrokerAuthentication
             Mandatory,
             ParameterSetName="WithCred",
             Position=0)]
+        [Parameter(
+            ParameterSetName="Proxy",
+            Position=2)]
         [string] $TenantId,
 
         [Parameter(
@@ -168,17 +176,32 @@ function Set-StoreBrokerAuthentication
 
         [Parameter(
             Mandatory,
-            ParameterSetName="Proxy")]
+            ParameterSetName="Proxy",
+            Position=0)]
         [switch] $UseProxy,
 
-        [Parameter(ParameterSetName="Proxy")]
-        [string] $ProxyEndpoint = $global:SBDefaultProxyEndpoint
+        [Parameter(
+            ParameterSetName="Proxy",
+            Position=1)]
+        [string] $ProxyEndpoint = $global:SBDefaultProxyEndpoint,
+
+        [Parameter(
+            ParameterSetName="Proxy",
+            Position=2)]
+        [string] $TenantName = $null
     )
 
     Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
 
     if ($UseProxy)
     {
+        if ((-not [String]::IsNullOrWhiteSpace($TenantId)) -and (-not [String]::IsNullOrWhiteSpace($TenantName)))
+        {
+            $message = "You cannot set both TenantId and TenantName.  Only provide one of them."
+            Write-Log $message -Level Error
+            throw $message
+        }
+
         if ($null -ne $script:authCredential)
         {
             Write-Log "Your cached credentials will no longer be used since you have enabled Proxy usage." -Level Warning
@@ -190,17 +213,33 @@ function Set-StoreBrokerAuthentication
         }
 
         $script:proxyEndpoint = $ProxyEndpoint
+
+        if ((-not [String]::IsNullOrWhiteSpace($TenantId)) -and
+            $PSCmdlet.ShouldProcess($TenantId, "Cache tenantId"))
+        {
+            $script:authTenantId = $TenantId
+            $script:authTenantName = $null
+        }
+
+        if ((-not [String]::IsNullOrWhiteSpace($TenantName)) -and
+            $PSCmdlet.ShouldProcess($TenantName, "Cache tenantName"))
+        {
+            $script:authTenantId = $null
+            $script:authTenantName = $TenantName
+        }
+
         return
+    }
+
+    if ($PSCmdlet.ShouldProcess($TenantId, "Cache tenantId"))
+    {
+        $script:authTenantId = $TenantId
+        $script:authTenantName = $null
     }
 
     # By calling into here with any other parameter set, the user is indicating that the proxy
     # should no longer be used, so we must clear out any existing value.
     $script:proxyEndpoint = $null
-
-    if ($PSCmdlet.ShouldProcess($TenantId, "Cache tenantId"))
-    {
-        $script:authTenantId = $TenantId
-    }
 
     if (($null -eq $Credential) -and (-not $OnlyCacheTenantId))
     {
@@ -268,6 +307,11 @@ function Clear-StoreBrokerAuthentication
     if ($PSCmdlet.ShouldProcess("", "Clear proxy"))
     {
         $script:proxyEndpoint = $null
+    }
+
+    if ($PSCmdlet.ShouldProcess("", "Clear tenantName"))
+    {
+        $script:tenantName = $null
     }
 }
 
@@ -1462,11 +1506,23 @@ function Invoke-SBRestMethod
         $headers.Add("Content-Type", "application/json; charset=utf8")
     }
 
-    # We'll add a special header in the event that we're using the proxy and the user wants
-    # to use INT.
-    if ($global:SBUseInt -and ($serviceEndpoint -eq $script:proxyEndpoint))
+    # Add any special headers when using the proxy.
+    if ($serviceEndpoint -eq $script:proxyEndpoint)
     {
-        $headers.Add("UseINT", "true")
+        if ($global:SBUseInt)
+        {
+            $headers.Add("UseINT", "true")
+        }
+        
+        if (-not [String]::IsNullOrWhiteSpace($script:authTenantId))
+        {
+            $headers.Add("TenantId", $script:authTenantId)
+        }
+
+        if (-not [String]::IsNullOrWhiteSpace($script:authTenantName))
+        {
+            $headers.Add("TenantName", $script:authTenantName)
+        }
     }
 
     try

@@ -134,6 +134,7 @@
     <Compile Include="Controllers\RootController.cs" />
     <Compile Include="Models\AsyncLock.cs" />
     <Compile Include="Models\Encryption.cs" />
+    <Compile Include="Models\Endpoint.cs" />
     <Compile Include="Models\ProxyManager.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>

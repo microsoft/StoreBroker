@@ -102,8 +102,7 @@ function Get-StoreBrokerConfigFileContentForIapId
         $updated = $updated -replace '"lifetime": ".*",', "`"lifetime`": `"$($sub.lifetime)`","
         $updated = $updated -replace '"contentType": ".*",', "`"contentType`": `"$($sub.contentType)`","
 
-        # Need to replace actual CR's and LF's with their control codes.  We'll ensure all variations are uniformly formatted as \r\n
-        $tag = $sub.tag -replace '\r\n', '\r\n' -replace '\r', '\r\n' -replace '\n', '\r\n'
+        $tag = Get-EscapedJsonValue -Value $sub.tag
         $updated = $updated -replace '"tag": ""', "`"tag`": `"$tag`""
 
         $keywords = $sub.keywords | ConvertTo-Json -Depth $script:jsonConversionDepth
@@ -111,8 +110,7 @@ function Get-StoreBrokerConfigFileContentForIapId
         $updated = $updated -replace '(\s+)"keywords": \[.*(\r|\n)+\s*\]', "`$1`"keywords`": $keywords"
 
         # NOTES FOR CERTIFICATION
-        # Need to replace actual CR's and LF's with their control codes.  We'll ensure all variations are uniformly formatted as \r\n
-        $notesForCertification = $sub.notesForCertification -replace '\r\n', '\r\n' -replace '\r', '\r\n' -replace '\n', '\r\n'
+        $notesForCertification = Get-EscapedJsonValue -Value $sub.notesForCertification
         $updated = $updated -replace '"notesForCertification": ""', "`"notesForCertification`": `"$notesForCertification`""
 
         return $updated
@@ -305,8 +303,7 @@ function Get-StoreBrokerConfigFileContentForAppId
         $updated = $updated -replace '"isGameDvrEnabled": .*,', "`"isGameDvrEnabled`": $($sub.isGameDvrEnabled.ToString().ToLower()),"
 
         # NOTES FOR CERTIFICATION
-        # Need to replace actual CR's and LF's with their control codes.  We'll ensure all variations are uniformly formatted as \r\n
-        $notesForCertification = $sub.notesForCertification -replace '\r\n', '\r\n' -replace '\r', '\r\n' -replace '\n', '\r\n'
+        $notesForCertification = Get-EscapedJsonValue -Value $sub.notesForCertification
         $updated = $updated -replace '"notesForCertification": ""', "`"notesForCertification`": `"$notesForCertification`""
 
         return $updated

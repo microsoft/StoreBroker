@@ -285,7 +285,7 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
                 {
                     byte[] bytes = System.Text.Encoding.UTF8.GetBytes(body);
                     request.ContentLength = bytes.Length;
-                    request.ContentType = $"{ProxyManager.JsonMediaType}; charset=utf8";
+                    request.ContentType = $"{ProxyManager.JsonMediaType}; charset=UTF-8";
 
                     using (Stream requestStream = await request.GetRequestStreamAsync())
                     {
@@ -307,24 +307,31 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
                                 HttpStatusCode.OK :
                                 httpResponse.StatusCode;
 
-                            string responseBody = reader.ReadToEnd();
+                            HttpResponseMessage httpResponseMessage = new HttpResponseMessage(statusCode);
 
-                            if (string.IsNullOrEmpty(responseBody))
+                            // Proxy all of the special headers that the API returns
+                            // (which all begin with "MS-").  One example is "MS-CorrelationId"
+                            // which is needed by the Windows Store Submission API team when they
+                            // are investigating bug reports with the API.
+                            foreach (string key in httpResponse.Headers.AllKeys)
                             {
-                                // Some commands, like DELETE have no response body.
-                                return new HttpResponseMessage(statusCode);
+                                if (key.StartsWith("MS-"))
+                                {
+                                    httpResponseMessage.Headers.Add(key, httpResponse.Headers[key]);
+                                }
                             }
-                            else
+
+                            // Some commands, like DELETE have no response body.
+                            string responseBody = reader.ReadToEnd();
+                            if (!string.IsNullOrEmpty(responseBody))
                             {
                                 // The contentType string tends to have the character encoding appended to it.
                                 // We just want the actual contentType since we specify the content encoding separately.
                                 string contentType = response.ContentType.Split(';')[0];
-
-                                return new HttpResponseMessage(statusCode)
-                                {
-                                    Content = new StringContent(responseBody, Encoding.UTF8, contentType)
-                                };
+                                httpResponseMessage.Content = new StringContent(responseBody, Encoding.UTF8, contentType);
                             }
+
+                            return httpResponseMessage;
                         }
                     }
                 }

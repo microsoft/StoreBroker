@@ -1405,10 +1405,12 @@ function Update-InAppProductSubmission
 
         $output = @()
         $output += "Successfully cloned the existing submission and modified its content."
-        $output += "You can view it on the Dev portal here:"
+        $output += "You can view it on the Dev Portal here:"
         $output += "    https://dev.windows.com/en-us/dashboard/iaps/$IapId/submissions/$submissionId/"
         $output += "or by running this command:"
         $output += "    Get-InAppProductSubmission -IapId $IapId -SubmissionId $submissionId | Format-InAppProductSubmission"
+        $output += ""
+        $output += $script:manualPublishWarning -f 'Update-InAppProductSubmission'
         Write-Log $($output -join [Environment]::NewLine)
 
         if (![System.String]::IsNullOrEmpty($PackagePath))
@@ -1596,7 +1598,7 @@ function Patch-InAppProductSubmission
     # as we need to mark the existing icons as "PendingDelete" so that they'll be deleted
     # during the upload, but only if the new listing doesn't have a new icon.
     # Otherwise, even though we don't include them in the updated JSON, they will still remain
-    # there in the dev portal which is not the desired behavior.
+    # there in the Dev Portal which is not the desired behavior.
     if ($UpdateListings)
     {
         # Save off the original listings so that we can make changes to them without affecting
@@ -1873,21 +1875,14 @@ function Complete-InAppProductSubmission
         $output += "The submission has been successfully committed."
         $output += "This is just the beginning though."
         $output += "It still has multiple phases of validation to get through, and there's no telling how long that might take."
-        $output += "You can view the progress of the submission validation on the Dev portal here:"
+        $output += "You can view the progress of the submission validation on the Dev Portal here:"
         $output += "    https://dev.windows.com/en-us/dashboard/iaps/$IapId/submissions/$submissionId/"
         $output += "or by running this command:"
         $output += "    Get-InAppProductSubmission -IapId $IapId -SubmissionId $submissionId | Format-InAppProductSubmission"
         $output += "You can automatically monitor this submission with this command:"
         $output += "    Start-InAppProductSubmissionMonitor -IapId $IapId -SubmissionId $submissionId -EmailNotifyTo $env:username"
         $output += ""
-        $output += "PLEASE NOTE: Due to the nature of how the Store API works, you won't see any of your changes in the"
-        $output += "dev portal until your submission has entered into certification.  It doesn't have to *complete*"
-        $output += "certification for you to see your changes, but it does have to enter certification first."
-        $output += "If it's important for you to verify your changes in the dev portal prior to publishing,"
-        $output += "consider publishing with the `"$script:keywordManual`" targetPublishMode by setting that value in your"
-        $output += "config file and then additionally specifying the -UpdatePublishModeAndVisibility switch"
-        $output += "when calling Update-InAppProductSubmission, or by specifying the"
-        $output += "-TargetPublishMode $script:keywordManual parameter when calling Update-InAppProductSubmission."
+        $output += $script:manualPublishWarning -f 'Update-InAppProductSubmission'
         Write-Log $($output -join [Environment]::NewLine)
     }
     catch [System.InvalidOperationException]

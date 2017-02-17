@@ -32,6 +32,19 @@ $script:keywordPendingCommit = 'PendingCommit'
 $script:keywordRelease = 'Release'
 $script:keywordPublished = 'Published'
 
+# Warning that is referenced in multiple places throughout the module.
+# {0} will be replaced in context with the relevant command.
+$script:manualPublishWarning = @"
+PLEASE NOTE: Due to the nature of how the Store API works, you won't see any of your changes in the
+Dev Portal until your submission has entered into certification.  It doesn't have to *complete*
+certification for you to see your changes, but it does have to enter certification first.
+If it's important for you to verify your changes in the Dev Portal prior to publishing,
+consider publishing with the `"$script:keywordManual`" targetPublishMode by setting that value in your
+config file and then additionally specifying the -UpdatePublishModeAndVisibility switch
+when calling {0}, or by specifying the
+-TargetPublishMode $script:keywordManual parameter when calling {0}.
+"@
+
 function Initialize-StoreIngestionApiGlobalVariables
 {
 <#
@@ -1235,10 +1248,10 @@ function Open-DevPortal
 {
 <#
     .SYNOPSIS
-        Launches the dev portal in the default web browser to display the requested information.
+        Launches the Dev Portal in the default web browser to display the requested information.
 
     .DESCRIPTION
-        Launches the dev portal in the default web browser to display the requested information.
+        Launches the Dev Portal in the default web browser to display the requested information.
 
         Sometimes users simply want to be able to see what's going on within the web portal as
         opposed to the commandline.  This is designed to make that work as quickly as possible.
@@ -1257,19 +1270,19 @@ function Open-DevPortal
     .EXAMPLE
         Open-DevPortal 0ABCDEF12345
 
-        Opens a new tab in the default web browser to the page in the dev portal that displays
+        Opens a new tab in the default web browser to the page in the Dev Portal that displays
         the general status of the application.
 
     .EXAMPLE
         Open-DevPortal 0ABCDEF12345 1234567890123456789
 
-        Opens a new tab in the default web browser to the page in the dev portal that displays
+        Opens a new tab in the default web browser to the page in the Dev Portal that displays
         the indicated submission.  Will work for both app and flight submissions.
 
     .EXAMPLE
         Open-DevPortal 0ABCDEF12345 1234567890123456789 -ShowFlight
 
-        Opens a new tab in the default web browser to the page in the dev portal that displays
+        Opens a new tab in the default web browser to the page in the Dev Portal that displays
         the flight edit page (enabling you to change the name, flight groups and ranking).
 #>
     [CmdletBinding(DefaultParametersetName="App")]
@@ -1303,7 +1316,7 @@ function Open-DevPortal
 
     Set-TelemetryEvent -EventName Open-DevPortal -Properties $telemetryProperties 
 
-    Write-Log "Opening dev portal in default web browser." 
+    Write-Log "Opening Dev Portal in default web browser." 
     
     $appUrl        = "https://developer.microsoft.com/en-us/dashboard/apps/$AppId"
     $submissionUrl = "https://developer.microsoft.com/en-us/dashboard/apps/$AppId/submissions/$SubmissionId/"

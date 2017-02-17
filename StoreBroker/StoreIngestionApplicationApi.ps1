@@ -1106,10 +1106,12 @@ function Update-ApplicationSubmission
 
         $output = @()
         $output += "Successfully cloned the existing submission and modified its content."
-        $output += "You can view it on the Dev portal here:"
+        $output += "You can view it on the Dev Portal here:"
         $output += "    https://dev.windows.com/en-us/dashboard/apps/$AppId/submissions/$submissionId/"
         $output += "or by running this command:"
         $output += "    Get-ApplicationSubmission -AppId $AppId -SubmissionId $submissionId | Format-ApplicationSubmission"
+        $output += ""
+        $output += $script:manualPublishWarning -f 'Update-ApplicationSubmission'
         Write-Log $($output -join [Environment]::NewLine)
 
         if (![System.String]::IsNullOrEmpty($PackagePath))
@@ -1336,7 +1338,7 @@ function Patch-ApplicationSubmission
     # the existing listings array with the new one.  We can't do that unfortunately though,
     # as we need to mark the existing screenshots as "PendingDelete" so that they'll be deleted
     # during the upload.  Otherwise, even though we don't include them in the updated JSON, they
-    # will still remain there in the dev portal.
+    # will still remain there in the Dev Portal.
     if ($UpdateListings)
     {
         # Save off the original listings so that we can make changes to them without affecting
@@ -1672,21 +1674,14 @@ function Complete-ApplicationSubmission
         $output += "The submission has been successfully committed."
         $output += "This is just the beginning though."
         $output += "It still has multiple phases of validation to get through, and there's no telling how long that might take."
-        $output += "You can view the progress of the submission validation on the Dev portal here:"
+        $output += "You can view the progress of the submission validation on the Dev Portal here:"
         $output += "    https://dev.windows.com/en-us/dashboard/apps/$AppId/submissions/$submissionId/"
         $output += "or by running this command:"
         $output += "    Get-ApplicationSubmission -AppId $AppId -SubmissionId $submissionId | Format-ApplicationSubmission"
         $output += "You can automatically monitor this submission with this command:"
         $output += "    Start-ApplicationSubmissionMonitor -AppId $AppId -SubmissionId $submissionId -EmailNotifyTo $env:username"
         $output += ""
-        $output += "PLEASE NOTE: Due to the nature of how the Store API works, you won't see any of your changes in the"
-        $output += "dev portal until your submission has entered into certification.  It doesn't have to *complete*"
-        $output += "certification for you to see your changes, but it does have to enter certification first."
-        $output += "If it's important for you to verify your changes in the dev portal prior to publishing,"
-        $output += "consider publishing with the `"$script:keywordManual`" targetPublishMode by setting that value in your"
-        $output += "config file and then additionally specifying the -UpdatePublishModeAndVisibility switch"
-        $output += "when calling Update-ApplicationSubmission, or by specifying the"
-        $output += "-TargetPublishMode $script:keywordManual parameter when calling Update-ApplicationSubmission."
+        $output += $script:manualPublishWarning -f 'Update-ApplicationSubmission'
         Write-Log $($output -join [Environment]::NewLine) 
     }
     catch [System.InvalidOperationException]

@@ -329,10 +329,10 @@ function Get-FlightGroups
 {
 <#
     .SYNOPSIS
-        Launches the dev portal in the default web browser to display all of the available flight groups.
+        Launches the Dev Portal in the default web browser to display all of the available flight groups.
 
     .DESCRIPTION
-        Launches the dev portal in the default web browser to display all of the available flight groups.
+        Launches the Dev Portal in the default web browser to display all of the available flight groups.
         This is necessary because there currently exists no API to programatically browse these groups.
 
         The Git repo for this module can be found here: http://aka.ms/StoreBroker
@@ -340,7 +340,7 @@ function Get-FlightGroups
     .EXAMPLE
         Open-ApplicationFlightGroups
 
-        Opens a new tab in the default web browser to the page in the dev portal that displays
+        Opens a new tab in the default web browser to the page in the Dev Portal that displays
         all of the available flight groups.
 #>
     [CmdletBinding()]
@@ -350,7 +350,7 @@ function Get-FlightGroups
 
     Set-TelemetryEvent -EventName Get-FlightGroups
 
-    Write-Log "Opening the dev portal UI in your default browser to view flight groups because there is currently no API access for this data."
+    Write-Log "Opening the Dev Portal UI in your default browser to view flight groups because there is currently no API access for this data."
     Write-Log "The FlightGroupID is the number at the end of the URL when you click on any flight group name."
 
     if (-not [String]::IsNullOrWhiteSpace($global:SBInternalGroupIds))
@@ -1306,10 +1306,12 @@ function Update-ApplicationFlightSubmission
 
         $output = @()
         $output += "Successfully cloned the existing submission and modified its content."
-        $output += "You can view it on the Dev portal here:"
+        $output += "You can view it on the Dev Portal here:"
         $output += "    https://dev.windows.com/en-us/dashboard/apps/$AppId/submissions/$submissionId/"
         $output += "or by running this command:"
         $output += "    Get-ApplicationFlightSubmission -AppId $AppId -FlightId $FlightId -SubmissionId $submissionId | Format-ApplicationFlightSubmission"
+        $output += ""
+        $output += $script:manualPublishWarning -f 'Update-ApplicationFlightSubmission'
         Write-Log $($output -join [Environment]::NewLine)
 
         if (![System.String]::IsNullOrEmpty($PackagePath))
@@ -1744,21 +1746,14 @@ function Complete-ApplicationFlightSubmission
         $output += "The submission has been successfully committed."
         $output += "This is just the beginning though."
         $output += "It still has multiple phases of validation to get through, and there's no telling how long that might take."
-        $output += "You can view the progress of the submission validation on the Dev portal here:"
+        $output += "You can view the progress of the submission validation on the Dev Portal here:"
         $output += "    https://dev.windows.com/en-us/dashboard/apps/$AppId/submissions/$submissionId/"
         $output += "or by running this command:"
         $output += "    Get-ApplicationFlightSubmission -AppId $AppId -Flight $FlightId -SubmissionId $submissionId | Format-ApplicationFlightSubmission"
         $output += "You can automatically monitor this submission with this command:"
         $output += "    Start-ApplicationFlightSubmissionMonitor -AppId $AppId -Flight $FlightId -SubmissionId $submissionId -EmailNotifyTo $env:username"
         $output += ""
-        $output += "PLEASE NOTE: Due to the nature of how the Store API works, you won't see any of your changes in the"
-        $output += "dev portal until your submission has entered into certification.  It doesn't have to *complete*"
-        $output += "certification for you to see your changes, but it does have to enter certification first."
-        $output += "If it's important for you to verify your changes in the dev portal prior to publishing,"
-        $output += "consider publishing with the `"$script:keywordManual`" targetPublishMode by setting that value in your"
-        $output += "config file and then additionally specifying the -UpdatePublishMode switch"
-        $output += "when calling Update-ApplicationFlightSubmission, or by specifying the"
-        $output += "-TargetPublishMode $script:keywordManual parameter when calling Update-ApplicationFlightSubmission."
+        $output += $script:manualPublishWarning -f 'Update-ApplicationFlightSubmission'
 
         Write-Log $($output -join [Environment]::NewLine)
     }

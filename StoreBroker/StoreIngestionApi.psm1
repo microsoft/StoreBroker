@@ -27,6 +27,7 @@ $script:accessTokenTimeoutSeconds = (59 * 60) - $script:accessTokenRefreshBuffer
 $script:keywordSpecificDate = 'SpecificDate'
 $script:keywordManual = 'Manual'
 $script:keywordDefault = 'Default'
+$script:keywordNoAction = 'NoAction'
 $script:keywordPendingDelete = 'PendingDelete'
 $script:keywordPendingCommit = 'PendingCommit'
 $script:keywordRelease = 'Release'
@@ -1757,7 +1758,7 @@ function Invoke-SBRestMethodMultipleResult
     .EXAMPLE
         Invoke-SBRestMethodMultipleResult "applications" "Get apps"
         Gets the first 100 applications associated with this developer account,
-        with the console window showing progress while awaiting for the response
+        with the console window showing progress while awaiting the response
         from the REST request.
 
     .EXAMPLE
@@ -1769,14 +1770,14 @@ function Invoke-SBRestMethodMultipleResult
     .EXAMPLE
         Invoke-SBRestMethodMultipleResult "applications" "Get apps" 500
         Gets the first 500 applications associated with this developer account,
-        with the console window showing progress while awaiting for the response
+        with the console window showing progress while awaiting the response
         from the REST request.
 
     .EXAMPLE
         Invoke-SBRestMethodMultipleResult "applications" "Get apps" 10 -StartAt 50
         Gets the next 10 apps in the developer account starting with the 51st app
         (since it's a 0-based index) with the console window showing progress while
-        awaiting for the response from the REST request.
+        awaiting the response from the REST request.
 #>
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]

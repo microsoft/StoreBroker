@@ -6,7 +6,7 @@
     CompanyName = 'Microsoft Corporation'
     Copyright = 'Copyright (C) Microsoft Corporation.  All rights reserved.'
 
-    ModuleVersion = '1.2.2'
+    ModuleVersion = '1.3.0'
     Description = 'Provides command-line access to the Windows Store Submission REST API.'
 
     RootModule = 'StoreIngestionApi'
@@ -27,7 +27,9 @@
     FunctionsToExport = @(
         'Clear-StoreBrokerAuthentication',
         'Complete-ApplicationFlightSubmission',
+        'Complete-ApplicationFlightSubmissionPackageRollout',
         'Complete-ApplicationSubmission',
+        'Complete-ApplicationSubmissionPackageRollout',
         'Complete-InAppProductSubmission',
         'Format-Application',
         'Format-ApplicationFlight',
@@ -42,10 +44,12 @@
         'Get-Application',
         'Get-ApplicationFlight',
         'Get-ApplicationFlightSubmission',
+        'Get-ApplicationFlightSubmissionPackageRollout',
         'Get-ApplicationFlightSubmissionStatus',
         'Get-ApplicationFlights',
         'Get-ApplicationInAppProducts',
         'Get-ApplicationSubmission',
+        'Get-ApplicationSubmissionPackageRollout',
         'Get-ApplicationSubmissionStatus',
         'Get-Applications',
         'Get-FlightGroups',
@@ -80,8 +84,12 @@
         'Start-ApplicationFlightSubmissionMonitor',
         'Start-InAppProductSubmissionMonitor',
         'Start-SubmissionMonitor',
+        'Stop-ApplicationFlightSubmissionPackageRollout',
+        'Stop-ApplicationSubmissionPackageRollout',
         'Update-ApplicationFlightSubmission',
+        'Update-ApplicationFlightSubmissionPackageRollout',
         'Update-ApplicationSubmission',
+        'Update-ApplicationSubmissionPackageRollout',
         'Update-InAppProductSubmission')
 
     AliasesToExport = @(
@@ -90,6 +98,8 @@
         'Commit-IapSubmission',
         'Commit-InAppProductSubmission',
         'Complete-InAppProductSubmission',
+        'Finalize-ApplicationFlightSubmissionPackageRollout',
+        'Finalize-ApplicationSubmissionPackageRollout',
         'Format-ApplicationIaps',
         'Format-Iap',
         'Format-IapSubmission',
@@ -99,6 +109,8 @@
         'Get-IapSubmission',
         'Get-IapSubmissionStatus',
         'Get-Iaps',
+        'Halt-ApplicationFlightSubmissionPackageRollout',
+        'Halt-ApplicationSubmissionPackageRollout',
         'New-Iap',
         'New-IapSubmission',
         'New-IapSubmissionPackage',

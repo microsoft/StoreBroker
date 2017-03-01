@@ -14,12 +14,15 @@ Add-Type -TypeDefinition @"
       AutoCommit,
       DayOfWeek,
       ErrorBucket,
+      ExistingPackageRolloutAction,
       FlightId,
       Force,
       HResult,
       IapId,
+      IsMandatoryUpdate,
       Message,
       PackagePath,
+      PackageRolloutPercentage,
       ProductId,
       ProductType,
       ReplacePackages,
@@ -130,6 +133,8 @@ function Get-PiiSafeString
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars", "", Justification="We use global variables sparingly and intentionally for module configuration, and employ a consistent naming convention.")]
     param(
         [Parameter(Mandatory)]
+        [AllowNull()]
+        [AllowEmptyString()]
         [string] $PlainText
     )
 

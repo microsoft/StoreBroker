@@ -13,6 +13,7 @@
 *   [Creating A New Application Submission](#creating-a-new-application-submission)
     *    [The Easy Way](#the-easy-way)
     *    [Manual Submissions](#manual-submissions)
+    *    [Related Commands](#related-commands)
 *   [Monitoring A Submission](#monitoring-a-submission)
     *   [Status Progression](#status-progression)
 *   [Flighting](#flighting)
@@ -168,6 +169,18 @@ The basic syntax looks of the command looks like this:
 
     Update-ApplicationSubmission -AppId <appId> -SubmissionDataPath ".\submission.json" -PackagePath ".\package.zip" -AutoCommit -Force
 
+While most of those parameters are straight-forward, the last two deserve explanation:
+
+ * **`-Force`** - You can only have one "pending" (e.g. in-progress) submission at any given
+   time.  Using `-Force` tells the command to delete any pending submission before continuing.
+   If you want to continue working with an existing pending submission, you can instead provide
+   the existing pending submission with the **`-SubmissionId`** paramter, as noted below.
+
+ * **`-AutoCommit`** - The submission will not start the certification process until you "commit"
+   it.  This switch says that the submission should automatically be committed once it has finished
+   replacing the submission content and uploading the package.  If you don't specify this, you'll
+   have to manually call the `Complete-ApplicationSubmission` command later on.
+
 > An important thing to note though, is that if you run that exact command above, the resulting
 > submission will be **identical** to the currently published submission, because you didn't tell
 > `Update-ApplicationSubmission` what you specifically wanted to modify.
@@ -228,8 +241,9 @@ fully override the publication and visibility of your app submission.
        Specify with `TargetPublishDate`
 
  * **`TargetPublishDate`** - The specific date/time that the submission should be published. To use
- this, you must specify `TargetPublishMode` as `SpecificDate`.  Using this value will override
- any value that might have been set by `-UpdatePublishModeAndVisibility`.
+   this, you must specify `TargetPublishMode` as `SpecificDate`.  Using this value will override
+   any value that might have been set by `-UpdatePublishModeAndVisibility`.  Users should provide this in
+   local time and it will be converted automatically to UTC.
 
  * **`Visibility`** - Indicates the store visibility of the app once the submission has been
    published. Setting this to any value other than `Default` will override the usage of
@@ -240,6 +254,35 @@ fully override the publication and visibility of your app submission.
        listing can still download it, except on Windows 8 and Windows 8.1.
      * **`Hidden`** - Hide this app and prevent acquisition. Customers with a promotional code can
        still download it on Windows 10 devices.
+
+You can control mandatory updates with the following parameters
+
+ * **`-IsMandatoryUpdate`** - Indicates whether you want to treat the packages in the submission
+   as mandatory packages for self-installing app updates.  For more information, refer to the
+   [Store documentation](https://docs.microsoft.com/en-us/windows/uwp/packaging/self-install-package-updates).
+
+ * **`MandatoryUpdateEffectiveDate`** - The date/time when the packges in this submission become mandatory.
+   This value will be ignored if `-IsMandatoryUpdate` is not also provided. Users should provide this in
+   local time and it will be converted automatically to UTC.
+
+You can also leverage gradual rollouts to limit the percentage of users who will be given the packages within
+this submission.
+
+ * **`PackageRolloutPercentage`** - _[0 - 100]_.  If specified, the packages in this submission will only
+   be rolled out to this percentage of your users.  You can later update this percentage by calling
+   `Update-ApplicationSubmissionPackageRollout`, and can complete the gradual rollout by either
+   finalizing it with `Complete-ApplicationSubmissionPackageRollout` (which will make the packages available
+   to all of your users) or `Stop-ApplicationSubmissionPackageRollout` (which will halt any new users from
+   getting the packages in this submission).
+
+   > Changing the percentage to 100 is not the same as Finalizing the package rollout.  For more information
+   > on this topic, refer to the [Store documentation](https://docs.microsoft.com/en-us/windows/uwp/publish/gradual-package-rollout).
+
+* **`ExistingPackageRolloutAction`** _[NoAction, Halt, Finalize]_ You can't create a new submission if
+  the current pending submission is currently using package rollout.  In that scenario, prior to calling
+  this command, you can manually call `Complete-ApplicationSubmissionPackageRollout` or
+  `Stop-ApplicationSubmissionPackageRollout`, or you can just sepecify this paramter and the action it
+  should take, and it will do that for you automatically prior to cloning the submission.
 
 > Due to the nature of how the Store API works, you won't see any of your changes in the
 > dev portal until your submission has entered into certification.  It doesn't have to _complete_
@@ -309,6 +352,31 @@ for your submission to enter into the Store certification process.
 
 > All of the commands referenced above will work for app and flight submissions equally.
 > If using them for flight submissions, just be sure to also include the FlightId parameter.
+
+### Related Commands
+
+In addition to the commands above, there are some other commands that you may find useful along the way.
+
+#### Gradual Rollout Commands
+
+If you're not familiar with package rollout, it might be helpful to read more about it
+in the [Store documentation](https://docs.microsoft.com/en-us/windows/uwp/publish/gradual-package-rollout).
+
+To view the current package rollout status:
+
+    Get-ApplicationSubmissionPackageRollout -AppId <appId> -SubmissionId <submissionId>
+
+To update the current package rollout percentage:
+
+    Update-ApplicationSubmissionPackageRollout -AppId <appId> -SubmissionId <submissionId> -Percentage <percentage>
+
+To halt the current package rollout:
+
+    Stop-ApplicationSubmissionPackageRollout -AppId <appId> -SubmissionId <submissionId>
+
+To finalize the current package rollout:
+
+    Complete-ApplicationSubmissionPackageRollout -AppId <appId> -SubmissionId <submissionId>
 
 ## Monitoring A Submission
 
@@ -408,6 +476,18 @@ The basic syntax looks of the command looks like this:
 
     Update-ApplicationFlightSubmission -AppId <appId> -FlightId <flightId> -SubmissionDataPath ".\submission.json" -PackagePath ".\package.zip" -AutoCommit -Force
 
+While most of those parameters are straight-forward, the last two deserve explanation:
+
+ * **`-Force`** - You can only have one "pending" (e.g. in-progress) submission at any given
+   time.  Using `-Force` tells the command to delete any pending submission before continuing.
+   If you want to continue working with an existing pending submission, you can instead provide
+   the existing pending submission with the **`-SubmissionId`** paramter, as noted below.
+
+ * **`-AutoCommit`** - The submission will not start the certification process until you "commit"
+   it.  This switch says that the submission should automatically be committed once it has finished
+   replacing the submission content and uploading the package.  If you don't specify this, you'll
+   have to manually call the `Complete-ApplicationFlightSubmission` command later on.
+
 > An important thing to note though, is that if you run that exact command above, the resulting
 > submission will be **identical** to the currently published submission, because you didn't tell
 > `Update-ApplicationFlightSubmission` what you specifically wanted to modify.
@@ -458,8 +538,38 @@ fully override the publication of your app's flight submission.
        `TargetPublishDate`
 
  * **`TargetPublishDate`** - The specific date/time that the submission should be published. To use
- this, you must specify `TargetPublishMode` as `SpecificDate`.  Using this value will override
- any value that might have been set by `-UpdatePublishMode`.
+   this, you must specify `TargetPublishMode` as `SpecificDate`.  Using this value will override
+   any value that might have been set by `-UpdatePublishMode`.  Users should provide this in
+   local time and it will be converted automatically to UTC.
+
+You can control mandatory updates with the following parameters
+
+ * **`-IsMandatoryUpdate`** - Indicates whether you want to treat the packages in the submission
+   as mandatory packages for self-installing app updates.  For more information, refer to the
+   [Store documentation](https://docs.microsoft.com/en-us/windows/uwp/packaging/self-install-package-updates).
+
+ * **`MandatoryUpdateEffectiveDate`** - The date/time when the packges in this submission become mandatory.
+   This value will be ignored if `-IsMandatoryUpdate` is not also provided. Users should provide this in
+   local time and it will be converted automatically to UTC.
+
+You can also leverage gradual rollouts to limit the percentage of users who will be given the packages within
+this submission.
+
+ * **`PackageRolloutPercentage`** - _[0 - 100]_.  If specified, the packages in this submission will only
+   be rolled out to this percentage of your users.  You can later update this percentage by calling
+   `Update-ApplicationFlightSubmissionPackageRollout`, and can complete the gradual rollout by either
+   finalizing it with `Complete-ApplicationFlightSubmissionPackageRollout` (which will make the packages available
+   to all of your users) or `Stop-ApplicationFlightSubmissionPackageRollout` (which will halt any new users from
+   getting the packages in this submission).
+
+   > Changing the percentage to 100 is not the same as Finalizing the package rollout.  For more information
+   > on this topic, refer to the [Store documentation](https://docs.microsoft.com/en-us/windows/uwp/publish/gradual-package-rollout).
+
+* **`ExistingPackageRolloutAction`** _[NoAction, Halt, Finalize]_ You can't create a new submission if
+  the current pending submission is currently using package rollout.  In that scenario, prior to calling
+  this command, you can manually call `Complete-ApplicationFlightSubmissionPackageRollout` or
+  `Stop-ApplicationFlightSubmissionPackageRollout`, or you can just sepecify this paramter and the action it
+  should take, and it will do that for you automatically prior to cloning the submission.
 
 > Due to the nature of how the Store API works, you won't see any of your changes in the
 > dev portal until your submission has entered into certification.  It doesn't have to _complete_
@@ -530,6 +640,27 @@ To delete a flight submission:
 To monitor a flight submission:
 Follow the same steps for [monitoring an application submission](#monitoring-a-submission), but
 just be sure to _also include_ the **`-FlightId`** in the cmdlet parameters.
+
+##### Gradual Rollout
+
+If you're not familiar with package rollout, it might be helpful to read more about it
+in the [Store documentatin](https://docs.microsoft.com/en-us/windows/uwp/publish/gradual-package-rollout).
+
+To view the current package rollout status:
+
+    Get-ApplicationFlightSubmissionPackageRollout -AppId <appId> -FlightId <flightId> -SubmissionId <submissionId>
+
+To update the current package rollout percentage:
+
+    Update-ApplicationFlightSubmissionPackageRollout -AppId <appId> -FlightId <flightId> -SubmissionId <submissionId> -Percentage <percentage>
+
+To halt the current package rollout:
+
+    Stop-ApplicationFlightSubmissionPackageRollout -AppId <appId> -FlightId <flightId> -SubmissionId <submissionId>
+
+To finalize the current package rollout:
+
+    Complete-ApplicationFlightSubmissionPackageRollout -AppId <appId> -FlightId <flightId> -SubmissionId <submissionId>
 
 ## In App Products
 
@@ -637,7 +768,8 @@ fully override the publication and visibility of your IAP submission.
 
  * **`TargetPublishDate`** - The specific date/time that the submission should be published. To use
    this, you must specify `TargetPublishMode` as `SpecificDate`.  Using this value will
-   override any value that might have been set by `-UpdatePublishModeAndVisibility`.
+   override any value that might have been set by `-UpdatePublishModeAndVisibility`.  Users should
+   provide this in local time and it will be converted automatically to UTC.
 
  * **`Visibility`** - Indicates the store visibility of the app once the submission has been
    published.  Setting this to any value other than `Default` will override the usage of

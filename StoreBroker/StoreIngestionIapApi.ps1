@@ -41,7 +41,7 @@ function Get-InAppProducts
         Get-InAppProducts
 
         Gets all of the IAP's associated with all applications in this developer account,
-        with the console window showing progress while awaiting for the response
+        with the console window showing progress while awaiting the response
         from the REST request.
 
     .EXAMPLE
@@ -187,7 +187,7 @@ function Get-InAppProduct
         Get-InAppProduct 0ABCDEF12345
 
         Gets the detail for this IAP with the console window showing progress while awaiting
-        for the response from the REST request.
+        the response from the REST request.
 
     .EXAMPLE
         Get-InAppProduct 0ABCDEF12345 -NoStatus
@@ -345,7 +345,7 @@ function Get-ApplicationInAppProducts
         Get-ApplicationInAppProducts 0ABCDEF12345
 
         Gets all of the IAP's associated with this applications in this developer account,
-        with the console window showing progress while awaiting for the response
+        with the console window showing progress while awaiting the response
         from the REST request.
 
     .EXAMPLE
@@ -583,7 +583,7 @@ function Remove-InAppProduct
         Remove-InAppProduct 0ABCDEF12345
 
         Removes the specified In-App Product from the developer's account,
-        with the console window showing progress while awaiting for the response
+        with the console window showing progress while awaiting the response
         from the REST request.
 
     .EXAMPLE
@@ -653,7 +653,7 @@ function Get-InAppProductSubmission
         Get-InAppProductSubmission 0ABCDEF12345 01234567-89ab-cdef-0123-456789abcdef 1234567890123456789
 
         Gets all of the detail known for this In-App Product's submission,
-        with the console window showing progress while awaiting for the response
+        with the console window showing progress while awaiting the response
         from the REST request.
 
     .EXAMPLE
@@ -888,7 +888,7 @@ function Get-InAppProductSubmissionStatus
         Get-InAppProductSubmissionStatus 0ABCDEF12345 01234567-89ab-cdef-0123-456789abcdef 1234567890123456789
 
         Gets just the status of this In-App Product's submission, with the console window showing
-        progress while awaiting for the response from the REST request.
+        progress while awaiting the response from the REST request.
 
     .EXAMPLE
         Get-InAppProductSubmissionStatus 0ABCDEF12345 01234567-89ab-cdef-0123-456789abcdef 1234567890123456789 -NoStatus
@@ -970,7 +970,7 @@ function Remove-InAppProductSubmission
         Remove-InAppProductSubmission 0ABCDEF12345 1234567890123456789
 
         Removes the specified application In-App Product submission from the developer account,
-        with the console window showing progress while awaiting for the response
+        with the console window showing progress while awaiting the response
         from the REST request.
 
     .EXAMPLE
@@ -1062,7 +1062,7 @@ function New-InAppProductSubmission
         First checks for any existing pending submission for the IAP 0ABCDEF12345.
         If one is found, it will be removed.  After that check has completed, this will create
         a new submission that is an exact clone of the currently published submission,
-        with the console window showing progress while awaiting for the response from the REST request.
+        with the console window showing progress while awaiting the response from the REST request.
         If successful, will return back the PSCustomObject representing the newly created
         application submission.
 
@@ -1160,7 +1160,8 @@ function Update-InAppProductSubmission
         The value specified here takes precendence over the value from SubmissionDataPath if
         -UpdatePublishModeAndVisibility is specified.  If -UpdatePublishModeAndVisibility
         is not specified and the value 'Default' is used, this submission will simply use the
-        value from the previous submission.
+        value from the previous submission.  Users should provide this in local time and it
+        will be converted automatically to UTC.
 
     .PARAMETER TargetPublishDate
         Indicates when the submission will be published once it has passed certification.
@@ -1508,7 +1509,8 @@ function Patch-InAppProductSubmission
         The value specified here takes precendence over the value from NewSubmission if
         -UpdatePublishModeAndVisibility is specified.  If -UpdatePublishModeAndVisibility
         is not specified and the value 'Default' is used, this submission will simply use the
-        value from the previous submission.
+        value from the previous submission.  Users should provide this in local time and it
+        will be converted automatically to UTC.
 
     .PARAMETER Visibility
         Indicates the store visibility of the IAP once the submission has been published.
@@ -1662,7 +1664,7 @@ function Patch-InAppProductSubmission
             throw $output
         }
 
-        $PatchedSubmission.targetPublishDate = $TargetPublishDate.ToString('o')
+        $PatchedSubmission.targetPublishDate = $TargetPublishDate.ToUniversalTime().ToString('o')
     }
 
     if ($Visibility -ne $script:keywordDefault)
@@ -1818,7 +1820,7 @@ function Complete-InAppProductSubmission
 
         Marks the pending submission 1234567890123456789 to start the approval process
         for publication, with the console window showing progress while awaiting
-        for the response from the REST request.
+        the response from the REST request.
 
     .EXAMPLE
         Commit-InAppProductSubmission 0ABCDEF12345 1234567890123456789 -NoStatus

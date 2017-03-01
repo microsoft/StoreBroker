@@ -299,6 +299,8 @@ function Get-SHA512Hash
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
+        [AllowNull()]
+        [AllowEmptyString()]
         [string] $PlainText
     )
 

@@ -45,7 +45,7 @@ function Get-ApplicationFlights
         Get-ApplicationFlights 0ABCDEF12345
 
         Gets all of the flights associated with this applications in this developer account,
-        with the console window showing progress while awaiting for the response
+        with the console window showing progress while awaiting the response
         from the REST request.
 
     .EXAMPLE
@@ -200,7 +200,7 @@ function Get-ApplicationFlight
         Get-ApplicationFlight 0ABCDEF12345 01234567-89ab-cdef-0123-456789abcdef
 
         Gets the detail for this application's flight with the console window showing progress
-        while awaiting for the response from the REST request.
+        while awaiting the response from the REST request.
 
     .EXAMPLE
         Get-ApplicationFlight 0ABCDEF12345 01234567-89ab-cdef-0123-456789abcdef -NoStatus
@@ -398,7 +398,7 @@ function New-ApplicationFlight
 
         Creates a new flight called "Alpha" that will be ranked higher than all other flights
         for this application.  It will use the two internal Microsoft flight groups (Canary Insiders
-        and Selfhost Insiders).  The console window showing progress while awaiting for the response
+        and Selfhost Insiders).  The console window showing progress while awaiting the response
         from the REST request.
 
     .EXAMPLE
@@ -503,7 +503,7 @@ function Remove-ApplicationFlight
         Remove-ApplicationFlight 0ABCDEF12345 01234567-89ab-cdef-0123-456789abcdef
 
         Removes the specified flight from the application in the developer's account,
-        with the console window showing progress while awaiting for the response
+        with the console window showing progress while awaiting the response
         from the REST request.
 
     .EXAMPLE
@@ -582,7 +582,7 @@ function Get-ApplicationFlightSubmission
         Get-ApplicationFlightSubmission 0ABCDEF12345 01234567-89ab-cdef-0123-456789abcdef 1234567890123456789
 
         Gets all of the detail known for this application's flight submission,
-        with the console window showing progress while awaiting for the response
+        with the console window showing progress while awaiting the response
         from the REST request.
 
     .EXAMPLE
@@ -706,6 +706,16 @@ function Format-ApplicationFlightSubmission
         $output += $ApplicationFlightSubmissionData.flightPackages | Format-SimpleTableString -IndentationLevel $indentLength
         $output += ""
 
+        $output += "Is Mandatory Update?                : {0}" -f $ApplicationFlightSubmissionData.packageDeliveryOptions.isMandatoryUpdate
+        $output += "Mandatory Update Effective Date     : {0}" -f $(Get-Date -Date $ApplicationFlightSubmissionData.packageDeliveryOptions.mandatoryUpdateEffectiveDate -Format R)
+        $output += ""
+
+        $output += "Is Package Rollout?                 : {0}" -f $ApplicationFlightSubmissionData.packageDeliveryOptions.packageRollout.isPackageRollout
+        $output += "Package Rollout Percentage          : {0}%" -f $ApplicationFlightSubmissionData.packageDeliveryOptions.packageRollout.packageRolloutPercentage
+        $output += "Package Rollout Status              : {0}" -f $ApplicationFlightSubmissionData.packageDeliveryOptions.packageRollout.packageRolloutStatus
+        $output += "Fallback SubmissionId               : {0}" -f $ApplicationFlightSubmissionData.packageDeliveryOptions.packageRollout.fallbackSubmissionId
+        $output += ""
+
         $output += "Status                                 : $($ApplicationFlightSubmissionData.status)"
         $output += "Status Details [Errors]                : {0}" -f $(if ($ApplicationFlightSubmissionData.statusDetails.errors.count -eq 0) { "<None>" } else { "" })
         $output += $ApplicationFlightSubmissionData.statusDetails.errors | Format-SimpleTableString -IndentationLevel $indentLength
@@ -763,7 +773,7 @@ function Get-ApplicationFlightSubmissionStatus
         Get-ApplicationFlightSubmissionStatus 0ABCDEF12345 01234567-89ab-cdef-0123-456789abcdef 1234567890123456789
 
         Gets the status of this application's flight submission, with the console window showing
-        progress while awaiting for the response from the REST request.
+        progress while awaiting the response from the REST request.
 
     .EXAMPLE
         Get-ApplicationFlightSubmissionStatus 0ABCDEF12345 01234567-89ab-cdef-0123-456789abcdef 1234567890123456789 -NoStatus
@@ -851,7 +861,7 @@ function Remove-ApplicationFlightSubmission
         Remove-ApplicationFlightSubmission 0ABCDEF12345 01234567-89ab-cdef-0123-456789abcdef 1234567890123456789
 
         Removes the specified application flight submission from the developer account,
-        with the console window showing progress while awaiting for the response
+        with the console window showing progress while awaiting the response
         from the REST request.
 
     .EXAMPLE
@@ -919,6 +929,13 @@ function New-ApplicationFlightSubmission
     .PARAMETER FlightId
         The Flight ID for the flight that the new submission is for.
 
+    .PARAMETER ExistingPackageRolloutAction
+        If the current published submission is making use of gradual package rollout,
+        a new submission cannot be created until that existing submission is either
+        halted or finalized.  To streamline the behavior in this scenario, you can
+        indicate what action should be performed to that existing submission's package
+        rollout prior to starting a new submission.
+
     .PARAMETER Force
         If this switch is specified, any existing pending submission for AppId
         will be removed before continuing with creation of the new submission.
@@ -949,7 +966,7 @@ function New-ApplicationFlightSubmission
         01234567-89ab-cdef-0123-456789abcdefapp under the app 0ABCDEF12345.
         If one is found, it will be removed.  After that check has completed, this will create
         a new application submission that is an exact clone of the currently published submission,
-        with the console window showing progress while awaiting for the response from the REST request.
+        with the console window showing progress while awaiting the response from the REST request.
         If successful, will return back the PSCustomObject representing the newly created
         application submission.
 
@@ -964,6 +981,9 @@ function New-ApplicationFlightSubmission
         
         [Parameter(Mandatory)]
         [string] $FlightId,
+
+        [ValidateSet('NoAction', 'Finalize', 'Halt')]
+        [string] $ExistingPackageRolloutAction = $script:keywordNoAction,
 
         [switch] $Force,
 
@@ -982,16 +1002,36 @@ function New-ApplicationFlightSubmission
     try
     {
         # The Force switch tells us that we need to remove any pending submission
-        if ($Force)
+        if ($Force -or ($ExistingPackageRolloutAction -ne $script:keywordNoAction))
         {
-            Write-Log "Force creation requested.  Ensuring that there is no existing pending submission." -Level Verbose
-
             $flight = Get-ApplicationFlight -AppId $AppId -FlightId $FlightId -AccessToken $AccessToken -NoStatus:$NoStatus
+            $publishedSubmissionId = $flight.lastPublishedFlightSubmission.id
             $pendingSubmissionId = $flight.pendingFlightSubmission.id
 
-            if ($null -ne $pendingSubmissionId)
+            if ($Force -and ($null -ne $pendingSubmissionId))
             {
+                Write-Log "Force creation requested. Removing pending submission." -Level Verbose
                 Remove-ApplicationFlightSubmission -AppId $AppId -FlightId $FlightId -SubmissionId $pendingSubmissionId -AccessToken $AccessToken -NoStatus:$NoStatus
+            }
+
+            if ($ExistingPackageRolloutAction -ne $script:keywordNoAction)
+            {
+                $rollout = Get-ApplicationFlightSubmissionPackageRollout -AppId $AppId -FlightId $FlightId -SubmissionId $publishedSubmissionId -AccessToken $AccessToken -NoStatus:$NoStatus
+                $isPackageRollout = $rollout.isPackageRollout
+                $packageRolloutStatus = $rollout.packageRolloutStatus
+                if ($isPackageRollout -and ($packageRolloutStatus -in ('PackageRolloutNotStarted', 'PackageRolloutInProgress')))
+                {
+                    if ($ExistingPackageRolloutAction -eq 'Finalize')
+                    {
+                        Write-Log "Finalizing package rollout for existing submission before continuing." -Level Verbose
+                        Complete-ApplicationFlightSubmissionPackageRollout -AppId $AppId -FlightId $FlightId -SubmissionId $publishedSubmissionId -AccessToken $AccessToken -NoStatus:$NoStatus
+                    }
+                    elseif ($ExistingPackageRolloutAction -eq 'Halt')
+                    {
+                        Write-Log "Halting package rollout for existing submission before continuing." -Level Verbose
+                        Stop-ApplicationFlightSubmissionPackageRollout -AppId $AppId -FlightId $FlightId -SubmissionId $publishedSubmissionId -AccessToken $AccessToken -NoStatus:$NoStatus
+                    }
+                }
             }
         }
 
@@ -999,6 +1039,8 @@ function New-ApplicationFlightSubmission
         $telemetryProperties = @{
             [StoreBrokerTelemetryProperty]::AppId = $AppId
             [StoreBrokerTelemetryProperty]::FlightId = $FlightId
+            [StoreBrokerTelemetryProperty]::ExistingPackageRolloutAction = $ExistingPackageRolloutAction
+            [StoreBrokerTelemetryProperty]::Force = $Force
         }
 
         $params = @{
@@ -1064,6 +1106,28 @@ function Update-ApplicationFlightSubmission
         The value specified here takes precendence over the value from SubmissionDataPath if
         -UpdatePublishMode is specified.  If -UpdatePublishMode is not specified and the value
         'Default' is used, this submission will simply use the value from the previous submission.
+        Users should provide this in local time and it will be converted automatically to UTC.
+
+    .PARAMETER ExistingPackageRolloutAction
+        If the current published submission is making use of gradual package rollout,
+        a new submission cannot be created until that existing submission is either
+        halted or finalized.  To streamline the behavior in this scenario, you can
+        indicate what action should be performed to that existing submission's package
+        rollout prior to starting a new submission.
+
+    .PARAMETER PackageRolloutPercentage
+        If specified, this submission will use gradual package rollout, setting their
+        initial rollout percentage to be the indicated amount.
+
+    .PARAMETER IsMandatoryUpdate
+        Indicates whether you want to treat the packages in this submission as mandatory
+        for self-installing app updates.
+
+    .PARAMETER MandatoryUpdateEffectiveDate
+        The date and time when the packages in this submission become mandatory. It is
+        not required to provide a value for this when using IsMandatoryUpdate, however
+        this value will be ignored if specified and IsMandatoryUpdate is not also provided.
+        Users should provide this in local time and it will be converted automatically to UTC.
 
     .PARAMETER AutoCommit
         If this switch is specified, will automatically commit the submission
@@ -1173,6 +1237,16 @@ function Update-ApplicationFlightSubmission
 
         [DateTime] $TargetPublishDate,
 
+        [ValidateSet('NoAction', 'Finalize', 'Halt')]
+        [string] $ExistingPackageRolloutAction = $script:keywordNoAction,
+
+        [ValidateRange(0, 100)]
+        [double] $PackageRolloutPercentage = -1,
+
+        [switch] $IsMandatoryUpdate,
+
+        [DateTime] $MandatoryUpdateEffectiveDate,
+
         [switch] $AutoCommit,
         
         [string] $SubmissionId = "",
@@ -1258,7 +1332,7 @@ function Update-ApplicationFlightSubmission
     {
         if ([System.String]::IsNullOrEmpty($SubmissionId))
         {
-            $submissionToUpdate = New-ApplicationFlightSubmission -AppId $AppId -FlightId $FlightId -Force:$Force -AccessToken $AccessToken -NoStatus:$NoStatus
+            $submissionToUpdate = New-ApplicationFlightSubmission -AppId $AppId -FlightId $FlightId -ExistingPackageRolloutAction $ExistingPackageRolloutAction -Force:$Force -AccessToken $AccessToken -NoStatus:$NoStatus
         }
         else
         {
@@ -1282,6 +1356,9 @@ function Update-ApplicationFlightSubmission
             if ($null -ne $TargetPublishDate) { $params.Add("TargetPublishDate", $TargetPublishDate) }
             $params.Add("UpdatePublishMode", $UpdatePublishMode)
             $params.Add("UpdateNotesForCertification", $UpdateNotesForCertification)
+            if ($PackageRolloutPercentage -ge 0) { $params.Add("PackageRolloutPercentage", $PackageRolloutPercentage) }
+            $params.Add("IsMandatoryUpdate", $IsMandatoryUpdate)
+            if ($null -ne $MandatoryUpdateEffectiveDate) { $params.Add("MandatoryUpdateEffectiveDate", $MandatoryUpdateEffectiveDate) }
 
             # Because these are mutually exclusive and tagged as such, we have to be sure to *only*
             # add them to the parameter set if they're true.
@@ -1359,6 +1436,8 @@ function Update-ApplicationFlightSubmission
             [StoreBrokerTelemetryProperty]::PackagePath = (Get-PiiSafeString -PlainText $PackagePath)
             [StoreBrokerTelemetryProperty]::AutoCommit = $AutoCommit
             [StoreBrokerTelemetryProperty]::Force = $Force
+            [StoreBrokerTelemetryProperty]::PackageRolloutPercentage = $PackageRolloutPercentage
+            [StoreBrokerTelemetryProperty]::IsMandatoryUpdate = [bool]$IsMandatoryUpdate
             [StoreBrokerTelemetryProperty]::AddPackages = $AddPackages
             [StoreBrokerTelemetryProperty]::ReplacePackages = $ReplacePackages
             [StoreBrokerTelemetryProperty]::UpdatePublishMode = $UpdatePublishMode
@@ -1409,6 +1488,21 @@ function Patch-ApplicationFlightSubmission
         The value specified here takes precendence over the value from NewSubmission if
         -UpdatePublishMode is specified.  If -UpdatePublishMode is not specified and the value
         'Default' is used, this submission will simply use the value from the previous submission.
+        Users should provide this in local time and it will be converted automatically to UTC.
+
+    .PARAMETER PackageRolloutPercentage
+        If specified, this submission will use gradual package rollout, setting their
+        initial rollout percentage to be the indicated amount.
+
+    .PARAMETER IsMandatoryUpdate
+        Indicates whether you want to treat the packages in this submission as mandatory
+        for self-installing app updates.
+
+    .PARAMETER MandatoryUpdateEffectiveDate
+        The date and time when the packages in this submission become mandatory. It is
+        not required to provide a value for this when using IsMandatoryUpdate, however
+        this value will be ignored if specified and IsMandatoryUpdate is not also provided.
+        Users should provide this in local time and it will be converted automatically to UTC.
 
     .PARAMETER AddPackages
         Causes the packages that are listed in SubmissionDataPath to be added to the package listing
@@ -1466,6 +1560,13 @@ function Patch-ApplicationFlightSubmission
 
         [DateTime] $TargetPublishDate,
 
+        [ValidateRange(0, 100)]
+        [double] $PackageRolloutPercentage = -1,
+
+        [switch] $IsMandatoryUpdate,
+
+        [DateTime] $MandatoryUpdateEffectiveDate,
+
         [Parameter(ParameterSetName="AppPackages")]
         [switch] $AddPackages,
 
@@ -1490,6 +1591,36 @@ function Patch-ApplicationFlightSubmission
     # and we'll modify that throughout this function and that will be the value that we return
     # at the end.
     $PatchedSubmission = DeepCopy-Object $ClonedSubmission
+
+    # We use a ValidateRange attribute to ensure a valid percentage, but then use -1 as a default
+    # value to indicate when the user hasn't specified a value (and thus, does not want to use
+    # this feature).
+    if ($PackageRolloutPercentage -ge 0)
+    {
+        $PatchedSubmission.packageDeliveryOptions.packageRollout.isPackageRollout = $true
+        $PatchedSubmission.packageDeliveryOptions.packageRollout.packageRolloutPercentage = $PackageRolloutPercentage
+
+        $output = @()
+        $output += "Your rollout selections apply to all of your packages, but will only apply to your customers running OS"
+        $output += "versions that support package flights (Windows.Desktop build 10586 or later; Windows.Mobile build 10586.63"
+        $output += "or later, and Xbox), including any customers who get the app via Store-managed licensing via the"
+        $output += "Windows Store for Business.  When using gradual package rollout, customers on earlier OS versions will not"
+        $output += "get packages from the latest submission until you finalize the package rollout."
+        Write-Log $($output -join [Environment]::NewLine) -Level Warning
+    }
+
+    $PatchedSubmission.packageDeliveryOptions.isMandatoryUpdate = [bool]$IsMandatoryUpdate
+    if ($null -ne $MandatoryUpdateEffectiveDate)
+    {
+        if ($IsMandatoryUpdate)
+        {
+            $PatchedSubmission.packageDeliveryOptions.mandatoryUpdateEffectiveDate = $MandatoryUpdateEffectiveDate.ToUniversalTime().ToString('o')
+        }
+        else
+        {
+            Write-Log "MandatoryUpdateEffectiveDate specified without indicating IsMandatoryUpdate.  The value will be ignored." -Level Warning
+        }
+    }
 
     # Caller wants to simply append the new packages to the existing set of packages in the
     # submission.
@@ -1537,7 +1668,7 @@ function Patch-ApplicationFlightSubmission
             throw $output
         }
 
-        $PatchedSubmission.targetPublishDate = $TargetPublishDate.ToString('o')
+        $PatchedSubmission.targetPublishDate = $TargetPublishDate.ToUniversalTime().ToString('o')
     }
 
     if ($UpdateNotesForCertification)
@@ -1687,7 +1818,7 @@ function Complete-ApplicationFlightSubmission
 
         Marks the pending submission 1234567890123456789 to start the approval process
         for publication, with the console window showing progress while awaiting
-        for the response from the REST request.
+        the response from the REST request.
 
     .EXAMPLE
         Commit-ApplicationFlightSubmission 0ABCDEF12345 01234567-89ab-cdef-0123-456789abcdef 1234567890123456789 -NoStatus
@@ -1834,4 +1965,411 @@ function Start-ApplicationFlightSubmissionMonitor
     )
 
     Start-SubmissionMonitor @PSBoundParameters
+}
+
+function Get-ApplicationFlightSubmissionPackageRollout
+{
+<#
+    .SYNOPSIS
+        Gets the package rollout information for the specified application flight submission.
+
+    .DESCRIPTION
+        Gets the package rollout information for the specified application flight submission.
+
+        The Git repo for this module can be found here: http://aka.ms/StoreBroker
+
+    .PARAMETER AppId
+        The Application ID for the application that has the package rollout information
+        you are interested in.
+
+    .PARAMETER FlightId
+        The Flight ID for the flight that has the submission whose packages are currently
+        being rolled out.
+
+    .PARAMETER SubmissionId
+        The ID of the published submission that has the package rollout information that
+        you are interested in.
+
+    .PARAMETER AccessToken
+        If provided, this will be used as the AccessToken for authentication with the
+        REST Api as opposed to requesting a new one.
+
+    .PARAMETER NoStatus
+        If this switch is specified, long-running commands will run on the main thread
+        with no commandline status update.  When not specified, those commands run in
+        the background, enabling the command prompt to provide status information.
+
+    .EXAMPLE
+        Get-ApplicationFlightSubmissionPackageRollout 0ABCDEF12345 01234567-89ab-cdef-0123-456789abcdef 1234567890123456789
+
+        Gets the package rollout information for submission 1234567890123456789
+        of flight 01234567-89ab-cdef-0123-456789abcdef for application 0ABCDEF12345.
+        The console window will show progress while awaiting the response from the REST request.
+
+    .EXAMPLE
+        Get-ApplicationFlightSubmissionPackageRollout 0ABCDEF12345 01234567-89ab-cdef-0123-456789abcdef 1234567890123456789 -NoStatus
+
+        Gets the package rollout information for submission 1234567890123456789
+        of flight 01234567-89ab-cdef-0123-456789abcdef for application 0ABCDEF12345.
+        The request happens in the foreground and there is no additional status shown to the
+        user until a response is returned from the REST request.
+#>
+    [CmdletBinding(SupportsShouldProcess)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
+    param(
+        [Parameter(Mandatory)]
+        [string] $AppId,
+        
+        [Parameter(Mandatory)]
+        [string] $FlightId,
+        
+        [Parameter(Mandatory)]
+        [string] $SubmissionId,
+
+        [string] $AccessToken = "",
+
+        [switch] $NoStatus
+    )
+
+    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose 
+
+    try
+    {
+        $telemetryProperties = @{
+            [StoreBrokerTelemetryProperty]::AppId = $AppId
+            [StoreBrokerTelemetryProperty]::FlightId = $FlightId
+            [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
+        }
+
+        $params = @{
+            "UriFragment" = "applications/$AppId/flights/$FlightId/submissions/$SubmissionId/packagerollout"
+            "Method" = "Get"
+            "Description" = "Getting package rollout on submission $SubmissionId for App: $AppId FlightId: $FlightId"
+            "AccessToken" = $AccessToken
+            "TelemetryEventName" = "Get-ApplicationFlightSubmissionPackageRollout"
+            "TelemetryProperties" = $telemetryProperties
+            "NoStatus" = $NoStatus
+        }
+
+        return (Invoke-SBRestMethod @params)
+    }
+    catch [System.InvalidOperationException]
+    {
+        throw
+    }
+}
+
+function Update-ApplicationFlightSubmissionPackageRollout
+{
+<#
+    .SYNOPSIS
+        Updates the package rollout percentage for the specified application flight submission.
+
+    .DESCRIPTION
+        Updates the package rollout percentage for the specified application flight submission.
+
+        The Git repo for this module can be found here: http://aka.ms/StoreBroker
+
+    .PARAMETER AppId
+        The Application ID for the application that has the package rollout information
+        you are interested in.
+
+    .PARAMETER FlightId
+        The Flight ID for the flight that has the submission whose packages are currently
+        being rolled out.
+
+    .PARAMETER SubmissionId
+        The ID of the published submission that has the package rollout information that
+        you are interested in.
+
+    .PARAMETER Percentage
+        The new percentage that should be applied to the submission's package rollout.
+
+    .PARAMETER AccessToken
+        If provided, this will be used as the AccessToken for authentication with the
+        REST Api as opposed to requesting a new one.
+
+    .PARAMETER NoStatus
+        If this switch is specified, long-running commands will run on the main thread
+        with no commandline status update.  When not specified, those commands run in
+        the background, enabling the command prompt to provide status information.
+
+    .EXAMPLE
+        Update-ApplicationFlightSubmissionPackageRollout 0ABCDEF12345 01234567-89ab-cdef-0123-456789abcdef 1234567890123456789 20
+
+        Updates the package rollout information for submission 1234567890123456789
+        of flight 01234567-89ab-cdef-0123-456789abcdef for application 0ABCDEF12345 to be set to 20%.
+        The console window will show progress while awaiting the response from the REST request.
+
+    .EXAMPLE
+        Update-ApplicationFlightSubmissionPackageRollout 0ABCDEF12345 01234567-89ab-cdef-0123-456789abcdef 1234567890123456789 50.5 -NoStatus
+
+        Updates the package rollout information for submission 1234567890123456789
+        of flight 01234567-89ab-cdef-0123-456789abcdef for application 0ABCDEF12345 to be set to 50.5%.
+        The request happens in the foreground and there is no additional status shown to the user until
+        a response is returned from the REST request.
+#>
+    [CmdletBinding(SupportsShouldProcess)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
+    param(
+        [Parameter(Mandatory)]
+        [string] $AppId,
+        
+        [Parameter(Mandatory)]
+        [string] $FlightId,
+        
+        [Parameter(Mandatory)]
+        [string] $SubmissionId,
+
+        [Parameter(Mandatory)]
+        [ValidateRange(0, 100)]
+        [double] $Percentage,
+
+        [string] $AccessToken = "",
+
+        [switch] $NoStatus
+    )
+
+    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose 
+
+    try
+    {
+        $telemetryProperties = @{
+            [StoreBrokerTelemetryProperty]::AppId = $AppId
+            [StoreBrokerTelemetryProperty]::FlightId = $FlightId
+            [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
+            [StoreBrokerTelemetryProperty]::PackageRolloutPercentage = $Percentage
+        }
+
+        $params = @{
+            "UriFragment" = "applications/$AppId/flights/$FlightId/submissions/$SubmissionId/updatepackagerolloutpercentage?percentage=$Percentage"
+            "Method" = "Post"
+            "Description" = "Updating package rollout percentage on submission $SubmissionId for App: $AppId FlightId: $FlightId to: $Percentage%"
+            "AccessToken" = $AccessToken
+            "TelemetryEventName" = "Update-ApplicationFlightSubmissionPackageRollout"
+            "TelemetryProperties" = $telemetryProperties
+            "NoStatus" = $NoStatus
+        }
+
+        $null = Invoke-SBRestMethod @params
+
+        Write-Log "Package rollout for this submission has been updated to $Percentage%."
+
+        if ($Percentage -eq 100)
+        {
+            $output = @()
+            $output += "Changing the rollout percentage to 100% does not ensure that all of your customers will get the"
+            $output += "packages from the latest submissions, because some customers may be on OS versions that don't"
+            $output += "support rollout. You must finalize the rollout in order to stop distributing the older packages"
+            $output += "and update all existing customers to the newer ones by calling"
+            $output += "    Complete-ApplicationFlightSubmissionPackageRollout -AppId $AppId -FlightId $FlightId -SubmissionId $SubmissionId"
+            Write-Log $($output -join [Environment]::NewLine) -Level Warning
+        }
+    }
+    catch [System.InvalidOperationException]
+    {
+        throw
+    }
+}
+
+function Stop-ApplicationFlightSubmissionPackageRollout
+{
+<#
+    .SYNOPSIS
+        Stops the package rollout for the specified application flight submission.
+
+    .DESCRIPTION
+        Stops the package rollout for the specified application flight submission.
+        All users will now begin receiving the fallback submission.
+
+        The Git repo for this module can be found here: http://aka.ms/StoreBroker
+
+    .PARAMETER AppId
+        The Application ID for the application that is currently being rolled out.
+
+    .PARAMETER FlightId
+        The Flight ID for the flight that has the submission whose packages are currently
+        being rolled out.
+
+    .PARAMETER SubmissionId
+        The ID of the published submission that is currently being rolled out.
+
+    .PARAMETER AccessToken
+        If provided, this will be used as the AccessToken for authentication with the
+        REST Api as opposed to requesting a new one.
+
+    .PARAMETER NoStatus
+        If this switch is specified, long-running commands will run on the main thread
+        with no commandline status update.  When not specified, those commands run in
+        the background, enabling the command prompt to provide status information.
+
+    .EXAMPLE
+        Stop-ApplicationFlightSubmissionPackageRollout 0ABCDEF12345 01234567-89ab-cdef-0123-456789abcdef 1234567890123456789
+
+        Halts the package rollout for submission 1234567890123456789 of flight
+        01234567-89ab-cdef-0123-456789abcdef for application 0ABCDEF12345.
+        Users will now begin receiving the packages from the fallback submission.
+        The console window will show progress while awaiting the response from the REST request.
+
+    .EXAMPLE
+        Stop-ApplicationFlightSubmissionPackageRollout 0ABCDEF12345 01234567-89ab-cdef-0123-456789abcdef 1234567890123456789 -NoStatus
+
+        Halts the package rollout for submission 1234567890123456789 of flight
+        01234567-89ab-cdef-0123-456789abcdef for application 0ABCDEF12345.
+        Users will now begin receiving the packages from the fallback submission. The request
+        happens in the foreground and there is no additional status shown to the user until a
+        response is returned from the REST request.
+#>
+    [CmdletBinding(SupportsShouldProcess)]
+    [Alias('Halt-ApplicationFlightSubmissionPackageRollout')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
+    param(
+        [Parameter(Mandatory)]
+        [string] $AppId,
+        
+        [Parameter(Mandatory)]
+        [string] $FlightId,
+        
+        [Parameter(Mandatory)]
+        [string] $SubmissionId,
+        
+        [string] $AccessToken = "",
+
+        [switch] $NoStatus
+    )
+
+    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose 
+
+    try
+    {
+        $telemetryProperties = @{
+            [StoreBrokerTelemetryProperty]::AppId = $AppId
+            [StoreBrokerTelemetryProperty]::FlightId = $FlightId
+            [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
+        }
+
+        $params = @{
+            "UriFragment" = "applications/$AppId/flights/$FlightId/submissions/$SubmissionId/haltpackagerollout"
+            "Method" = "Post"
+            "Description" = "Halting package rollout on submission $SubmissionId for App: $AppId FlightId: $FlightId"
+            "AccessToken" = $AccessToken
+            "TelemetryEventName" = "Stop-ApplicationFlightSubmissionPackageRollout"
+            "TelemetryProperties" = $telemetryProperties
+            "NoStatus" = $NoStatus
+        }
+
+        $result = Invoke-SBRestMethod @params
+
+        $output = @()
+        $output += "Package rollout for this submission has been halted."
+        $output += "All users in this flight will now receive the packages from SubmissionId: $($result.fallbackSubmissionId)"
+        Write-Log $($output -join [Environment]::NewLine) 
+
+        $output = @()
+        $output += "Any customers who already have the newer packages will keep those packages; they won't be rolled back to the previous version."
+        $output += "To provide an update to these customers, you'll need to create a new submission with the packages you'd like them to get."
+        $output += "Note that if you use a gradual rollout in your next submission, customers who had the package you halted will be offered"
+        $output += "the new update in the same order they were offered the halted package.  The new rollout will be between your last finalized"
+        $output += "submission and your newest submission; once you halt a package rollout, those packages will no longer be distributed to any customers."
+        Write-Log $($output -join [Environment]::NewLine) -Level Warning
+    }
+    catch [System.InvalidOperationException]
+    {
+        throw
+    }
+}
+
+function Complete-ApplicationFlightSubmissionPackageRollout
+{
+<#
+    .SYNOPSIS
+        Finalizes the package rollout for the specified application flight submission.
+
+    .DESCRIPTION
+        Finalizes the package rollout for the specified application flight submission.
+        All users will now begin receiving this submission's packages.
+
+        The Git repo for this module can be found here: http://aka.ms/StoreBroker
+
+    .PARAMETER AppId
+        The Application ID for the application that is currently being rolled out.
+
+    .PARAMETER FlightId
+        The Flight ID for the flight that has the submission whose packages are currently
+        being rolled out.
+
+    .PARAMETER SubmissionId
+        The ID of the published submission that is currently being rolled out.
+
+    .PARAMETER AccessToken
+        If provided, this will be used as the AccessToken for authentication with the
+        REST Api as opposed to requesting a new one.
+
+    .PARAMETER NoStatus
+        If this switch is specified, long-running commands will run on the main thread
+        with no commandline status update.  When not specified, those commands run in
+        the background, enabling the command prompt to provide status information.
+
+    .EXAMPLE
+        Complete-ApplicationFlightSubmissionPackageRollout 0ABCDEF12345 01234567-89ab-cdef-0123-456789abcdef 1234567890123456789
+
+        Finalizes the package rollout for submission 1234567890123456789 of application
+        0ABCDEF12345.  All users will now begin receiving the packages from this
+        submission. The console window will show progress while awaiting the response
+        from the REST request.
+
+    .EXAMPLE
+        Complete-ApplicationFlightSubmissionPackageRollout 0ABCDEF12345 01234567-89ab-cdef-0123-456789abcdef 1234567890123456789 -NoStatus
+
+        Finalizes the package rollout for submission 1234567890123456789 of application
+        0ABCDEF12345.  All users will now begin receiving the packages from this
+        submission. The request happens in the foreground and there is no additional
+        status shown to the user until a response is returned from the REST request.
+#>
+    [CmdletBinding(SupportsShouldProcess)]
+    [Alias('Finalize-ApplicationFlightSubmissionPackageRollout')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
+    param(
+        [Parameter(Mandatory)]
+        [string] $AppId,
+        
+        [Parameter(Mandatory)]
+        [string] $FlightId,
+        
+        [Parameter(Mandatory)]
+        [string] $SubmissionId,
+        
+        [string] $AccessToken = "",
+
+        [switch] $NoStatus
+    )
+
+    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose 
+
+    try
+    {
+        $telemetryProperties = @{
+            [StoreBrokerTelemetryProperty]::AppId = $AppId
+            [StoreBrokerTelemetryProperty]::FlightId = $FlightId
+            [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
+        }
+
+        $params = @{
+            "UriFragment" = "applications/$AppId/flights/$FlightId/submissions/$SubmissionId/finalizepackagerollout"
+            "Method" = "Post"
+            "Description" = "Finalizing package rollout on submission $SubmissionId for App: $AppId FlightId: $FlightId"
+            "AccessToken" = $AccessToken
+            "TelemetryEventName" = "Complete-ApplicationFlightSubmissionPackageRollout"
+            "TelemetryProperties" = $telemetryProperties
+            "NoStatus" = $NoStatus
+        }
+
+        $null = Invoke-SBRestMethod @params
+
+        Write-Log "Package rollout for this submission has been finalized.  All users in this flight will now receive these packages."
+    }
+    catch [System.InvalidOperationException]
+    {
+        throw
+    }
 }

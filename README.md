@@ -6,7 +6,6 @@
     *   [Project Status](#project-status)
     *   [Goals](#goals)
     *   [Current Functionality](#current-functionality)
-        *   [Limitations](#limitations)
     *   [Prerequisites](#prerequisites)
 *   [Installation and Setup](#installation-and-setup)
 *   [Usage](#usage)
@@ -72,14 +71,6 @@ At a very high level, this is what you can do with StoreBroker:
 
  - General
     - Submission Monitor with email support
-
-#### Limitations
-
-At this time, we don't have support for these newest additions to the API, but they are on our
-[backlog to add](https://github.com/Microsoft/StoreBroker/issues/2):
-
-  - Package Rollout
-  - Mandatory Update
 
 ### Prerequisites
 

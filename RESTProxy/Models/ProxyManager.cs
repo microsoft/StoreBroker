@@ -4,6 +4,7 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
 {
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.Linq;
     using System.Net;
     using System.Net.Http;
     using System.Reflection;
@@ -26,6 +27,11 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
         ///  The media type that describes a JSON payload.
         /// </summary>
         public const string JsonMediaType = "application/json";
+
+        /// <summary>
+        ///  The header name for the CorrelationId that the API adds for post-mortem diagnostics.
+        /// </summary>
+        public const string MSCorrelationIdHeader = "MS-CorrelationId";
 
         /// <summary>
         /// The Application Insights client that will be used for "logging" all of the user requests
@@ -149,6 +155,9 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
             // Assume ok unless we find out otherwise.
             HttpStatusCode statusCode = HttpStatusCode.OK;
 
+            // We want to record the MS-CorrelationId for every request in case we need to look up failures later.
+            string correlationId = string.Empty;
+
             try
             {
                 Endpoint endpoint = null;
@@ -158,7 +167,14 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
                     response = await endpoint.PerformRequestAsync(pathAndQuery, method, onBehalfOf, body);
                 }
 
-                statusCode = response.StatusCode; // used in the finally block
+                // used in the finally block
+                statusCode = response.StatusCode;
+                IEnumerable<string> headerValues;
+                if (response.Headers.TryGetValues(ProxyManager.MSCorrelationIdHeader, out headerValues))
+                {
+                    correlationId = headerValues.FirstOrDefault();
+                }
+
                 return response;
             }
             finally
@@ -172,6 +188,7 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
                     tenantName,
                     endpointType,
                     statusCode,
+                    correlationId,
                     stopwatch.Elapsed.TotalSeconds);
             }
         }
@@ -329,6 +346,7 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
         /// <param name="tenantName">The friendly name of <paramref name="tenantId"/>.</param>
         /// <param name="endpointType">The type of endpoint that should be used for the request.</param>
         /// <param name="statusCode">The <see cref="HttpStatusCode"/> for the result of the request.</param>
+        /// <param name="correlationId">The ID given to the request by the API to enable post-mortem analysis.</param>
         /// <param name="duration">The total number of seconds that the request took to complete.</param>
         private static void LogTelemetryEvent(
             string userName,
@@ -338,6 +356,7 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
             string tenantName,
             EndpointType endpointType,
             HttpStatusCode statusCode,
+            string correlationId,
             double duration)
         {
             ProxyManager.telemetryClient.Context.Session.Id = System.Guid.NewGuid().ToString();
@@ -348,6 +367,7 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
             properties.Add("PathAndQuery", pathAndQuery);
             properties.Add("Method", method.ToString());
             properties.Add("StatusCode", statusCode.ToString());
+            properties.Add("CorrelationId", correlationId);
             properties.Add("EndpointType", endpointType.ToString());
             properties.Add("TenantId", tenantId);
             properties.Add("TenantFriendlyName", tenantName);

@@ -293,47 +293,13 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
                     }
                 }
 
-                // Send the actual response.
+                // Get the response.
                 using (WebResponse response = await request.GetResponseAsync())
                 {
-                    using (Stream stream = response.GetResponseStream())
-                    {
-                        using (StreamReader reader = new StreamReader(stream))
-                        {
-                            // Even though we got a simple WebResponse, in our scenario we would prefer
-                            // an HttpWebResponse since it exposes a StatusCode property.
-                            HttpWebResponse httpResponse = response as HttpWebResponse;
-                            HttpStatusCode statusCode = (httpResponse == null) ?
-                                HttpStatusCode.OK :
-                                httpResponse.StatusCode;
-
-                            HttpResponseMessage httpResponseMessage = new HttpResponseMessage(statusCode);
-
-                            // Proxy all of the special headers that the API returns
-                            // (which all begin with "MS-").  One example is "MS-CorrelationId"
-                            // which is needed by the Windows Store Submission API team when they
-                            // are investigating bug reports with the API.
-                            foreach (string key in httpResponse.Headers.AllKeys)
-                            {
-                                if (key.StartsWith("MS-"))
-                                {
-                                    httpResponseMessage.Headers.Add(key, httpResponse.Headers[key]);
-                                }
-                            }
-
-                            // Some commands, like DELETE have no response body.
-                            string responseBody = reader.ReadToEnd();
-                            if (!string.IsNullOrEmpty(responseBody))
-                            {
-                                // The contentType string tends to have the character encoding appended to it.
-                                // We just want the actual contentType since we specify the content encoding separately.
-                                string contentType = response.ContentType.Split(';')[0];
-                                httpResponseMessage.Content = new StringContent(responseBody, Encoding.UTF8, contentType);
-                            }
-
-                            return httpResponseMessage;
-                        }
-                    }
+                    // Even though we got a simple WebResponse, in our scenario we would prefer
+                    // an HttpWebResponse since it exposes a StatusCode property.
+                    HttpWebResponse httpResponse = response as HttpWebResponse;
+                    return this.GetResponseMessage(httpResponse);
                 }
             }
             catch (WebException ex)
@@ -342,28 +308,54 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
                 // it should actually be an HttpWebResponse.  We'd prefer that one, since HttpWebResponse
                 // exposes a StatusCode property.
                 HttpWebResponse httpResponse = ex.Response as HttpWebResponse;
-                HttpStatusCode statusCode = (httpResponse == null) ?
-                    HttpStatusCode.InternalServerError :
-                    httpResponse.StatusCode;
+                return this.GetResponseMessage(httpResponse);
+            }
+        }
 
-                string responseBody = new StreamReader(ex.Response.GetResponseStream()).ReadToEnd();
+        /// <summary>
+        /// Creates the message to send back to the proxy client.
+        /// </summary>
+        /// <param name="httpResponseFromApi">The response from the Submission API.</param>
+        /// <returns>The response to send back to the proxy client.</returns>
+        private HttpResponseMessage GetResponseMessage(HttpWebResponse httpResponseFromApi)
+        {
+            if (httpResponseFromApi == null)
+            {
+                return new HttpResponseMessage(HttpStatusCode.InternalServerError);
+            }
 
-                // The contentType string tends to have the character encoding appended to it.
-                // We just want the actual contentType since we specify the content encoding separately.
-                string contentType = ex.Response.ContentType.Split(';')[0];
+            HttpResponseMessage httpResponseMessage = new HttpResponseMessage(httpResponseFromApi.StatusCode);
+            string responseBody = string.Empty;
 
-                if (string.IsNullOrEmpty(responseBody))
+            using (Stream stream = httpResponseFromApi.GetResponseStream())
+            {
+                using (StreamReader reader = new StreamReader(stream))
                 {
-                    return new HttpResponseMessage(statusCode);
-                }
-                else
-                {
-                    return new HttpResponseMessage(statusCode)
-                    {
-                        Content = new StringContent(responseBody, Encoding.UTF8, contentType)
-                    };
+                    responseBody = reader.ReadToEnd();
                 }
             }
+
+            // Proxy all of the special headers that the API returns
+            // (which all begin with "MS-").  One example is "MS-CorrelationId"
+            // which is needed by the Windows Store Submission API team when they
+            // are investigating bug reports with the API.
+            foreach (string key in httpResponseFromApi.Headers.AllKeys)
+            {
+                if (key.StartsWith("MS-"))
+                {
+                    httpResponseMessage.Headers.Add(key, httpResponseFromApi.Headers[key]);
+                }
+            }
+
+            if (!string.IsNullOrEmpty(responseBody))
+            {
+                // The contentType string tends to have the character encoding appended to it.
+                // We just want the actual contentType since we specify the content encoding separately.
+                string contentType = httpResponseFromApi.ContentType.Split(';')[0];
+                httpResponseMessage.Content = new StringContent(responseBody, Encoding.UTF8, contentType);
+            }
+
+            return httpResponseMessage;
         }
 
         /// <summary>

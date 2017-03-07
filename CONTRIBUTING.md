@@ -301,6 +301,10 @@ Where:
 * `<minor>` - If this is a feature update, increment by one and be sure to reset `<patch>` to 0.
 * `<patch>` - If this is a bug fix, leave `<minor>` alone and increment this by one.
 
+When new code changes are checked in to the repo, a new NuGet package must be published by Microsoft.
+This process is documented in Microsoft's internal StoreBroker repo.
+Refer to the CONTRIBUTING.md in that repo for more information on creating a signed NuGet package.
+
 ----------
 
 ### Legal and Licensing

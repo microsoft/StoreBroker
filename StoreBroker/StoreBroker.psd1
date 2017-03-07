@@ -6,7 +6,7 @@
     CompanyName = 'Microsoft Corporation'
     Copyright = 'Copyright (C) Microsoft Corporation.  All rights reserved.'
 
-    ModuleVersion = '1.7.0'
+    ModuleVersion = '1.7.1'
     Description = 'Provides command-line access to the Windows Store Submission REST API.'
 
     RootModule = 'StoreIngestionApi'
@@ -143,10 +143,10 @@
             Tags = @('Store', 'App', 'Submission')
 
             # A URL to the license for this module.
-            LicenseUri = 'http://aka.ms/StoreBroker_License'
+            LicenseUri = 'https://aka.ms/StoreBroker_License'
 
             # A URL to the main website for this project.
-            ProjectUri = 'http://aka.ms/StoreBroker'
+            ProjectUri = 'https://aka.ms/StoreBroker'
 
             # A URL to an icon representing this module.
             # IconUri = ''

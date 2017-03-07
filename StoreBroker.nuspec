@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>Microsoft.Windows.StoreBroker</id>
+    <version>$version$</version>
+    <authors>Microsoft</authors>
+    <owners>microsoft,nugetstorebrokerteam</owners>
+    <licenseUrl>https://aka.ms/StoreBroker_License</licenseUrl>
+    <projectUrl>https://aka.ms/StoreBroker</projectUrl>
+    <iconUrl>http://go.microsoft.com/fwlink/?LinkID=288890</iconUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>A PowerShell module that leverages the Windows Store Submission API to allow easy automation of application submissions to the Windows Store.</description>
+    <copyright>© Microsoft Corporation. All rights reserved.</copyright>
+    <tags>microsoft windows store broker storebroker submission api powershell posh module</tags>
+    <language>en-US</language>
+  </metadata>
+  <files>
+      <file src="StoreBroker\" target="StoreBroker\"/>
+      <file src="Extensions\" target="Extensions\"/>
+      <file src="PDP\*.xsd" target="PDP\"/>
+  </files>
+</package>

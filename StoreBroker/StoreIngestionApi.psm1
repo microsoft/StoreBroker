@@ -33,6 +33,10 @@ $script:keywordPendingCommit = 'PendingCommit'
 $script:keywordRelease = 'Release'
 $script:keywordPublished = 'Published'
 
+# Special header added to Submission API responses that provides a unique ID
+# that the Submission API team can use to trace back problems with a specific request.
+$script:headerMSCorrelationId = 'MS-CorrelationId'
+
 # Warning that is referenced in multiple places throughout the module.
 # {0} will be replaced in context with the relevant command.
 $script:manualPublishWarning = @"
@@ -1402,10 +1406,10 @@ function Invoke-SBRestMethod
 {
 <#
     .SYNOPSIS
-        A wrapper around Invoke-RestMethod that understands the Store API.
+        A wrapper around Invoke-WebRequest that understands the Store API.
 
     .DESCRIPTION
-        A very heavy wrapper around Invoke-RestMethod that understands the Store API and
+        A very heavy wrapper around Invoke-WebRequest that understands the Store API and
         how to perform its operation with and without console status updates.  It also
         understands how to parse and handle errors from the REST calls.
 
@@ -1466,6 +1470,11 @@ function Invoke-SBRestMethod
 
         Deletes the specified submission, but the request happens in the foreground and there is
         no additional status shown to the user until a response is returned from the REST request.
+
+    .NOTES
+        This wraps Invoke-WebRequest as opposed to Invoke-RestMethod because we want access to the headers
+        that are returned in the response (specifically 'MS-CorrelationId') for logging purposes, and
+        Invoke-RestMethod drops those headers.
 #>
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars", "", Justification="We use global variables sparingly and intentionally for module configuration, and employ a consistent naming convention.")]
@@ -1546,7 +1555,7 @@ function Invoke-SBRestMethod
 
         if ($NoStatus)
         {
-            if ($PSCmdlet.ShouldProcess($url, "Invoke-RestMethod"))
+            if ($PSCmdlet.ShouldProcess($url, "Invoke-WebRequest"))
             {
                 $params = @{}
                 $params.Add("Uri", $url)
@@ -1560,7 +1569,7 @@ function Invoke-SBRestMethod
                     $params.Add("Body", $bodyAsBytes)
                 }
 
-                $result = Invoke-RestMethod @params
+                $result = Invoke-WebRequest @params
                 if ($Method -eq 'delete')
                 {
                     Write-Log "Successfully removed." -Level Verbose
@@ -1574,7 +1583,11 @@ function Invoke-SBRestMethod
             if ($PSCmdlet.ShouldProcess($jobName, "Start-Job"))
             {
                 [scriptblock]$scriptBlock = {
-                    param($Url, $method, $Headers, $Body)
+                    param($Url, $method, $Headers, $Body, $HeaderName)
+
+                    # Because this is running in a different PowerShell process, we need to
+                    # redefine this script variable (for use within the exception)
+                    $script:headerMSCorrelationId = $HeaderName
 
                     $params = @{}
                     $params.Add("Uri", $Url)
@@ -1588,10 +1601,29 @@ function Invoke-SBRestMethod
                         $params.Add("Body", $bodyAsBytes)
                     }
 
-                    Invoke-RestMethod @params
+                    try
+                    {
+                        Invoke-WebRequest @params
+                    }
+                    catch [System.Net.WebException]
+                    {
+                        # We need to access the CorrelationId header in the exception handling,
+                        # but the actual *values* of the headers of a WebException don't get serialized
+                        # when the RemoteException wraps it.  To work around that, we'll extract the
+                        # information that we actually care about *now*, and then we'll throw our own exception
+                        # that is just a JSON object with the data that we'll later extract for processing in
+                        # the main catch.
+                        $ex = @{}
+                        $ex.Message = $_.Exception.Message
+                        $ex.StatusCode = $_.Exception.Response.StatusCode
+                        $ex.StatusDescription = $_.Exception.Response.StatusDescription
+                        $ex.CorrelationId = $_.Exception.Response.Headers[$script:headerMSCorrelationId]
+                        $ex.InnerMessage = $_.ErrorDetails.Message
+                        throw ($ex | ConvertTo-Json -Depth 20)
+                    }
                 }
 
-                $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($url, $Method, $headers, $Body)
+                $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($url, $Method, $headers, $Body, $script:headerMSCorrelationId)
 
                 if ($PSCmdlet.ShouldProcess($jobName, "Wait-JobWithAnimation"))
                 {
@@ -1606,13 +1638,19 @@ function Invoke-SBRestMethod
 
             if ($remoteErrors.Count -gt 0)
             {
-               throw $remoteErrors[0].Exception
+                throw $remoteErrors[0].Exception
             }
 
             if ($Method -eq 'delete')
             {
                 Write-Log "Successfully removed." -Level Verbose
             }
+        }
+
+        $correlationId = $result.Headers[$script:headerMSCorrelationId]
+        if (-not [String]::IsNullOrEmpty($correlationId))
+        {
+            Write-Log "$($script:headerMSCorrelationId): $correlationId" -Level Verbose
         }
 
         # Record the telemetry for this event.
@@ -1623,69 +1661,106 @@ function Invoke-SBRestMethod
             Set-TelemetryEvent -EventName $TelemetryEventName -Properties $localTelemetryProperties -Metrics $telemetryMetrics
         }
 
-        return $result
-    }
-    catch [System.InvalidOperationException]
-    {
-        # This type of exception occurs when using -NoStatus
-
-        # Dig into the exception to get the Response details.
-        # Note that value__ is not a typo.
-        $output = @()
-        $statusCode = $_.Exception.Response.StatusCode.value__
-        if ($statusCode -eq 404)
+        $finalResult = $result.Content
+        try
         {
-           $output += "The item being removed could not be found."
+            $finalResult = $finalResult | ConvertFrom-Json
         }
-        elseif ($statusCode -eq 409)
+        catch [ArgumentException]
         {
-           $output += "The item being removed was found, but could be deleted in its current state."
+            # The content must not be JSON.  We'll return the raw content result instead.
         }
-        
-        $output += "StatusCode: $($_.Exception.Response.StatusCode.value__)"
-        $output += "StatusDescription: $($_.Exception.Response.StatusDescription)"
-        $output += "$($_.ErrorDetails)"
-        
-        Set-TelemetryException -Exception $_.Exception -ErrorBucket $errorBucket -Properties $localTelemetryProperties
-        Write-Log $($output -join [Environment]::NewLine) -Level Error
-        throw "Halt Execution"
+
+        return $finalResult
     }
-    catch [System.Management.Automation.RuntimeException]
+    catch
     {
-        # This type of exception occurs when NOT using -NoStatus
+        # We only know how to handle WebExceptions, which will either come in "pure" when running with -NoStatus,
+        # or will come in as a RemoteException when running normally (since it's coming from the asynchronous Job).
+        $ex = $null
+        $message = $null
+        $statusCode = $null
+        $statusDescription = $null
+        $correlationId = $null
+        $innerMessage = $null
+
+        if ($_.Exception -is [System.Net.WebException])
+        {
+            $ex = $_.Exception
+            $message = $ex.Message
+            $statusCode = $ex.Response.StatusCode.value__ # Note that value__ is not a typo.
+            $statusDescription = $ex.Response.StatusDescription
+            $innerMessage = $_.ErrorDetails.Message
+            $correlationId = $ex.Response.Headers[$script:headerMSCorrelationId]
+
+        }
+        elseif (($_.Exception -is [System.Management.Automation.RemoteException]) -and
+                ($_.Exception.SerializedRemoteException.PSObject.TypeNames[0] -eq 'Deserialized.System.Management.Automation.RuntimeException'))
+        {
+            $ex = $_.Exception
+            try
+            {
+                $deserialized = $ex.Message | ConvertFrom-Json
+                $message = $deserialized.Message
+                $statusCode = $deserialized.StatusCode
+                $statusDescription = $deserialized.StatusDescription
+                $innerMessage = $deserialized.InnerMessage
+                $correlationId = $deserialized.CorrelationId
+            }
+            catch [System.ArgumentException]
+            {
+                # Will be thrown if $ex.Message isn't JSON content
+                Write-Log $ex.Message -Level Error
+                Set-TelemetryException -Exception $ex -ErrorBucket $errorBucket -Properties $localTelemetryProperties
+                throw;
+            }
+        }
+        else
+        {
+            Write-Log $_.Exception.Message -Level Error
+            Set-TelemetryException -Exception $_.Exception -ErrorBucket $errorBucket -Properties $localTelemetryProperties
+            throw;
+        }
 
         $output = @()
-        $output += "$($_.Exception.Message)"
-        if ($_.ErrorDetails.Message)
+        if (-not [string]::IsNullOrEmpty($statusCode))
+        {
+            $output += "$statusCode | $statusDescription"
+        }
+
+        $output += $message
+
+        if (-not [string]::IsNullOrEmpty($innerMessage))
         {
             try
             {
-                $message = ($_.ErrorDetails.Message | ConvertFrom-Json)
-                if ($message -is [String])
+                $innerMessageJson = ($innerMessage | ConvertFrom-Json)
+                if ($innerMessageJson -is [String])
                 {
-                    $output += $message
+                    $output += $innerMessageJson
                 }
                 else
                 {
-                    $output += "$($message.code) : $($message.message)"
-                    if ($message.details)
+                    $output += "$($innerMessageJson.code) : $($innerMessageJson.message)"
+                    if ($innerMessageJson.details)
                     {
-                        $output += "$($message.details | Format-Table | Out-String)"
+                        $output += "$($innerMessageJson.details | Format-Table | Out-String)"
                     }
                 }
             }
-            catch [ArgumentException]
+            catch [System.ArgumentException]
             {
-                # Will be thrown if $_.ErrorDetails.Message isn't JSON content
-                $message = $_.ErrorDetails.Message
-                if ([String]::IsNullOrEmpty($message))
-                {
-                    $output += $message
-                }
+                # Will be thrown if $innerMessage isn't JSON content
+                $output += $innerMessage
             }
         }
 
-        Set-TelemetryException -Exception $_.Exception -ErrorBucket $errorBucket -Properties $localTelemetryProperties
+        if (-not [String]::IsNullOrEmpty($correlationId))
+        {
+            Write-Log "$($script:headerMSCorrelationId): $correlationId" -Level Verbose
+        }
+       
+        Set-TelemetryException -Exception $ex -ErrorBucket $errorBucket -Properties $localTelemetryProperties
         Write-Log $($output -join [Environment]::NewLine) -Level Error
         throw "Halt Execution"
     }

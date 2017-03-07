@@ -30,7 +30,7 @@ function Get-NugetExe
         $sourceNugetExe = "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe"
         $script:nugetExePath = Join-Path $(New-TemporaryDirectory) "nuget.exe"
     
-        Write-Log "Downlading $sourceNugetExe to $script:nugetExePath" -Level Verbose
+        Write-Log "Downloading $sourceNugetExe to $script:nugetExePath" -Level Verbose
         Invoke-WebRequest $sourceNugetExe -OutFile $script:nugetExePath
     }
 

@@ -1429,7 +1429,7 @@ function Invoke-SBRestMethod
 
     .PARAMETER Body
         This optional parameter forms the body of a PUT or POST request. It will be automatically
-        encoded to UTF8 and sent as Content Type: "application/json; charset=utf8"
+        encoded to UTF8 and sent as Content Type: "application/json; charset=UTF-8"
 
     .PARAMETER AccessToken
         If provided, this will be used as the AccessToken for authentication with the
@@ -1526,7 +1526,7 @@ function Invoke-SBRestMethod
     $headers = @{"Authorization" = "Bearer $AccessToken"}
     if ($Method -in ('post', 'put'))
     {
-        $headers.Add("Content-Type", "application/json; charset=utf8")
+        $headers.Add("Content-Type", "application/json; charset=UTF-8")
     }
 
     # Add any special headers when using the proxy.

@@ -7,6 +7,7 @@
     *   [Help Documentation](#help-documentation)
     *   [Formatting Results](#formatting-results)
     *   [Logging](#logging)
+    *   [Additional Configuration](#additional-configuration)
     *   [Common Switches](#common-switches)
     *   [Accessing the Portal](#accessing-the-portal)
 *   [Creating Your Application Payload](#creating-your-application-payload)
@@ -78,6 +79,16 @@ when the module is loaded.
 > `$profile`. From a **PowerShell console** run `notepad $profile`. If Notepad informs you that
 > the file doesn't exist, let Notepad create the profile for you. Then, just add your updated
 > assignments to it.
+
+### Additional Configuration
+
+There are some additional optional configurations that can be made with StoreBroker if the
+situation requires it.  Most users will likely never need to touch these.  The pre-existing
+values of these variables will be honored if they already exist, otherwise they will be created
+(with defaults) when the module is loaded.
+
+ **`$global:SBWebRequestTimeoutSec`** - [int] Number of seconds to use for the timeout of the
+   internal `Invoke-WebRequest` call. Defaults to `0` (indefinite)
 
 ### Common Switches
 

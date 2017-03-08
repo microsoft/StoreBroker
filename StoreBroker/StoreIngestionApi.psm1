@@ -1557,7 +1557,7 @@ function Invoke-SBRestMethod
     try
     {
         Write-Log $Description -Level Verbose
-        Write-Log "Accessing [$Method] $url" -Level Verbose
+        Write-Log "Accessing [$Method] $url [Timeout = $global:SBWebRequestTimeoutSec]" -Level Verbose
 
         if ($NoStatus)
         {
@@ -1569,6 +1569,7 @@ function Invoke-SBRestMethod
                 $params.Add("Headers", $headers)
                 $params.Add("UseDefaultCredentials", $true)
                 $params.Add("UseBasicParsing", $true)
+                $params.Add("TimeoutSec", $global:SBWebRequestTimeoutSec)
                 
                 if ($Method -in ('post', 'put') -and (-not [String]::IsNullOrEmpty($Body)))
                 {
@@ -1590,7 +1591,7 @@ function Invoke-SBRestMethod
             if ($PSCmdlet.ShouldProcess($jobName, "Start-Job"))
             {
                 [scriptblock]$scriptBlock = {
-                    param($Url, $method, $Headers, $Body, $HeaderName)
+                    param($Url, $method, $Headers, $Body, $HeaderName, $TimeoutSec)
 
                     # Because this is running in a different PowerShell process, we need to
                     # redefine this script variable (for use within the exception)
@@ -1602,6 +1603,7 @@ function Invoke-SBRestMethod
                     $params.Add("Headers", $Headers)
                     $params.Add("UseDefaultCredentials", $true)
                     $params.Add("UseBasicParsing", $true)
+                    $params.Add("TimeoutSec", $TimeoutSec)
                 
                     if ($Method -in ('post', 'put') -and (-not [String]::IsNullOrEmpty($Body)))
                     {
@@ -1635,7 +1637,7 @@ function Invoke-SBRestMethod
                     }
                 }
 
-                $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($url, $Method, $headers, $Body, $script:headerMSCorrelationId)
+                $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($url, $Method, $headers, $Body, $script:headerMSCorrelationId, $global:SBWebRequestTimeoutSec)
 
                 if ($PSCmdlet.ShouldProcess($jobName, "Wait-JobWithAnimation"))
                 {

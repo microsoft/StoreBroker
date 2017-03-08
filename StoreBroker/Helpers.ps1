@@ -76,6 +76,11 @@ function Initialize-HelpersGlobalVariables
     {
         $global:SBUseUTC = $false
     }
+
+    if (!(Get-Variable -Name SBWebRequestTimeoutSec -Scope Global -ValueOnly -ErrorAction SilentlyContinue))
+    {
+        $global:SBWebRequestTimeoutSec = 0
+    }
 }
 
 # We need to be sure to call this explicitly so that the global variables get initialized.

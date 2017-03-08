@@ -1617,8 +1617,12 @@ function Invoke-SBRestMethod
                         $ex.Message = $_.Exception.Message
                         $ex.StatusCode = $_.Exception.Response.StatusCode
                         $ex.StatusDescription = $_.Exception.Response.StatusDescription
-                        $ex.CorrelationId = $_.Exception.Response.Headers[$script:headerMSCorrelationId]
                         $ex.InnerMessage = $_.ErrorDetails.Message
+                        if ($_.Exception.Response.Headers.Count -gt 0)
+                        {
+                            $ex.CorrelationId = $_.Exception.Response.Headers[$script:headerMSCorrelationId]
+                        }
+
                         throw ($ex | ConvertTo-Json -Depth 20)
                     }
                 }
@@ -1691,7 +1695,10 @@ function Invoke-SBRestMethod
             $statusCode = $ex.Response.StatusCode.value__ # Note that value__ is not a typo.
             $statusDescription = $ex.Response.StatusDescription
             $innerMessage = $_.ErrorDetails.Message
-            $correlationId = $ex.Response.Headers[$script:headerMSCorrelationId]
+            if ($ex.Response.Headers.Count -gt 0)
+            {
+                $correlationId = $ex.Response.Headers[$script:headerMSCorrelationId]
+            }
 
         }
         elseif (($_.Exception -is [System.Management.Automation.RemoteException]) -and

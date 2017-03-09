@@ -1332,9 +1332,7 @@ function Update-InAppProductSubmission
         }
     }
 
-    # Now, we'll remove the iapId property since it's not really valid in submission content.
-    # We can safely call this method without validating that the property actually exists.
-    $submission.PSObject.Properties.Remove('iapId')
+    Remove-UnofficialSubmissionProperties -Submission $submission
 
     # Identify potentially incorrect usage of this method by checking to see if no modification
     # switch was provided by the user

@@ -199,7 +199,7 @@
             //
             // Set the price of the app.
             // The value provided should be a "Tier" and NOT an actual price
-            // For a mapping of "Tiers" to prices, see TODO: add reference
+            // For a mapping of "Tiers" to prices, refer to https://docs.microsoft.com/en-us/windows/uwp/monetize/manage-add-on-submissions#price-tiers
             // Can also be "Free" or "NotAvailable"
 
             "priceId": "NotAvailable",

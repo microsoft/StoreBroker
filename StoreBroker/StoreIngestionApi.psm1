@@ -697,6 +697,9 @@ function Set-SubmissionPackage
         [switch] $NoStatus
     )
 
+    # Let's resolve this path to a full path so that it works with non-PowerShell commands (like the Azure module)
+    $PackagePath = Resolve-UnverifiedPath -Path $PackagePath
+
     # Telemetry-related
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::PackagePath = (Get-PiiSafeString -PlainText $PackagePath) }
@@ -859,6 +862,9 @@ function Get-SubmissionPackage
         [switch] $NoStatus
     )
 
+    # Let's resolve this path to a full path so that it works with non-PowerShell commands (like the Azure module)
+    $PackagePath = Resolve-UnverifiedPath -Path $PackagePath
+
     # Telemetry-related
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::PackagePath = (Get-PiiSafeString -PlainText $PackagePath) }
@@ -886,7 +892,7 @@ function Get-SubmissionPackage
         }
         else
         {
-            $jobName = "Get-ApplicationSubmissionPackage-" + (Get-Date).ToFileTime().ToString()
+            $jobName = "Get-SubmissionPackage-" + (Get-Date).ToFileTime().ToString()
 
             if ($PSCmdlet.ShouldProcess($jobName, "Start-Job"))
             {
@@ -923,7 +929,7 @@ function Get-SubmissionPackage
         # Record the telemetry for this event.
         $stopwatch.Stop()
         $telemetryMetrics = @{ [StoreBrokerTelemetryMetric]::Duration = $stopwatch.Elapsed.TotalSeconds }
-        Set-TelemetryEvent -EventName Get-ApplicationSubmissionPackage -Properties $telemetryProperties -Metrics $telemetryMetrics 
+        Set-TelemetryEvent -EventName Get-SubmissionPackage -Properties $telemetryProperties -Metrics $telemetryMetrics 
     }
     catch [System.Management.Automation.RuntimeException]
     {
@@ -941,7 +947,7 @@ function Get-SubmissionPackage
             }
         }
 
-        Set-TelemetryException -Exception $_.Exception -ErrorBucket Get-ApplicationSubmissionPackage -Properties $telemetryProperties 
+        Set-TelemetryException -Exception $_.Exception -ErrorBucket Get-SubmissionPackage -Properties $telemetryProperties 
         Write-Log $($output -join [Environment]::NewLine) -Level Error 
         throw "Halt Execution"
     }
@@ -956,7 +962,7 @@ function Get-SubmissionPackage
         $output += "StatusDescription: $($_.Exception.Response.StatusDescription)"
         $output += "$($_.ErrorDetails)"
         
-        Set-TelemetryException -Exception $_.Exception -ErrorBucket Get-ApplicationSubmissionPackage -Properties $telemetryProperties 
+        Set-TelemetryException -Exception $_.Exception -ErrorBucket Get-SubmissionPackage -Properties $telemetryProperties 
         Write-Log $($output -join [Environment]::NewLine) -Level Error 
         throw "Halt Execution"
     }

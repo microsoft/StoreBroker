@@ -1464,7 +1464,7 @@ function Update-InAppProductSubmission
             [StoreBrokerTelemetryProperty]::UpdateProperties = $UpdateProperties
         }
 
-        Set-TelemetryEvent -EventName Update-ApplicationFlightSubmission -Properties $telemetryProperties -Metrics $telemetryMetrics
+        Set-TelemetryEvent -EventName Update-InAppProductSubmission -Properties $telemetryProperties -Metrics $telemetryMetrics
 
         return $submissionId, $uploadUrl
     }

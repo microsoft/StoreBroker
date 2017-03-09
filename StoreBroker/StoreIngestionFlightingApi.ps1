@@ -1304,9 +1304,7 @@ function Update-ApplicationFlightSubmission
         }
     }
 
-    # Now, we'll remove the appId property since it's not really valid in submission content.
-    # We can safely call this method without validating that the property actually exists.
-    $submission.PSObject.Properties.Remove('appId')
+    Remove-UnofficialSubmissionProperties -Submission $submission
 
     # Identify potentially incorrect usage of this method by checking to see if no modification
     # switch was provided by the user

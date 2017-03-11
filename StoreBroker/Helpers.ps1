@@ -810,6 +810,6 @@ function Resolve-UnverifiedPath
     }
     else
     {
-        return $resolvedPath.Path
+        return $resolvedPath.ProviderPath
     }
 }

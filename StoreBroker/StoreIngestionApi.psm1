@@ -1568,6 +1568,7 @@ function Invoke-SBRestMethod
                 $params.Add("Method", $Method)
                 $params.Add("Headers", $headers)
                 $params.Add("UseDefaultCredentials", $true)
+                $params.Add("UseBasicParsing", $true)
                 
                 if ($Method -in ('post', 'put') -and (-not [String]::IsNullOrEmpty($Body)))
                 {
@@ -1600,6 +1601,7 @@ function Invoke-SBRestMethod
                     $params.Add("Method", $Method)
                     $params.Add("Headers", $Headers)
                     $params.Add("UseDefaultCredentials", $true)
+                    $params.Add("UseBasicParsing", $true)
                 
                     if ($Method -in ('post', 'put') -and (-not [String]::IsNullOrEmpty($Body)))
                     {

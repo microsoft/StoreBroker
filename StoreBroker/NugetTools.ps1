@@ -99,7 +99,7 @@ function Get-NugetPackage
         {
             if (-not [System.String]::IsNullOrEmpty($Version))
             {
-                & $nugetPath install $PackageName -o $TargetPath -version $Version  -source nuget.org -NonInteractive | Out-Null
+                & $nugetPath install $PackageName -o $TargetPath -version $Version -source nuget.org -NonInteractive | Out-Null
             }
             else
             {
@@ -118,11 +118,11 @@ function Get-NugetPackage
 
                 if (-not [System.String]::IsNullOrEmpty($Version))
                 {
-                    & $NugetPath install $PackageName -o $TargetPath -version $Version
+                    & $NugetPath install $PackageName -o $TargetPath -version $Version -source nuget.org 
                 }
                 else
                 {
-                    & $NugetPath install $PackageName -o $TargetPath 
+                    & $NugetPath install $PackageName -o $TargetPath -source nuget.org 
                 }
             }
 

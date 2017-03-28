@@ -1149,8 +1149,7 @@ function Report-UnsupportedFile
 {
 <#
     .SYNOPSIS
-        When we discover an invalid .appx, .appxbundle, or .appxupload,
-        raise a new telemetry event and report the file path.
+        When we discover an invalid file, raise a new telemetry event.
 
     .PARAMETER Path
         Filepath of the file that could not be identified.
@@ -1166,9 +1165,6 @@ function Report-UnsupportedFile
     {
         $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::SourceFilePath = (Get-PiiSafeString -PlainText $Path) }
         Set-TelemetryEvent -EventName New-SubmissionPackage-UnsupportedFile -Properties $telemetryProperties
-
-        $type = [System.IO.Path]::GetExtension($Path)
-        Write-Log "Unable to find an $type file in: `"$Path`"" -Level Error
     }
 }
 
@@ -1389,7 +1385,8 @@ function Read-AppxUploadMetadata
         workflow.
 
         As part of processing the .appxupload, the file is opened to read metadata from
-        the inner .appx file.  There must be exactly one inner .appx.
+        the inner .appx or .appxbundle file.  There must be exactly one inner .appx
+        or .appxbundle.
 
     .PARAMETER AppxuploadPath
         A path to the .appxupload to be processed.
@@ -1407,8 +1404,8 @@ function Read-AppxUploadMetadata
         Returns a hashtable containing metadata about the inner .appx file.
 
     .NOTES
-        An .appxupload file is just a .zip containing a .appx and .appxsym file.  We only
-        care about the inner .appx.
+        An .appxupload file is just a .zip containing an .appxsym file and a
+        single .appx or .appxbundle.  We only care about the inner .appx or .appxbundle.
 #>
     [CmdletBinding(SupportsShouldProcess)]
     param(
@@ -1423,17 +1420,42 @@ function Read-AppxUploadMetadata
 
     try
     {
+        $throwFormat = "`"$AppxuploadPath`" is not a proper .appxupload. There must be exactly one {0} inside the file."
+
         Write-Log "Opening `"$AppxuploadPath`"." -Level Verbose
         $expandedContainerPath = Open-AppxContainer -AppxContainerPath $AppxPath
 
         $appxFilePath = (Get-ChildItem -Recurse -Path $expandedContainerPath -Include "*.appx").FullName
-        if (($null -eq $appxFilePath) -or ($appxFilePath.Count -ne 1))
+        if ($null -ne $appxFilePath)
         {
-            Report-UnsupportedFile -Path $AppxuploadPath
-            throw "`"$AppxuploadPath`" is not a proper .appxupload. There must be exactly one .appx inside the file."
+            if ($appxFilePath.Count -ne 1)
+            {
+                Report-UnsupportedFile -Path $AppxuploadPath
+
+                $error = $throwFormat -f ".appx"
+                Write-Log $error -Level Error
+                throw $error
+            }
+            else
+            {
+                return Read-AppxMetadata -AppxPath $appxFilePath -AppxInfo $AppxInfo
+            }
         }
 
-        return Read-AppxMetadata -AppxPath $appxFilePath -AppxInfo $AppxInfo
+        # Could not find an .appx inside. Maybe there is an .appxbundle.
+        $appxbundleFilePath = (Get-ChildItem -Recurse -Path $expandedContainerPath -Include "*.appxbundle").FullName
+        if (($null -eq $appxbundleFilePath) -or ($appxbundleFilePath.Count -ne 1))
+        {
+            Report-UnsupportedFile -Path $AppxuploadPath
+
+            $error = $throwFormat -f ".appx or .appxbundle"
+            Write-Log $error -Level Error
+            throw $error
+        }
+        else
+        {
+            return Read-AppxBundleMetadata -AppxbundlePath $appxbundleFilePath -AppxInfo $AppxInfo
+        }
     }
     finally
     {

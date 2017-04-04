@@ -3255,6 +3255,9 @@ function Join-SubmissionPackage
         If specified, the packages from AdditionalJsonPath will be merged with those in
         MasterJsonPath
 
+    .PARAMETER Force
+        If specified, will overwrite the output files if they already exist.
+
     .EXAMPLE
         Join-SubmissionPackage c:\SBCallingRS1.json c:\SBCallingTH2.json c:\SBCallingMerged.json -AddPackages
 
@@ -3274,13 +3277,12 @@ function Join-SubmissionPackage
         [string] $AdditionalJsonPath,
 
         [Parameter(Mandatory=$true)]
-        [ValidateScript({if (Test-Path -Path $_ -PathType Leaf) {  throw "$_ already exists. Choose a different name." } else { $true }})]
         [string] $OutJsonPath,
 
-        [switch] $AddPackages
-    )
+        [switch] $AddPackages,
 
-    Add-Type -AssemblyName System.IO.Compression.FileSystem
+        [switch] $Force
+    )
 
     # Fix the paths
     $MasterJsonPath = Resolve-UnverifiedPath -Path $MasterJsonPath
@@ -3291,6 +3293,28 @@ function Join-SubmissionPackage
     $additionalZipPath = Join-Path (Split-Path $AdditionalJsonPath -Parent) "$([System.IO.Path]::GetFileNameWithoutExtension($AdditionalJsonPath)).zip"
     $outZipPath = Join-Path (Split-Path $OutJsonPath -Parent) "$([System.IO.Path]::GetFileNameWithoutExtension($OutJsonPath)).zip"
 
+    # It the user isn't using -Force, we need to ensure that the target json/zip files don't already exist.
+    if (-not $Force)
+    {
+        $errorMessage = "[{0}] already exists.  Choose a different name, or specify the -Force switch to overwrite it."
+
+        if (Test-Path -Path $OutJsonPath -PathType Leaf)
+        {
+            $output = $errorMessage -f $OutJsonPath
+            Write-Log -Message $output -Level Error
+            throw $output
+        }
+
+        if (Test-Path -Path $outZipPath -PathType Leaf)
+        {
+            $output = $errorMessage -f $outZipPath
+            Write-Log -Message $output -Level Error
+            throw $output
+        }
+    }
+
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+
     # Make sure that these zip files actually exist.
     foreach ($zipFile in ($masterZipPath, $additionalZipPath))
     {
@@ -3298,12 +3322,6 @@ function Join-SubmissionPackage
         {
             throw "Could not find [$zipFile].  We expect the .json and .zip to have the same base name."
         }
-    }
-
-    # Make sure that the output one *doesn't* exist
-    if (Test-Path -Path $outZipPath -PathType Leaf)
-    {
-        throw "[$outZipPath] already exists. Please choose a different name."
     }
 
     # Warn the user if they didn't specify anything to actually get merged in.

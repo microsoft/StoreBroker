@@ -39,6 +39,7 @@ Add-Type -TypeDefinition @"
       UpdatePublishModeAndVisibility,
       UriFragment,
       UserName,
+      Web,
    }
 "@
 

@@ -1347,6 +1347,62 @@ function Open-DevPortal
     }
 }
 
+function Open-Store()
+{
+<#
+.SYNOPSIS
+    Opens the specified app in the Windows Store.
+
+.DESCRIPTION
+    Opens the specified app in the Windows Store.
+
+    The Git repo for this module can be found here: https://aka.ms/StoreBroker
+
+.PARAMETER AppId
+    The ID of the app that should be opened in the Store.
+
+.PARAMETER Web
+    If specified, opens the Web Store instead of the native Windows Store App.
+
+.EXAMPLE
+    Open-Store -AppId 0ABCDEF12345
+
+    Opens the Windows Store app and navigates to the specified application.
+
+.EXAMPLE
+    Open-Store -AppId 0ABCDEF12345 -Web
+
+    Opens the user's browser to the specified app's Windows Store page.
+#>
+    [cmdletbinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string] $AppId,
+
+        [switch] $Web
+    )
+
+    # Telemetry-related
+    $telemetryProperties = @{
+        [StoreBrokerTelemetryProperty]::AppId = $AppId
+        [StoreBrokerTelemetryProperty]::Web = $Web
+    }
+
+    Set-TelemetryEvent -EventName Open-Store -Properties $telemetryProperties
+
+    $webUri = "https://www.microsoft.com/store/apps/$AppId"
+    $storeAppUri = "ms-windows-store://pdp/?productid=$AppId"
+
+    $uri = $storeAppUri
+    if ($Web)
+    {
+        $uri = $webUri
+    }
+
+    Write-Log "Launching $uri" -Level Verbose
+    Start-Process -FilePath $uri
+}
+
 function Get-ProperEnumCasing
 {
 <#

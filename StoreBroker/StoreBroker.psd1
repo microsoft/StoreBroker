@@ -6,7 +6,7 @@
     CompanyName = 'Microsoft Corporation'
     Copyright = 'Copyright (C) Microsoft Corporation.  All rights reserved.'
 
-    ModuleVersion = '1.6.1'
+    ModuleVersion = '1.7.0'
     Description = 'Provides command-line access to the Windows Store Submission REST API.'
 
     RootModule = 'StoreIngestionApi'
@@ -71,6 +71,7 @@
         'New-StoreBrokerInAppProductConfigFile',
         'New-SubmissionPackage',
         'Open-DevPortal',
+        'Open-Store',
         'Remove-ApplicationFlight',
         'Remove-ApplicationFlightSubmission',
         'Remove-ApplicationSubmission',

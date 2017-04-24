@@ -1926,6 +1926,16 @@ function Start-ApplicationFlightSubmissionMonitor
         with no commandline status update.  When not specified, those commands run in
         the background, enabling the command prompt to provide status information.
 
+    .PARAMETER PassThru
+        Returns the final submission object that was retrieved when checking submission
+        status.  By default, this function does not generate any output.
+
+    .OUTPUTS
+       None or PSCustomObject
+       By default, this does not generate any output. If you use the PassThru parameter,
+       it generates a PSCustomObject object that represents the last retrieved submission
+       which can be inspected for submission status.
+
     .EXAMPLE
         Start-ApplicationFlightSubmissionMonitor 0ABCDEF12345 01234567-89ab-cdef-0123-456789abcdef 1234567890123456789
 
@@ -1959,7 +1969,9 @@ function Start-ApplicationFlightSubmissionMonitor
 
         [string[]] $EmailNotifyTo = @(),
 
-        [switch] $NoStatus
+        [switch] $NoStatus,
+
+        [switch] $PassThru
     )
 
     Start-SubmissionMonitor @PSBoundParameters

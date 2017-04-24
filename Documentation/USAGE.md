@@ -439,6 +439,11 @@ Multiple email addresses are separated by a comma
 
     Start-SubmissionMonitor -AppId <appId> -SubmissionId <submissionId> -EmailNotifyTo <emailAddress1>,<emailAddress2>
 
+> By default, `Start-SubmissionMonitor` does not return any result.
+> You can provide the `-PassThru` switch if you'd like it to return back the final submission object
+> that caused it to end its monitoring loop.  You can then capture that result and do additional
+> processing on it if so desired.
+
 ### Status Progression
 
  The following explains the common progression of a submission by status:

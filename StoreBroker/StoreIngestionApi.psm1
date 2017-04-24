@@ -1128,6 +1128,16 @@ function Start-SubmissionMonitor
         with no commandline status update.  When not specified, those commands run in
         the background, enabling the command prompt to provide status information.
 
+    .PARAMETER PassThru
+        Returns the final submission object that was retrieved when checking submission
+        status.  By default, this function does not generate any output.
+
+    .OUTPUTS
+       None or PSCustomObject
+       By default, this does not generate any output. If you use the PassThru parameter,
+       it generates a PSCustomObject object that represents the last retrieved submission
+       which can be inspected for submission status.
+
     .EXAMPLE
         Start-SubmissionMonitor 0ABCDEF12345 1234567890123456789
         Checks that submission every 60 seconds until the submission enters a Failed state
@@ -1178,7 +1188,9 @@ function Start-SubmissionMonitor
             Position=0)]
         [string] $IapId,
 
-        [switch] $NoStatus
+        [switch] $NoStatus,
+
+        [switch] $PassThru
     )
 
     Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose 
@@ -1223,6 +1235,8 @@ function Start-SubmissionMonitor
             $fullName = "$appName | $flightName"
         }
     }
+
+    $submission = $null
 
     # We can safely assume this is being used on a recently committed submission.
     # If it isn't we'll report that to the user and update this value during the first
@@ -1370,6 +1384,11 @@ function Start-SubmissionMonitor
             Write-Log "Status is [$lastStatus]. Waiting $secondsBetweenChecks seconds before checking again..." 
             Start-Sleep -Seconds $secondsBetweenChecks
         }
+    }
+
+    if ($PassThru)
+    {
+        return $submission
     }
 }
 

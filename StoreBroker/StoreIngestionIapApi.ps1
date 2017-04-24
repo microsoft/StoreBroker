@@ -1922,6 +1922,16 @@ function Start-InAppProductSubmissionMonitor
         with no commandline status update.  When not specified, those commands run in
         the background, enabling the command prompt to provide status information.
 
+    .PARAMETER PassThru
+        Returns the final submission object that was retrieved when checking submission
+        status.  By default, this function does not generate any output.
+
+    .OUTPUTS
+       None or PSCustomObject
+       By default, this does not generate any output. If you use the PassThru parameter,
+       it generates a PSCustomObject object that represents the last retrieved submission
+       which can be inspected for submission status.
+
     .EXAMPLE
         Start-InAppProductSubmissionMonitor 0ABCDEF12345 1234567890123456789
 
@@ -1953,7 +1963,9 @@ function Start-InAppProductSubmissionMonitor
 
         [string[]] $EmailNotifyTo = @(),
 
-        [switch] $NoStatus
+        [switch] $NoStatus,
+
+        [switch] $PassThru
     )
 
     Start-SubmissionMonitor @PSBoundParameters

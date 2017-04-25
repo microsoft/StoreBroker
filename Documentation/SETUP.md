@@ -124,7 +124,7 @@ This will install the lastest available version of the StoreBroker module as a d
 `Microsoft.Windows.StoreBroker.<version>`, then rename that directory to `StoreBroker`.
 
 > The StoreBroker NuGet package contains *only* the scripts needed to use StoreBroker. For
-> any documentation, see [the repository](../).
+> any documentation, get started with [the README.md](../README.md).
 
 > Note that the NuGet package installation option is a *snapshot* of the StoreBroker module,
 > and is more difficult to keep up-to-date. To sync your local module with the newest package,

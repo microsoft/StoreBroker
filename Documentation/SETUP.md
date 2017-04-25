@@ -113,7 +113,8 @@ From there, just add the following:
 
 #### Using NuGet
 
-Assuming you have the NuGet command-line utility installed on your machine:
+Assuming you have the NuGet command-line utility
+[installed](https://dist.nuget.org/index.html) on your machine:
 
     Push-Location -Path "<folderFromStep2>"
     nuget install Microsoft.Windows.StoreBroker
@@ -122,8 +123,13 @@ Assuming you have the NuGet command-line utility installed on your machine:
 This will install the lastest available version of the StoreBroker module as a directory named
 `Microsoft.Windows.StoreBroker.<version>`, then rename that directory to `StoreBroker`.
 
-> The StoreBroker NuGet package contans *only* the scripts needed to use StoreBroker. For
-> any documentation, see [the repository](https://aka.ms/StoreBroker).
+> The StoreBroker NuGet package contains *only* the scripts needed to use StoreBroker. For
+> any documentation, see [the repository](../).
+
+> Note that the NuGet package installation option is a *snapshot* of the StoreBroker module,
+> and is more difficult to keep up-to-date. To sync your local module with the newest package,
+> you will need to delete the folder created above and follow the installation instructions
+> again.
 
 #### Downloading A Zip
 
@@ -139,6 +145,11 @@ operating system that you trust the zip's contents:
     Get-ChildItem -Recurse -File -Path "<folderFromStep2>" | ForEach-Object { Unblock-File -Path $_.FullName }
 
 > For more information on `Unblock-File`, review [its documentation](https://technet.microsoft.com/en-us/library/hh849924.aspx)
+
+> Note that the ZIP installation option is a *snapshot* of the StoreBroker module,
+> and is more difficult to keep up-to-date. To sync your local module with the newest package,
+> you will need to delete the folder created above and follow the installation instructions
+> again.
 
 ----------
 

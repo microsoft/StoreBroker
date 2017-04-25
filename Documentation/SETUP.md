@@ -11,6 +11,7 @@
     *   [Choosing a Folder](#choosing-a-folder)
     *   [Get the Module](#get-the-module)
         *   [Using Git](#using-git)
+        *   [Using NuGet](#using-nuget)
         *   [Downloading a Zip](#downloading-a-zip)
 *   [Automatic Dependency Downloads](#automatic-dependency-downloads)
 *   [Setup](#setup)
@@ -53,10 +54,10 @@ potential confusion. At a high level, all you're doing is:
 
 ## Installation
 
-> We have an [open issue](https://github.com/Microsoft/StoreBroker/issues/1) for creating a
-> NuGet package in order to have an alternative installation method.
+The following section describes how to configure your system for use with StoreBroker,
+and lists the available options for installing the module contents.
 
-### ExecutionPolicy
+### ExecutionPolicy 
 
 Update the `PowerShell ExecutionPolicy` to be `RemoteSigned` (which means
 that PowerShell scripts that are local to your machine don't need to be signed in order to execute).
@@ -86,9 +87,8 @@ StoreBroker command will work.
 
 ### Get The Module
 
-You'll either be cloning the repo into the `<folder>` that you chose above (enabling you to
-easily keep it up-to-date), or you'll be downloading a zip and just getting a snapshot of the
-module in its current state.
+There are currently three options for installing the StoreBroker module.
+We recommend the Git option, as it is the simplest for staying up-to-date with StoreBroker changes.
 
 #### Using Git
 
@@ -110,6 +110,20 @@ From there, just add the following:
     Push-Location -Path "<folderFromStep2>"
     git pull
     Pop-Location
+
+#### Using NuGet
+
+Assuming you have the NuGet command-line utility installed on your machine:
+
+    Push-Location -Path "<folderFromStep2>"
+    nuget install Microsoft.Windows.StoreBroker
+    Move-Item -Path ".\Microsoft.Windows.StoreBroker.*" -Destination ".\StoreBroker"
+
+This will install the lastest available version of the StoreBroker module as a directory named
+`Microsoft.Windows.StoreBroker.<version>`, then rename that directory to `StoreBroker`.
+
+> The StoreBroker NuGet package contans *only* the scripts needed to use StoreBroker. For
+> any documentation, see [the repository](https://aka.ms/StoreBroker).
 
 #### Downloading A Zip
 

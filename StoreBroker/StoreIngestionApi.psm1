@@ -629,9 +629,69 @@ function Get-AzureStorageDllPath
     )
 
     $nugetPackageName = "WindowsAzure.Storage"
-    $nugetPackageVersion = "6.0.0"
-    $assemblyPackageTailDir = "WindowsAzure.Storage.6.0.0\lib\net40\"
+    $nugetPackageVersion = "8.1.1"
+    $assemblyPackageTailDir = "WindowsAzure.Storage.8.1.1\lib\net45\"
     $assemblyName = "Microsoft.WindowsAzure.Storage.dll"
+
+    return Get-NugetPackageDllPath -NugetPackageName $nugetPackageName -NugetPackageVersion $nugetPackageVersion -AssemblyPackageTailDirectory $assemblyPackageTailDir -AssemblyName $assemblyName -NoStatus:$NoStatus
+}
+
+function Get-AzureStorageDataMovementDllPath {
+    <#
+    .SYNOPSIS
+        Makes sure that the Microsoft.WindowsAzure.Storage.DataMovement assembly
+        is available on the machine, and returns the path to it.
+
+    .DESCRIPTION
+        Makes sure that the Microsoft.WindowsAzure.Storage.DataMovement assembly
+        is available on the machine, and returns the path to it.
+
+        This will first look for the assembly in the module's script directory.
+        
+        Next it will look for the assembly in the location defined by
+        $SBAlternateAssemblyDir.  This value would have to be defined by the user
+        prior to execution of this cmdlet.
+        
+        If not found there, it will look in a temp folder established during this
+        PowerShell session.
+        
+        If still not found, it will download the nuget package
+        for it to a temp folder accessible during this PowerShell session.
+
+        The Git repo for this module can be found here: http://aka.ms/StoreBroker
+
+    .PARAMETER NoStatus
+        If this switch is specified, long-running commands will run on the main thread
+        with no commandline status update.  When not specified, those commands run in
+        the background, enabling the command prompt to provide status information.
+
+    .EXAMPLE
+        Get-AzureStorageDataMovementDllPath
+
+        Returns back the path to the assembly as found.  If the package has to
+        be downloaded via nuget, the command prompt will show a time duration
+        status counter while the package is being downloaded.
+
+    .EXAMPLE
+        Get-AzureStorageDataMovementDllPath -NoStatus
+
+        Returns back the path to the assembly as found.  If the package has to
+        be downloaded via nuget, the command prompt will appear to hang during
+        this time.
+
+    .OUTPUTS
+        System.String - The path to the Microsoft.WindowsAzure.Storage.DataMovement.dll assembly.
+#>
+    [CmdletBinding(SupportsShouldProcess)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification = "Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
+    param(
+        [switch] $NoStatus
+    )
+
+    $nugetPackageName = "Microsoft.Azure.Storage.DataMovement"
+    $nugetPackageVersion = "0.5.1"
+    $assemblyPackageTailDir = "Microsoft.Azure.Storage.DataMovement.0.5.1\lib\net45\"
+    $assemblyName = "Microsoft.WindowsAzure.Storage.DataMovement.dll"
 
     return Get-NugetPackageDllPath -NugetPackageName $nugetPackageName -NugetPackageVersion $nugetPackageVersion -AssemblyPackageTailDirectory $assemblyPackageTailDir -AssemblyName $assemblyName -NoStatus:$NoStatus
 }
@@ -708,13 +768,26 @@ function Set-SubmissionPackage
 
     Write-Log "Attempting to upload the package ($PackagePath) for the submission to $UploadUrl..." -Level Verbose 
 
-    $azureStorageDll = Get-AzureStorageDllPath -NoStatus:$NoStatus 
+    $azureStorageDll = Get-AzureStorageDllPath -NoStatus:$NoStatus
+    $azureStorageDataMovementDll = Get-AzureStorageDataMovementDllPath -NoStatus:$NoStatus
+
+    # We're going to be changing these, so we want to capture the current values so that we
+    # we can restore them when we're done.
+    $origDefaultConnectionLimit = [System.Net.ServicePointManager]::DefaultConnectionLimit
+    $origExpect100Continue = [System.Net.ServicePointManager]::Expect100Continue
 
     try
     {
         if ($NoStatus)
         {
+            # Recommendations per https://github.com/Azure/azure-storage-net-data-movement#best-practice
+            [System.Net.ServicePointManager]::DefaultConnectionLimit = [Environment]::ProcessorCount * 8
+            [System.Net.ServicePointManager]::Expect100Continue = $false
+
             $bytes = [System.IO.File]::ReadAllBytes($azureStorageDll)
+            [System.Reflection.Assembly]::Load($bytes) | Out-Null
+
+            $bytes = [System.IO.File]::ReadAllBytes($azureStorageDataMovementDll)
             [System.Reflection.Assembly]::Load($bytes) | Out-Null
             
             $uri = New-Object -TypeName System.Uri -ArgumentList $UploadUrl
@@ -722,7 +795,9 @@ function Set-SubmissionPackage
 
             if ($PSCmdlet.ShouldProcess($PackagePath, "CloudBlockBlob.UploadFromFile"))
             {
-                $result = $cloudBlockBlob.UploadFromFile($PackagePath, [System.IO.FileMode]::Open)
+                # We will run this async command synchronously within the console.
+                $task = [Microsoft.WindowsAzure.Storage.DataMovement.TransferManager]::UploadAsync($packagePath, $cloudBlockBlob, $null, $null)
+                $task.GetAwaiter().GetResult() | Out-Null
             }
         }
         else
@@ -732,17 +807,27 @@ function Set-SubmissionPackage
             if ($PSCmdlet.ShouldProcess($jobName, "Start-Job"))
             {
                 [scriptblock]$scriptBlock = {
-                    param($UploadUrl, $PackagePath, $AzureStorageDll)
+                    param($UploadUrl, $PackagePath, $AzureStorageDll, $AzureStorageDataMovementDll)
                     
+                    # Recommendations per https://github.com/Azure/azure-storage-net-data-movement#best-practice
+                    [System.Net.ServicePointManager]::DefaultConnectionLimit = [Environment]::ProcessorCount * 8
+                    [System.Net.ServicePointManager]::Expect100Continue = $false
+
                     $bytes = [System.IO.File]::ReadAllBytes($AzureStorageDll)
+                    [System.Reflection.Assembly]::Load($bytes) | Out-Null
+
+                    $bytes = [System.IO.File]::ReadAllBytes($AzureStorageDataMovementDll)
                     [System.Reflection.Assembly]::Load($bytes) | Out-Null
 
                     $uri = New-Object -TypeName System.Uri -ArgumentList $UploadUrl
                     $cloudBlockBlob = New-Object -TypeName Microsoft.WindowsAzure.Storage.Blob.CloudBlockBlob -ArgumentList $uri
-                    $cloudBlockBlob.UploadFromFile($PackagePath, [System.IO.FileMode]::Open)
+
+                    # We will run this async command synchronously within the console.
+                    $task = [Microsoft.WindowsAzure.Storage.DataMovement.TransferManager]::UploadAsync($PackagePath, $cloudBlockBlob, $null, $null)
+                    $task.GetAwaiter().GetResult() | Out-Null
                 }
 
-                $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($UploadUrl, $PackagePath, $azureStorageDll)
+                $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($UploadUrl, $PackagePath, $azureStorageDll, $azureStorageDataMovementDll)
 
                 if ($PSCmdlet.ShouldProcess($jobName, "Wait-JobWithAnimation"))
                 {
@@ -751,7 +836,7 @@ function Set-SubmissionPackage
 
                 if ($PSCmdlet.ShouldProcess($jobName, "Receive-Job"))
                 {
-                    $result = Receive-Job $jobName -AutoRemoveJob -Wait -ErrorAction SilentlyContinue -ErrorVariable remoteErrors
+                    $null = Receive-Job $jobName -AutoRemoveJob -Wait -ErrorAction SilentlyContinue -ErrorVariable remoteErrors
                 }
             }
 
@@ -801,9 +886,13 @@ function Set-SubmissionPackage
         Write-Log $($output -join [Environment]::NewLine) -Level Error 
         throw "Halt Execution"
     }
+    finally
+    {
+        [System.Net.ServicePointManager]::DefaultConnectionLimit = $origDefaultConnectionLimit
+        [System.Net.ServicePointManager]::Expect100Continue = $origExpect100Continue
+    }
 
     Write-Log "Successfully uploaded the application package." -Level Verbose 
-    return $result
 }
 
 function Get-SubmissionPackage
@@ -874,12 +963,25 @@ function Get-SubmissionPackage
     Write-Log "Attempting to download the contents of $UploadUrl to $PackagePath..." -Level Verbose 
 
     $azureStorageDll = Get-AzureStorageDllPath -NoStatus:$NoStatus 
+    $azureStorageDataMovementDll = Get-AzureStorageDataMovementDllPath -NoStatus:$NoStatus
+
+    # We're going to be changing these, so we want to capture the current values so that we
+    # we can restore them when we're done.
+    $origDefaultConnectionLimit = [System.Net.ServicePointManager]::DefaultConnectionLimit
+    $origExpect100Continue = [System.Net.ServicePointManager]::Expect100Continue
 
     try
     {
         if ($NoStatus)
         {
+            # Recommendations per https://github.com/Azure/azure-storage-net-data-movement#best-practice
+            [System.Net.ServicePointManager]::DefaultConnectionLimit = [Environment]::ProcessorCount * 8
+            [System.Net.ServicePointManager]::Expect100Continue = $false
+
             $bytes = [System.IO.File]::ReadAllBytes($azureStorageDll)
+            [System.Reflection.Assembly]::Load($bytes) | Out-Null
+
+            $bytes = [System.IO.File]::ReadAllBytes($azureStorageDataMovementDll)
             [System.Reflection.Assembly]::Load($bytes) | Out-Null
 
             $uri = New-Object -TypeName System.Uri -ArgumentList $UploadUrl
@@ -887,7 +989,9 @@ function Get-SubmissionPackage
 
             if ($PSCmdlet.ShouldProcess($PackagePath, "CloudBlockBlob.DownloadToFile"))
             {
-                $result = $cloudBlockBlob.DownloadToFile($PackagePath, [System.IO.FileMode]::OpenOrCreate)
+                # We will run this async command synchronously within the console.
+                $task = [Microsoft.WindowsAzure.Storage.DataMovement.TransferManager]::DownloadAsync($cloudBlockBlob, $PackagePath)
+                $task.GetAwaiter().GetResult() | Out-Null
             }
         }
         else
@@ -897,17 +1001,27 @@ function Get-SubmissionPackage
             if ($PSCmdlet.ShouldProcess($jobName, "Start-Job"))
             {
                 [scriptblock]$scriptBlock = {
-                    param($UploadUrl, $PackagePath, $AzureStorageDll)
+                    param($UploadUrl, $PackagePath, $AzureStorageDll, $AzureStorageDataMovementDll)
                     
+                    # Recommendations per https://github.com/Azure/azure-storage-net-data-movement#best-practice
+                    [System.Net.ServicePointManager]::DefaultConnectionLimit = [Environment]::ProcessorCount * 8
+                    [System.Net.ServicePointManager]::Expect100Continue = $false
+
                     $bytes = [System.IO.File]::ReadAllBytes($AzureStorageDll)
+                    [System.Reflection.Assembly]::Load($bytes) | Out-Null
+
+                    $bytes = [System.IO.File]::ReadAllBytes($AzureStorageDataMovementDll)
                     [System.Reflection.Assembly]::Load($bytes) | Out-Null
 
                     $uri = New-Object -TypeName System.Uri -ArgumentList $UploadUrl
                     $cloudBlockBlob = New-Object -TypeName Microsoft.WindowsAzure.Storage.Blob.CloudBlockBlob -ArgumentList $uri
-                    $cloudBlockBlob.DownloadToFile($PackagePath, [System.IO.FileMode]::OpenOrCreate)
+
+                    # We will run this async command synchronously within the console.
+                    $task = [Microsoft.WindowsAzure.Storage.DataMovement.TransferManager]::DownloadAsync($cloudBlockBlob, $PackagePath)
+                    $task.GetAwaiter().GetResult() | Out-Null
                 }
 
-                $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($UploadUrl, $PackagePath, $azureStorageDll)
+                $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($UploadUrl, $PackagePath, $azureStorageDll, $azureStorageDataMovementDll)
 
                 if ($PSCmdlet.ShouldProcess($jobName, "Wait-JobWithAnimation"))
                 {
@@ -916,7 +1030,7 @@ function Get-SubmissionPackage
 
                 if ($PSCmdlet.ShouldProcess($jobName, "Receive-Job"))
                 {
-                    $result = Receive-Job $jobName -AutoRemoveJob -Wait -ErrorAction SilentlyContinue -ErrorVariable remoteErrors
+                    $null = Receive-Job $jobName -AutoRemoveJob -Wait -ErrorAction SilentlyContinue -ErrorVariable remoteErrors
                 }
             }
 
@@ -966,9 +1080,13 @@ function Get-SubmissionPackage
         Write-Log $($output -join [Environment]::NewLine) -Level Error 
         throw "Halt Execution"
     }
+    finally
+    {
+        [System.Net.ServicePointManager]::DefaultConnectionLimit = $origDefaultConnectionLimit
+        [System.Net.ServicePointManager]::Expect100Continue = $origExpect100Continue
+    }
 
     Write-Log "Successfully downloaded the blob contents." -Level Verbose 
-    return $result
 }
 
 function Start-SubmissionMonitor

@@ -146,6 +146,72 @@ function Get-NugetPackage
     }
 }
 
+function Test-AssemblyIsDesiredVersion
+{
+    <#
+    .SYNOPSIS
+        Checks if the specified file is the expected version.
+
+    .DESCRIPTION
+        Checks if the specified file is the expected version.
+
+        Does a best effort match.  If you only specify a desired version of "6",
+        any version of the file that has a "major" version of 6 will be considered
+        a match, where we use the terminology of a version being:
+        Major.Minor.Build.PrivateInfo.
+
+        The Git repo for this module can be found here: http://aka.ms/StoreBroker
+
+    .PARAMETER AssemblyPath
+        The full path to the assembly file being tested.
+
+    .PARAMETER DesiredVersion
+        The desired version of the assembly.  Specify the version as specifically as
+        necessary.
+
+    .EXAMPLE
+        Test-AssemblyIsDesiredVersion "c:\Microsoft.WindowsAzure.Storage.dll" "6"
+
+        Returns back $true if "c:\Microsoft.WindowsAzure.Storage.dll" has a major version
+        of 6, regardless of its Minor, Build or PrivateInfo numbers.
+
+    .OUTPUTS
+        Boolean - $true if the assembly at the specified path exists and meets the specified
+        version criteria, $false otherwise.
+#>
+    param(
+        [Parameter(Mandatory)]
+        [ValidateScript( { if (Test-Path -PathType Leaf -Path $_) { $true }  else { throw "'$_' cannot be found." } })]
+        [string] $AssemblyPath,
+
+        [Parameter(Mandatory)]
+        [ValidateScript( { if ($_ -match '^\d+(\.\d+){0,3}$') { $true } else { throw "'$_' not a valid version format." } })]
+        [string] $DesiredVersion
+    )
+
+    $splitTargetVer = $DesiredVersion.Split('.')
+
+    $versionInfo = (Get-Item -Path $AssemblyPath).VersionInfo
+    $splitSourceVer = @(
+        $versionInfo.ProductMajorPart,
+        $versionInfo.ProductMinorPart,
+        $versionInfo.ProductBuildPart,
+        $versionInfo.ProductPrivatePart
+    )
+
+    # The cmdlet contract states that we only care about matching
+    # as much of the version number as the user has supplied.
+    for ($i = 0; $i -lt $splitTargetVer.Count; $i++)
+    {
+        if ($splitSourceVer[$i] -ne $splitTargetVer[$i])
+        {
+            return $false
+        }
+    }
+
+    return $true
+}
+
 function Get-NugetPackageDllPath
 {
 <#
@@ -230,8 +296,15 @@ function Get-NugetPackageDllPath
     $moduleAssembly = Join-Path $PSScriptRoot $AssemblyName
     if (Test-Path -Path $moduleAssembly -PathType Leaf)
     {
-        Write-Log "Found $AssemblyName in module directory ($PSScriptRoot)." -Level Verbose
-        return $moduleAssembly
+        if (Test-AssemblyIsDesiredVersion -AssemblyPath $moduleAssembly -DesiredVersion $NugetPackageVersion)
+        {
+            Write-Log "Found $AssemblyName in module directory ($PSScriptRoot)." -Level Verbose
+            return $moduleAssembly
+        }
+        else
+        {
+            Write-Log "Found $AssemblyName in module directory ($PSScriptRoot), but its version number didn't match required [$NugetPackageVersion]." -Level Verbose
+        }
     }
 
     # Next, we'll check to see if the user has defined an alternate path to get the assembly from
@@ -240,8 +313,15 @@ function Get-NugetPackageDllPath
         $alternateAssemblyPath = Join-Path $SBAlternateAssemblyDir $AssemblyName
         if (Test-Path -Path $alternateAssemblyPath -PathType Leaf)
         {
-            Write-Log "Found $AssemblyName in alternate directory ($SBAlternateAssemblyDir)." -Level Verbose
-            return $alternateAssemblyPath
+            if (Test-AssemblyIsDesiredVersion -AssemblyPath $alternateAssemblyPath -DesiredVersion $NugetPackageVersion)
+            {
+                Write-Log "Found $AssemblyName in alternate directory ($SBAlternateAssemblyDir)." -Level Verbose
+                return $alternateAssemblyPath
+            }
+            else
+            {
+                Write-Log "Found $AssemblyName in alternate directory ($SBAlternateAssemblyDir), but its version number didn't match required [$NugetPackageVersion]." -Level Verbose
+            }
         }
     }
 
@@ -255,8 +335,15 @@ function Get-NugetPackageDllPath
         $cachedAssemblyPath = Join-Path $(Join-Path $script:tempAssemblyCacheDir $AssemblyPackageTailDirectory) $AssemblyName
         if (Test-Path -Path $cachedAssemblyPath -PathType Leaf)
         {
-            Write-Log "Found $AssemblyName in temp directory ($script:tempAssemblyCacheDir)." -Level Verbose
-            return $cachedAssemblyPath
+            if (Test-AssemblyIsDesiredVersion -AssemblyPath $cachedAssemblyPath -DesiredVersion $NugetPackageVersion)
+            {
+                Write-Log "Found $AssemblyName in temp directory ($script:tempAssemblyCacheDir)." -Level Verbose
+                return $cachedAssemblyPath
+            }
+            else
+            {
+                Write-Log "Found $AssemblyName in temp directory ($script:tempAssemblyCacheDir), but its version number didn't match required [$NugetPackageVersion]." -Level Verbose
+            }
         }
     }
 

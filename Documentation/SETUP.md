@@ -161,7 +161,8 @@ StoreBroker has a dependency on dll's from the following NuGet packages:
 
 **For uploading/downloading packages**
 
-    WindowsAzure.Storage v6.0.0: Microsoft.WindowsAzure.Storage.dll
+    WindowsAzure.Storage v8.1.1: Microsoft.WindowsAzure.Storage.dll
+    Microsoft.Azure.Storage.DataMovement v0.5.1: Microsoft.WindowsAzure.Storage.DataMovement.dll
 
 **For [Telemetry](USAGE.md#telemetry)**
 

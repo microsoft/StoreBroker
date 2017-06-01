@@ -385,7 +385,7 @@ listing for.
 You can read [PDP.md](PDP.md) for greater detail on PDP files.  Right now, we just need to get you
 started by generating your app's PDP files based on your current published submission.
 
-    .\Extensions\ConvertFrom-ExistingSubmission.ps1 -AppId <appId> -Release <release> -PdpFileName <pdpFileName> -0utPath <outPath>
+    .\Extensions\ConvertFrom-ExistingSubmission.ps1 -AppId <appId> -Release <release> -PdpFileName <pdpFileName> -OutPath <outPath>
 
 Where:
   * `<appId>` is your app's ID.

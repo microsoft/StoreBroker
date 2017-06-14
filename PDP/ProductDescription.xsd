@@ -18,7 +18,7 @@
 
   <xs:simpleType name="KeywordString">
     <xs:restriction base="xs:normalizedString">
-      <xs:pattern value="\s*(\S(\r|\n|.){0,44}\s*)?"/>
+      <xs:pattern value="\s*(\S(\r|\n|.){0,29}\s*)?"/>
     </xs:restriction>
   </xs:simpleType>
 

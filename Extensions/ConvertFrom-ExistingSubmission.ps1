@@ -350,7 +350,7 @@ function Add-Keywords
     }
 
     # Add comment to parent
-    $maxChars = 45
+    $maxChars = 30
     $maxChildren = 7
     $paramSet = @{
         "Element" = $elementNode;
@@ -360,7 +360,7 @@ function Add-Keywords
     Add-ToElement @paramSet
 
     # Add comment to children
-    $maxChars = 45
+    $maxChars = 30
     $paramSet = @{
         "Parent" = $elementNode;
         "Attribute" = @{ $script:LocIdAttribute = ($script:LocIdFormat -f "keyword") + "{0}" };

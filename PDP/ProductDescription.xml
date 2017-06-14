@@ -11,12 +11,12 @@
   </AppStoreName>
 
   <Keywords>
-    <!-- Valid length: 45 character limit, up to 7 -->
-    <Keyword _locID="App_keyword1"><!-- _locComment_text="{MaxLength=45} App keyword 1" -->Video edit</Keyword>
-    <Keyword _locID="App_keyword2"><!-- _locComment_text="{MaxLength=45} App keyword 2" -->Captions</Keyword>
-    <Keyword _locID="App_keyword3"><!-- _locComment_text="{MaxLength=45} App keyword 3" -->Trim</Keyword>
-    <Keyword _locID="App_keyword4"><!-- _locComment_text="{MaxLength=45} App keyword 4" -->Soundtrack</Keyword>
-    <Keyword _locID="App_keyword5"><!-- _locComment_text="{MaxLength=45} App keyword 5" -->Video sharing</Keyword>
+    <!-- Valid length: 30 character limit, up to 7 -->
+    <Keyword _locID="App_keyword1"><!-- _locComment_text="{MaxLength=30} App keyword 1" -->Video edit</Keyword>
+    <Keyword _locID="App_keyword2"><!-- _locComment_text="{MaxLength=30} App keyword 2" -->Captions</Keyword>
+    <Keyword _locID="App_keyword3"><!-- _locComment_text="{MaxLength=30} App keyword 3" -->Trim</Keyword>
+    <Keyword _locID="App_keyword4"><!-- _locComment_text="{MaxLength=30} App keyword 4" -->Soundtrack</Keyword>
+    <Keyword _locID="App_keyword5"><!-- _locComment_text="{MaxLength=30} App keyword 5" -->Video sharing</Keyword>
   </Keywords>
    <!-- Valid length: 10000 character limit -->
    <Description _locID="App_Description"><!-- _locComment_text="{MaxLength=10000} App Description" --> 

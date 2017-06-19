@@ -292,7 +292,7 @@ this submission.
 * **`ExistingPackageRolloutAction`** _[NoAction, Halt, Finalize]_ You can't create a new submission if
   the current pending submission is currently using package rollout.  In that scenario, prior to calling
   this command, you can manually call `Complete-ApplicationSubmissionPackageRollout` or
-  `Stop-ApplicationSubmissionPackageRollout`, or you can just sepecify this paramter and the action it
+  `Stop-ApplicationSubmissionPackageRollout`, or you can just specify this parameter and the action it
   should take, and it will do that for you automatically prior to cloning the submission.
 
 > Due to the nature of how the Store API works, you won't see any of your changes in the

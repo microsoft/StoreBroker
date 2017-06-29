@@ -112,7 +112,7 @@
 
   <xs:simpleType name="SupportContactInfoString">
     <xs:restriction base="xs:string">
-      <xs:pattern value="\s*(\S(\r|\n|.){0,2047}\s*)?"/>
+      <xs:pattern value="\s*(\S(\r|\n|.){1,2047}\s*)?"/>
     </xs:restriction>
   </xs:simpleType>
 
@@ -348,11 +348,11 @@
           </xs:complexType>
         </xs:element>
         
-        <xs:element name="SupportContactInfo" minOccurs="0">
+        <xs:element name="SupportContactInfo" minOccurs="1">
           <xs:complexType>
             <xs:annotation>
               <xs:documentation>
-                Optional, may not exceed 2048 characters
+                Required, may not exceed 2048 characters
               </xs:documentation>
             </xs:annotation>
             <xs:simpleContent>

@@ -386,9 +386,10 @@ function Get-AccessToken
         $output += "when you call Set-StoreBrokerAuthentication."
         $output += "To learn more on how to get these values, go to 'Installation and Setup' here:"
         $output += "   http://aka.ms/StoreBroker"
-        Write-Log $($output -join [Environment]::NewLine) -Level Error
-        
-        throw "Halt Execution"
+
+        $newLineOutput = ($output -join [Environment]::NewLine)
+        Write-Log $newLineOutput -Level Error
+        throw $newLineOutput
     }
 
     # Get our client id and secret, either from the cached credential or by prompting for them.
@@ -404,8 +405,9 @@ function Get-AccessToken
 
     if ($null -eq $credential)
     {
-        Write-Log "You must supply valid credentials (client id and secret) to use this module." -Level Error
-        throw "Halt Execution"
+        $output = "You must supply valid credentials (client id and secret) to use this module."
+        Write-Log  $output -Level Error
+        throw $output
     }
 
     $clientId = $credential.UserName
@@ -489,8 +491,9 @@ function Get-AccessToken
         $output += "StatusDescription: $($_.Exception.Response.StatusDescription)"
         $output += "$($_.ErrorDetails | ConvertFrom-JSON | Out-String)"
 
-        Write-Log $($output -join [Environment]::NewLine) -Level Error
-        throw "Halt Execution"
+        $newLineOutput = ($output -join [Environment]::NewLine)
+        Write-Log $newLineOutput -Level Error
+        throw $newLineOutput
     }
     catch [System.Management.Automation.RuntimeException]
     {
@@ -508,8 +511,9 @@ function Get-AccessToken
             }
         }
 
-        Write-Log $($output -join [Environment]::NewLine) -Level Error
-        throw "Halt Execution"
+        $newLineOutput = ($output -join [Environment]::NewLine)
+        Write-Log $newLineOutput -Level Error
+        throw $newLineOutput
     }
 }
 
@@ -868,8 +872,9 @@ function Set-SubmissionPackage
         }
 
         Set-TelemetryException -Exception $_.Exception -ErrorBucket Set-SubmissionPackage -Properties $telemetryProperties 
-        Write-Log $($output -join [Environment]::NewLine) -Level Error 
-        throw "Halt Execution"
+        $newLineOutput = ($output -join [Environment]::NewLine)
+        Write-Log $newLineOutput -Level Error
+        throw $newLineOutput
     }
     catch
     {
@@ -883,8 +888,9 @@ function Set-SubmissionPackage
         $output += "$($_.ErrorDetails)"
         
         Set-TelemetryException -Exception $_.Exception -ErrorBucket Set-SubmissionPackage -Properties $telemetryProperties 
-        Write-Log $($output -join [Environment]::NewLine) -Level Error 
-        throw "Halt Execution"
+        $newLineOutput = ($output -join [Environment]::NewLine)
+        Write-Log $newLineOutput -Level Error
+        throw $newLineOutput
     }
     finally
     {
@@ -1062,8 +1068,9 @@ function Get-SubmissionPackage
         }
 
         Set-TelemetryException -Exception $_.Exception -ErrorBucket Get-SubmissionPackage -Properties $telemetryProperties 
-        Write-Log $($output -join [Environment]::NewLine) -Level Error 
-        throw "Halt Execution"
+        $newLineOutput = ($output -join [Environment]::NewLine)
+        Write-Log $newLineOutput -Level Error
+        throw $newLineOutput
     }
     catch
     {
@@ -1077,8 +1084,9 @@ function Get-SubmissionPackage
         $output += "$($_.ErrorDetails)"
         
         Set-TelemetryException -Exception $_.Exception -ErrorBucket Get-SubmissionPackage -Properties $telemetryProperties 
-        Write-Log $($output -join [Environment]::NewLine) -Level Error 
-        throw "Halt Execution"
+        $newLineOutput = ($output -join [Environment]::NewLine)
+        Write-Log $newLineOutput -Level Error
+        throw $newLineOutput
     }
     finally
     {
@@ -1857,7 +1865,7 @@ function Invoke-SBRestMethod
         $correlationId = $result.Headers[$script:headerMSCorrelationId]
         if (-not [String]::IsNullOrEmpty($correlationId))
         {
-            Write-Log "$($script:headerMSCorrelationId): $correlationId" -Level Verbose
+            Write-Log "$($script:headerMSCorrelationId) : $correlationId" -Level Verbose
         }
 
         # Record the telemetry for this event.
@@ -1929,13 +1937,13 @@ function Invoke-SBRestMethod
         {
             Write-Log $_.Exception.Message -Level Error
             Set-TelemetryException -Exception $_.Exception -ErrorBucket $errorBucket -Properties $localTelemetryProperties
-            throw;
+            throw $script:headerMSCorrelationId + ' : ' + $correlationId + [Environment]::NewLine + $_.Exception.Message;
         }
 
         $output = @()
         if (-not [string]::IsNullOrEmpty($statusCode))
         {
-            $output += "$statusCode | $statusDescription"
+            $output += "$statusCode | $($statusDescription.Trim())"
         }
 
         $output += $message
@@ -1947,11 +1955,11 @@ function Invoke-SBRestMethod
                 $innerMessageJson = ($innerMessage | ConvertFrom-Json)
                 if ($innerMessageJson -is [String])
                 {
-                    $output += $innerMessageJson
+                    $output += $innerMessageJson.Trim()
                 }
                 else
                 {
-                    $output += "$($innerMessageJson.code) : $($innerMessageJson.message)"
+                    $output += "$($innerMessageJson.code) : $($innerMessageJson.message.Trim())"
                     if ($innerMessageJson.details)
                     {
                         $output += "$($innerMessageJson.details | Format-Table | Out-String)"
@@ -1961,18 +1969,20 @@ function Invoke-SBRestMethod
             catch [System.ArgumentException]
             {
                 # Will be thrown if $innerMessage isn't JSON content
-                $output += $innerMessage
+                $output += $innerMessage.Trim()
             }
         }
 
         if (-not [String]::IsNullOrEmpty($correlationId))
         {
+            $output += $script:headerMSCorrelationId + ': ' + $correlationId 
             Write-Log "$($script:headerMSCorrelationId): $correlationId" -Level Verbose
         }
        
         Set-TelemetryException -Exception $ex -ErrorBucket $errorBucket -Properties $localTelemetryProperties
-        Write-Log $($output -join [Environment]::NewLine) -Level Error
-        throw "Halt Execution"
+        $newLineOutput = ($output -join [Environment]::NewLine)
+        Write-Log $newLineOutput -Level Error
+        throw $newLineOutput
     }
 }
 

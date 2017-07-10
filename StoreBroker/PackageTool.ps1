@@ -523,7 +523,7 @@ function Test-Xml
         $msg = $msg -join [Environment]::NewLine
 
         Write-Log $msg -Level Error
-        throw "Halt Execution"
+        throw $msg
     }
 }
 
@@ -697,8 +697,9 @@ function Convert-ListingToObject
 
                                     if ($null -eq $image)
                                     {
-                                        Write-Log "Could not find image '$($imageFileName)' in any subdirectory of '$imageContainerPath'." -Level Error
-                                        throw "Halt Execution"
+                                        $output = "Could not find image '$($imageFileName)' in any subdirectory of '$imageContainerPath'."
+                                        Write-Log $output -Level Error
+                                        throw $output
                                     }
                         
                                     $destinationInPackage = Join-Path $packageImagePath $image.Name
@@ -718,8 +719,9 @@ function Convert-ListingToObject
                                 }
                                 else
                                 {
-                                    Write-Log "Provided image directory was not found: $imageContainerPath" -Level Error
-                                    throw "Halt Execution"
+                                    $output = "Provided image directory was not found: $imageContainerPath"
+                                    Write-Log $output -Level Error
+                                    throw $output
                                 }
                             }
                         }
@@ -741,8 +743,9 @@ function Convert-ListingToObject
                 }
                 catch [System.InvalidCastException]
                 {
-                    Write-Log "Provided .xml file is not a valid .xml document: $xmlFilePath" -Level Error
-                    throw "Halt Execution"
+                    $output = "Provided .xml file is not a valid .xml document: $xmlFilePath"
+                    Write-Log $output -Level Error
+                    throw $output
                 }
             }
         }
@@ -955,8 +958,9 @@ function Convert-InAppProductListingToObject
                             $image = Get-ChildItem -Recurse -File -Path $imageContainerPath -Include $imageFileName | Select-Object -First 1
                             if ($null -eq $image)
                             {
-                                Write-Log "Could not find image '$($imageFileName)' in any subdirectory of '$imageContainerPath'." -Level Error
-                                throw "Halt Execution"
+                                $output = "Could not find image '$($imageFileName)' in any subdirectory of '$imageContainerPath'."
+                                Write-Log $output -Level Error
+                                throw $output
                             }
                         
                             $destinationInPackage = Join-Path -Path $packageImagePath -ChildPath $image.Name
@@ -974,8 +978,9 @@ function Convert-InAppProductListingToObject
                         }
                         else
                         {
-                            Write-Log "Provided image directory was not found: $imageContainerPath" -Level Error
-                            throw "Halt Execution"
+                            $output = "Provided image directory was not found: $imageContainerPath"
+                            Write-Log $output -Level Error
+                            throw $output
                         }
                     }
 
@@ -983,8 +988,9 @@ function Convert-InAppProductListingToObject
                 }
                 catch [System.InvalidCastException]
                 {
-                    Write-Log "Provided .xml file is not a valid .xml document: $xmlFilePath" -Level Error
-                    throw "Halt Execution"
+                    $output = "Provided .xml file is not a valid .xml document: $xmlFilePath"
+                    Write-Log $output -Level Error
+                    throw $output
                 }
             }
         }
@@ -2007,9 +2013,10 @@ function Get-SubmissionRequestBody
                 $out = @()
                 $out += "'$pathWithRelease' is not a valid directory or cannot be found."
                 $out += "Check the values of '$script:s_PDPRootPath' and '$script:s_Release' and try again."
-
-                Write-Log ($out -join [Environment]::NewLine) -Level Error
-                throw "Halt Execution"
+                
+                $newLineOutput = ($out -join [Environment]::NewLine)
+                Write-Log $newLineOutput -Level Error
+                throw $newLineOutput
             }
         }
 
@@ -2121,8 +2128,9 @@ function Get-InAppProductSubmissionRequestBody
                 $out += "'$pathWithRelease' is not a valid directory or cannot be found."
                 $out += "Check the values of '$script:s_PDPRootPath' and '$script:s_Release' and try again."
 
-                Write-Log ($out -join [Environment]::NewLine) -Level Error
-                throw "Halt Execution"
+                $newLineOutput = ($out -join [Environment]::NewLine)
+                Write-Log $newLineOutput -Level Error
+                throw $newLineOutput
             }
         }
 
@@ -2221,7 +2229,7 @@ function Resolve-PackageParameters
                 $out = "$($param): `"$($ParamMap[$param])`" is not a directory or cannot be found."
 
                 Write-Log $out -Level Error
-                throw "Halt Execution"
+                throw $out
             }
         }
     }
@@ -2236,8 +2244,9 @@ function Resolve-PackageParameters
             $out += "Only one of '$script:s_PDPRootPath' and '$script:s_ImagesRootPath' was specified."
             $out += "If one of these parameters is specified, then both must be specified."
 
-            Write-Log ($out -join [Environment]::NewLine) -Level Error
-            throw "Halt Execution"
+            $newLineOutput = ($out -join [Environment]::NewLine)
+            Write-Log $newLineOutput -Level Error
+            throw $newLineOutput
         }
     }
     
@@ -2250,8 +2259,9 @@ function Resolve-PackageParameters
             $configVal = $ConfigObject.packageParameters.OutPath
             if ([System.String]::IsNullOrWhiteSpace($configVal))
             {
-                Write-Log ($out -f $script:s_OutPath) -Level Error
-                throw "Halt Execution"
+                $newLineOutput = ($out -join [Environment]::NewLine)
+                Write-Log $newLineOutput -Level Error
+                throw $newLineOutput
             }
             else
             {
@@ -2273,8 +2283,9 @@ function Resolve-PackageParameters
             $configVal = $ConfigObject.packageParameters.OutName
             if ([System.String]::IsNullOrWhiteSpace($configVal))
             {
-                Write-Log ($out -f $script:s_OutName) -Level Error
-                throw "Halt Execution"
+                $output = ($out -f $script:s_OutName) 
+                Write-Log $output -Level Error
+                throw $output
             }
             else
             {
@@ -2340,8 +2351,9 @@ function Resolve-PackageParameters
                     $out += "`"$path`" is not a file or cannot be found."
                     $out += "See the `"$script:s_AppxPath`" object in the config file."
 
-                    Write-Log ($out -join [Environment]::NewLine) -Level Error
-                    throw "Halt Execution"
+                    $newLineOutput = ($out -join [Environment]::NewLine)
+                    Write-Log $newLineOutput -Level Error
+                    throw $newLineOutput
                 }
                 else
                 {
@@ -2367,8 +2379,9 @@ function Resolve-PackageParameters
                         $out += "Could not find a file with a supported extension ($($script:supportedExtensions -join ", ")) using the relative path: '$path'."
                         $out += "See the `"$script:s_AppxPath`" object in the config file."
 
-                        Write-Log ($out -join [Environment]::NewLine) -Level Error
-                        throw "Halt Execution"
+                        $newLineOutput = ($out -join [Environment]::NewLine)
+                        Write-Log $newLineOutput -Level Error
+                        throw $newLineOutput
                     }
                 }
             }

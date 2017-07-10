@@ -1299,8 +1299,10 @@ function Update-ApplicationFlightSubmission
             $output = @()
             $output += "The AppId [$($submission.appId)] in the submission content [$SubmissionDataPath] does not match the intended AppId [$AppId]."
             $output += "You either entered the wrong AppId at the commandline, or you're referencing the wrong submission content to upload."
-            Write-Log $($output -join [Environment]::NewLine) -Level Error
-            throw $($output -join [Environment]::NewLine)
+            
+            $newLineOutput = ($output -join [Environment]::NewLine)
+            Write-Log $newLineOutput -Level Error
+            throw $newLineOutput
         }
     }
 
@@ -1340,8 +1342,10 @@ function Update-ApplicationFlightSubmission
                 $output = @()
                 $output += "We can only modify a submission that is in the '$script:keywordPendingCommit' state."
                 $output += "The submission that you requested to modify ($SubmissionId) is in '$(submissionToUpdate.status)' state."
-                Write-Log $($output -join [Environment]::NewLine) -Level Error
-                throw "Halt Execution"
+                
+                $newLineOutput = ($output -join [Environment]::NewLine)
+                Write-Log $newLineOutput -Level Error
+                throw $newLineOutput
             }
         }
 
@@ -1449,7 +1453,7 @@ function Update-ApplicationFlightSubmission
     catch
     {
         Write-Log $_ -Level Error
-        throw "Halt Execution"
+        throw
     }
 }
 

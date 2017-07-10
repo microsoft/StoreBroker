@@ -366,6 +366,7 @@ function Get-NugetPackageDllPath
         return $cachedAssemblyPath
     }
 
-    Write-Log "Unable to acquire a reference to $AssemblyName." -Level Error
-    throw "Halt Execution"
+    $output = "Unable to acquire a reference to $AssemblyName."
+    Write-Log $output -Level Error
+    throw $output
 }

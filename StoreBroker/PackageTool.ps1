@@ -190,6 +190,7 @@ function New-StoreBrokerInAppProductConfigFile
     {
         Write-Log "Creating directory: $dir" -Level Verbose
         New-Item -Force -ItemType Directory -Path $dir | Out-Null
+        Write-Log "Created directory." -Level Verbose
     }
 
     $sourcePath = Join-Path -Path $PSScriptRoot -ChildPath $script:defaultIapConfigFileName
@@ -204,6 +205,7 @@ function New-StoreBrokerInAppProductConfigFile
 
     Write-Log "Copying (Item: $sourcePath) to (Target: $Path)." -Level Verbose
     Set-Content -Path $Path -Value $template -Encoding UTF8 -Force
+    Write-Log "Copy complete." -Level Verbose
 
     $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::IapId = $IapId }
     Set-TelemetryEvent -EventName New-StoreBrokerIapConfigFile -Properties $telemetryProperties
@@ -383,6 +385,7 @@ function New-StoreBrokerConfigFile
     {
         Write-Log "Creating directory: $dir" -Level Verbose
         New-Item -Force -ItemType Directory -Path $dir | Out-Null
+        Write-Log "Created directory." -Level Verbose
     }
 
     $sourcePath = Join-Path -Path $PSScriptRoot -ChildPath $script:defaultConfigFileName
@@ -397,9 +400,97 @@ function New-StoreBrokerConfigFile
 
     Write-Log "Copying (Item: $sourcePath) to (Target: $Path)." -Level Verbose
     Set-Content -Path $Path -Value $template -Encoding UTF8 -Force
+    Write-Log "Copy complete." -Level Verbose
 
     $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::AppId = $AppId }
     Set-TelemetryEvent -EventName New-StoreBrokerConfigFile -Properties $telemetryProperties
+}
+
+function Out-DirectoryToZip
+{
+<#
+    .SYNOPSIS
+        Compresses a directory to a zip file, with logging.
+
+    .DESCRIPTION
+        Compresses a directory to a zip file, with logging.
+
+        For performance reasons, we will always zip locally, then copy the zip to the final
+        destination. This gives better performance when the final destination is not on the local
+        machine.
+
+        The function uses no compression during the zip process, as we didn't see a noticeable
+        difference in file size. This is because the contents we are compressing (appx/appxbundles/png)
+        have already been compressed so there is not much room for improvement.
+
+    .PARAMETER Path
+        The directory to be compressed. The path given must exist.
+
+    .PARAMETER Destination
+        The path to place the compressed contents of the Path. This path does not need to exist,
+        but it must end in a .zip extension.
+#>
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(Mandatory)]
+        [ValidateScript({
+            if (Test-Path -PathType Container -Path $_) { $true }
+            else { throw "Could not find directory to compress: [$_]." }
+        })]
+        [string] $Path,
+
+        [Parameter(Mandatory)]
+        [ValidateScript({
+            if (($_ -like "*.zip") -and (Test-Path -IsValid -Path $_)) { $true }
+            else { throw "Destination path is not a zip file: [$_]." }
+        })]
+        [string] $Destination
+    )
+
+    try
+    {
+        if ($PSCmdlet.ShouldProcess($Destination, "Output to File"))
+        {
+            $tempLocalZipDir = New-TemporaryDirectory
+            $tempLocalZipPath = Join-Path -Path $tempLocalZipDir -ChildPath "SBTempLocalPayload.zip"
+
+            # Delete output paths if they already exist.
+            foreach ($zipPath in ($tempLocalZipPath, $Destination))
+            {
+                if (Test-Path -PathType Leaf -Include "*.zip" -Path $zipPath)
+                {
+                    Write-Log "Removing zip path: [$zipPath]." -Level Verbose
+                    Remove-Item -Force -Recurse -Path $zipPath
+                    Write-Log "Removal complete." -Level Verbose
+                }
+            }
+
+            # Need to add this type in-order to access the ZipFile class.
+            Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+            # The contents we are compressing have already been compressed so there's not much
+            # of a disadvantage to using NoCompression.
+            $compressionLevel = [System.IO.Compression.CompressionLevel]::NoCompression
+            $includeBaseDir = $false
+
+            Write-Log "Compressing [$Path] to [$tempLocalZipPath]." -Level Verbose
+            [System.IO.Compression.ZipFile]::CreateFromDirectory($Path, $tempLocalZipPath, $compressionLevel, $includeBaseDir)
+            Write-Log "Compression complete." -Level Verbose
+
+            Write-Log "Moving [$tempLocalZipPath] to [$Destination]." -Level Verbose
+            Move-Item -Force -Path $tempLocalZipPath -Destination $Destination
+            Write-Log "Move complete." -Level Verbose
+        }
+    }
+    finally
+    {
+        if ($null -ne $tempLocalZipDir)
+        {
+            Write-Log "Removing temporary directory: [$tempLocalZipDir]." -Level Verbose
+            Remove-Item -Force -Recurse -Path $tempLocalZipDir -ErrorAction Ignore
+            Write-Log "Removal complete." -Level Verbose
+        }
+    }
 }
 
 function Write-SubmissionRequestBody
@@ -425,7 +516,13 @@ function Write-SubmissionRequestBody
 
     if ($PSCmdlet.ShouldProcess($OutFilePath, "Output to File"))
     {
-        $JsonObject | ConvertTo-Json -Depth $script:jsonConversionDepth -Compress | Out-File -Encoding utf8 -FilePath $OutFilePath
+        Write-Log "Writing submission request JSON file: [$OutFilePath]." -Level Verbose
+
+        $JsonObject |
+            ConvertTo-Json -Depth $script:jsonConversionDepth -Compress |
+            Out-File -Encoding utf8 -FilePath $OutFilePath
+
+        Write-Log "Writing complete." -Level Verbose
     }
 }
 
@@ -822,9 +919,13 @@ function Convert-ListingsMetadata
 
     $listings = @{}
 
+    Write-Log "Converting application listings metadata." -Level Verbose
+
     (Get-ChildItem -File $PDPRootPath -Recurse -Include $PDPInclude -Exclude $PDPExclude).FullName |
         Convert-ListingToObject -PDPRootPath $PDPRootPath -LanguageExclude $LanguageExclude -ImagesRootPath $ImagesRootPath |
         ForEach-Object { $listings[$_."lang"] = $_."listing" }
+
+    Write-Log "Conversion complete." -Level Verbose
 
     return $listings
 }
@@ -1067,9 +1168,13 @@ function Convert-InAppProductListingsMetadata
 
     $listings = @{}
 
+    Write-Log "Converting IAP listings metadata." -Level Verbose
+
     (Get-ChildItem -File $PDPRootPath -Recurse -Include $PDPInclude -Exclude $PDPExclude).FullName |
         Convert-InAppProductListingToObject -PDPRootPath $PDPRootPath -LanguageExclude $LanguageExclude -ImagesRootPath $ImagesRootPath |
         ForEach-Object { $listings[$_."lang"] = $_."listing" }
+        
+    Write-Log "Conversion complete." -Level Verbose
 
     return $listings
 }
@@ -1122,12 +1227,14 @@ function Open-AppxContainer
 
         Write-Log "Copying (Item: $AppxContainerPath) to (Target: $containerZipPath)." -Level Verbose
         Copy-Item -Force -Path $AppxContainerPath -Destination $containerZipPath
+        Write-Log "Copy complete." -Level Verbose
 
         # Expand CONTAINER.appxcontainer.zip to CONTAINER folder
         $expandedContainerPath = New-TemporaryDirectory
 
         Write-Log "Unzipping archive (Item: $containerZipPath) to (Target: $expandedContainerPath)." -Level Verbose
         [System.IO.Compression.ZipFile]::ExtractToDirectory($containerZipPath, $expandedContainerPath)
+        Write-Log "Unzip complete." -Level Verbose
 
         return $expandedContainerPath
     }
@@ -1137,6 +1244,7 @@ function Open-AppxContainer
         {
             Write-Log "Deleting item: $expandedContainerPath" -Level Verbose
             Remove-Item -Force -Recurse -Path $expandedContainerPath -ErrorAction SilentlyContinue
+            Write-Log "Deletion complete." -Level Verbose
         }
 
         throw
@@ -1147,6 +1255,7 @@ function Open-AppxContainer
         {
             Write-Log "Deleting item: $containerZipPath" -Level Verbose
             Remove-Item -Force -Recurse -Path $containerZipPath -ErrorAction SilentlyContinue
+            Write-Log "Deletion complete." -Level Verbose
         }
     }
 }
@@ -1369,6 +1478,7 @@ function Read-AppxMetadata
         {
             Write-Log "Deleting item: $expandedAppxPath" -Level Verbose
             Remove-Item -Force -Recurse -Path $expandedAppxPath -ErrorAction SilentlyContinue | Out-Null
+            Write-Log "Deletion complete." -Level Verbose
         }
     }
 
@@ -1469,6 +1579,7 @@ function Read-AppxUploadMetadata
         {
             Write-Log "Deleting item: $expandedContainerPath" -Level Verbose
             Remove-Item -Force -Recurse -Path $expandedContainerPath -ErrorAction SilentlyContinue | Out-Null
+            Write-Log "Deletion complete." -Level Verbose
         }
     }
 }
@@ -1596,6 +1707,7 @@ function Read-AppxBundleMetadata
         {
             Write-Log "Deleting item: $expandedContainerPath" -Level Verbose
             Remove-Item -Force -Recurse -Path $expandedContainerPath -ErrorAction SilentlyContinue | Out-Null
+            Write-Log "Deletion complete." -Level Verbose
         }
     }
 
@@ -1843,8 +1955,10 @@ function Add-AppPackagesMetadata
             if ($script:tempFolderExists)
             {
                 $destinationPath = Join-Path $script:tempFolderPath $appxName
+
                 Write-Log "Copying (Item: $path) to (Target: $destinationPath)" -Level Verbose
                 Copy-Item -Path $path -Destination $destinationPath
+                Write-Log "Copy complete." -Level Verbose
             }
 
             $SubmissionObject.applicationPackages += $appPackageObject
@@ -2590,6 +2704,7 @@ function Join-SubmissionPackage
     {
         Write-Log "Unzipping archive [$masterZipPath] to [$outUnpackedZipPath]" -Level Verbose
         [System.IO.Compression.ZipFile]::ExtractToDirectory($masterZipPath, $outUnpackedZipPath)
+        Write-Log "Unzip complete." -Level Verbose
     }
 
     $additionalUnpackedZipPath = New-TemporaryDirectory
@@ -2597,6 +2712,7 @@ function Join-SubmissionPackage
     {
         Write-Log "Unzipping archive [$additionalZipPath] to [$additionalUnpackedZipPath]" -Level Verbose
         [System.IO.Compression.ZipFile]::ExtractToDirectory($additionalZipPath, $additionalUnpackedZipPath)
+        Write-Log "Unzip complete." -Level Verbose
     }
 
     # out json content will be based off of master, so we can just consider master's json as "out"
@@ -2629,27 +2745,31 @@ function Join-SubmissionPackage
                 $sourcePath = Join-Path $additionalUnpackedZipPath $package.fileName
                 Write-Log "Copying [$sourcePath] to [$destPath]" -Level Verbose
                 Copy-Item -Path $sourcePath -Destination $destPath
+                Write-Log "Copy complete." -Level Verbose
             }
         }
     }
 
     # Zip up out directory to $outZipPath
-    if ($PSCmdlet.ShouldProcess($outZipPath, "Create zip"))
-    {
-        Write-Log "Zipping [$outUnpackedZipPath] into [$outZipPath]" -Level Verbose
-        [System.IO.Compression.ZipFile]::CreateFromDirectory($outUnpackedZipPath, $outZipPath)
-    }
+    Out-DirectoryToZip -Path $outUnpackedZipPath -Destination $outZipPath
 
     # Output the merged json
     if ($PSCmdlet.ShouldProcess($OutJsonPath, "Create json"))
     {
-        $outJsonContent | ConvertTo-Json -Depth $script:jsonConversionDepth -Compress | Out-File -Encoding utf8 -FilePath $OutJsonPath
+        Write-Log "Writing merged JSON file: [$OutJsonPath]." -Level Verbose
+
+        $outJsonContent |
+            ConvertTo-Json -Depth $script:jsonConversionDepth -Compress |
+            Out-File -Encoding utf8 -FilePath $OutJsonPath
+        
+        Write-Log "Write complete." -Level Verbose
     }
 
     # Clean up the temp directories
     Write-Log "Cleaning up temp directories..." -Level Verbose
     Remove-Item -Path $outUnpackedZipPath -Recurse -Force -ErrorAction SilentlyContinue
     Remove-Item -Path $additionalUnpackedZipPath -Recurse -Force -ErrorAction SilentlyContinue
+    Write-Log "Cleaning up temp directories complete." -Level Verbose
 }
 
 function New-SubmissionPackage
@@ -2858,17 +2978,12 @@ function New-SubmissionPackage
 
         Write-SubmissionRequestBody -JsonObject $submissionBody -OutFilePath (Join-Path $OutPath ($OutName + '.json'))
 
-        # Zip the contents of the temporary directory.  Then delete the temporary directory.
-        $zipPath = Join-Path $OutPath ($OutName + '.zip')
-
-        if ($PSCmdlet.ShouldProcess($zipPath, "Output to File") -and $script:tempFolderExists)
+        # Zip the contents of the temporary directory. Then delete the temporary directory.
+        if ($script:tempFolderExists)
         {
-            if (Test-Path -PathType Leaf $zipPath)
-            {
-                Remove-Item -Force -Recurse -Path $zipPath
-            }
+            $zipPath = Join-Path -Path $OutPath -ChildPath ($OutName + '.zip')
 
-            [System.IO.Compression.ZipFile]::CreateFromDirectory($script:tempFolderPath, $zipPath)
+            Out-DirectoryToZip -Path $script:tempFolderPath -Destination $zipPath
         }
 
         # Record the telemetry for this event.
@@ -2910,6 +3025,7 @@ function New-SubmissionPackage
         {
             Write-Log "Deleting temporary directory: $script:tempFolderPath" -Level Verbose
             Remove-Item -Force -Recurse $script:tempFolderPath -ErrorAction SilentlyContinue
+            Write-Log "Deleting temporary directory complete." -Level Verbose
         }
     }
 }
@@ -3088,16 +3204,11 @@ function New-InAppProductSubmissionPackage
         Write-SubmissionRequestBody -JsonObject $submissionBody -OutFilePath (Join-Path -Path $OutPath -ChildPath ($OutName + '.json'))
 
         # Zip the contents of the temporary directory.  Then delete the temporary directory.
-        $zipPath = Join-Path -Path $OutPath -ChildPath ($OutName + '.zip')
-
-        if ($PSCmdlet.ShouldProcess($zipPath, "Output to File") -and $script:tempFolderExists)
+        if ($script:tempFolderExists)
         {
-            if (Test-Path -PathType Leaf $zipPath)
-            {
-                Remove-Item -Force -Recurse -Path $zipPath
-            }
+            $zipPath = Join-Path -Path $OutPath -ChildPath ($OutName + '.zip')
 
-            [System.IO.Compression.ZipFile]::CreateFromDirectory($script:tempFolderPath, $zipPath)
+            Out-DirectoryToZip -Path $script:tempFolderPath -Destination $zipPath
         }
 
         # Record the telemetry for this event.
@@ -3119,6 +3230,7 @@ function New-InAppProductSubmissionPackage
         {
             Write-Log "Deleting temporary directory: $script:tempFolderPath" -Level Verbose
             Remove-Item -Force -Recurse $script:tempFolderPath -ErrorAction SilentlyContinue
+            Write-Log "Deleting temporary directory complete." -Level Verbose
         }
     }
 }

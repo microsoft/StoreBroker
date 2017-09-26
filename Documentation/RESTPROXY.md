@@ -283,6 +283,11 @@ Deployment is very straightforward.  With the solution open, just right-click on
 and choose **Publish**.  Choose either "Production" or "Staging" from the profile dropdown
 depending on what your intention is, and then click `Publish`.
 
+> If the subscription you have selected tells you `"Cloud Services are not available in this subscription."`,
+> note that you must be both an `Owner` and a `Co-Admin` for the subscription.
+> Follow [these](https://blogs.msdn.microsoft.com/cie/2016/07/05/cloud-services-are-not-available-in-this-subscription/)
+> steps to resolve the issue.
+
 It should take roughly 5 minutes to complete.  When done, you can check the Azure portal to find
 out the IP address that was created for the ILB that you should be accessing.  To find the IP,
 follow the steps outlined in [A RECORD](#a-record).  You will also need to update the A RECORD

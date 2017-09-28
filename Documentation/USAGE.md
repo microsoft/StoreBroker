@@ -72,6 +72,18 @@ when the module is loaded.
     When `$true`, times are logged using UTC (and those timestamps will end with a Z per the
     [W3C standard](http://www.w3.org/TR/NOTE-datetime))
 
+ **`$global:SBShouldLogPid`** [bool] Defaults to `$false`. If `$true`, the
+ Process ID (`$global:PID`) of the current PowerShell process will be added
+ to every log entry.  This can be helpful if you have situations where
+ multiple instances of StoreBroker run concurrently and you want to
+ more easily isolate the log entries for one process.  An alternative
+ solution would be to use `$global:SBLogPath` to specify a different
+ log file for each StoreBroker process. An easy way to view the filtered
+ entries for a session is (replacing `PID` with the PID that you are interested in):
+
+    Get-Content -Path $global:SBLogPath -Encoding UTF8 | Where { $_ -like '*[[]PID[]]*' }
+
+
 > **PowerShell Tip**
 >
 > If you wish to always use a different value for these, set the new values in your PowerShell

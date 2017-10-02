@@ -355,10 +355,23 @@ call:
 
 The next steps require you to know the AppId for the App you are trying to use StoreBroker with.
 
-Run the following and get the `ID` that is shown there (it looks like this: `0ABCDEF12345`).
+If you have easy access to the Dev Portal, you can get it directly from there by:
+  1. Log in to the [Dev Portal](https://developer.microsoft.com/en-us/dashboard/apps/overview)
+  2. Select the app
+  3. Click on **App Management**
+  4. Click on **App Identity**
+  5. Look towards the bottom and grab the `Store ID` that is displayed.  This is your `AppId`.
+
+Alternatively, you can find this value directly with StoreBroker by running the following and
+getting the `id` that is shown there (it looks like this: `0ABCDEF12345`).
 That's your `AppId` (replace `<appName>` with all or part your app's name to limit the results):
 
     Get-Applications -GetAll | Where-Object primaryName -like "*<appName>*" | Format-Application
+
+If you run into issues with this command, it's possible that you're having trouble with your search
+with `Where-Object`.  Instead, just try running this:
+
+    Get-Applications -GetAll | Format-Applications
 
 > The Windows Store Submission API does not allow for the *creation* of new apps.
 > To use StoreBroker, you must have already created **and published** an app submission via the

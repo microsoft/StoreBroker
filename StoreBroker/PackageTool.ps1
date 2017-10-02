@@ -516,6 +516,8 @@ function Write-SubmissionRequestBody
 
     if ($PSCmdlet.ShouldProcess($OutFilePath, "Output to File"))
     {
+        Ensure-Directory -Path (Split-Path -Parent -Path $OutFilePath)
+
         Write-Log "Writing submission request JSON file: [$OutFilePath]." -Level Verbose
 
         $JsonObject |
@@ -582,10 +584,10 @@ function Test-Xml
     )
 
     # Relative paths such as '.\File.txt' can resolve as 'C:\windows\System32\File.txt' when
-    # interacting with .NET libraries.  Run [string] path parameters through 'Convert-Path' to
+    # interacting with .NET libraries.  Run [string] path parameters through 'Resolve-UnverifiedPath' to
     # get a full-path before using the path with any .NET libraries.
-    $XsdFile = Convert-Path -Path $XsdFile
-    $XmlFile = Convert-Path -Path $XmlFile
+    $XsdFile = Resolve-UnverifiedPath -Path $XsdFile
+    $XmlFile = Resolve-UnverifiedPath -Path $XmlFile
 
     # The ValidationEventHandler runs in its own scope and does not have access to variables from
     # Test-Xml.  Make $validationErrors a script variable so capture exceptions in the
@@ -2336,7 +2338,7 @@ function Resolve-PackageParameters
         if (-not [String]::IsNullOrWhiteSpace($ParamMap[$param]))
         {
             # Resolve path parameters to full paths. Necessary in case a path contains '.' or '..'
-            $ParamMap[$param] = Convert-Path -Path $ParamMap[$param]
+            $ParamMap[$param] = Resolve-UnverifiedPath -Path $ParamMap[$param]
 
             if (-not (Test-Path -PathType Container -Path $ParamMap[$param]))
             {
@@ -2385,7 +2387,7 @@ function Resolve-PackageParameters
         }
 
         # Resolve path parameters to full paths. Necessary in case a path contains '.' or '..'
-        $ParamMap[$script:s_OutPath] = Convert-Path -Path $ParamMap[$script:s_OutPath]
+        $ParamMap[$script:s_OutPath] = Resolve-UnverifiedPath -Path $ParamMap[$script:s_OutPath]
     }
 
 
@@ -2506,7 +2508,7 @@ function Resolve-PackageParameters
         }
 
         # Resolve AppxPath to a list of full paths.
-        $ParamMap[$script:s_AppxPath] = $ParamMap[$script:s_AppxPath] | ForEach-Object { Convert-Path -Path $_ }
+        $ParamMap[$script:s_AppxPath] = $ParamMap[$script:s_AppxPath] | ForEach-Object { Resolve-UnverifiedPath -Path $_ }
     }
 
     if ($SkipValidation -inotcontains $script:s_DisableAutoPackageNameFormatting)
@@ -2662,8 +2664,8 @@ function Join-SubmissionPackage
     Add-Type -AssemblyName System.IO.Compression.FileSystem
 
     # Fix the paths
-    $MasterJsonPath = Convert-Path $MasterJsonPath
-    $AdditionalJsonPath = Convert-Path $AdditionalJsonPath
+    $MasterJsonPath = Resolve-UnverifiedPath -Path $MasterJsonPath
+    $AdditionalJsonPath = Resolve-UnverifiedPath -Path $AdditionalJsonPath
 
     # Determine the paths to the zip files for these json files
     $masterZipPath = Join-Path (Split-Path $MasterJsonPath -Parent) "$([System.IO.Path]::GetFileNameWithoutExtension($MasterJsonPath)).zip"
@@ -2907,7 +2909,6 @@ function New-SubmissionPackage
         })]
         [string[]] $AppxPath,
 
-        [ValidateScript({ if (Test-Path -PathType Container $_) { $true } else { throw "$_ cannot be found." } })]
         [string] $OutPath,
 
         [string] $OutName,
@@ -3135,7 +3136,6 @@ function New-InAppProductSubmissionPackage
         [ValidateScript({ if (Test-Path -PathType Container $_) { $true } else { throw "$_ cannot be found." } })]
         [string] $ImagesRootPath,
 
-        [ValidateScript({ if (Test-Path -PathType Container $_) { $true } else { throw "$_ cannot be found." } })]
         [string] $OutPath,
 
         [string] $OutName

@@ -467,7 +467,8 @@ function Write-Log
         [Parameter(
             Mandatory,
             ValueFromPipeline)]
-        [ValidateNotNullOrEmpty()]
+        [AllowEmptyString()]
+        [AllowNull()]
         [string] $Message,
 
         [ValidateSet('Error', 'Warning', 'Info', 'Verbose', 'Debug')]

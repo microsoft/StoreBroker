@@ -601,5 +601,10 @@ function Main
 }
 
 
+
+
+# Script body
+$OutPath = Resolve-UnverifiedPath -Path $OutPath
+
 # function Main invocation
 Main

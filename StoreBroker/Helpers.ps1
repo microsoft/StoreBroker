@@ -839,3 +839,44 @@ function Resolve-UnverifiedPath
         return $resolvedPath.ProviderPath
     }
 }
+
+function Ensure-Directory
+{
+<#
+    .SYNOPSIS
+        A utility function for ensuring a given directory exists.
+
+    .DESCRIPTION
+        A utility function for ensuring a given directory exists.
+
+        If the directory does not already exist, it will be created.
+
+    .PARAMETER Path
+        A full or relative path to the directory that should exist when the function exits.
+
+    .NOTES
+        Uses the Resolve-UnverifiedPath function to resolve relative paths.
+#>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string] $Path
+    )
+
+    try
+    {
+        $Path = Resolve-UnverifiedPath -Path $Path
+
+        if (-not (Test-Path -PathType Container -Path $Path))
+        {
+            Write-Log "Creating directory: [$Path]" -Level Verbose
+            New-Item -ItemType Directory -Path $Path | Out-Null
+        }
+    }
+    catch
+    {
+        Write-Log "Could not ensure directory: [$Path]" -Level Error
+
+        throw 
+    }
+}

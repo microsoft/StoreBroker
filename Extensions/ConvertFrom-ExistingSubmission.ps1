@@ -965,13 +965,14 @@ function Ensure-PdpFilePath
         [string] $FileName
     )
 
-    $dropFolder = Join-Path $PdpRootPath $Lang
+    $dropFolder = Join-Path -Path $PdpRootPath -ChildPath $Lang
+
     if (-not (Test-Path -PathType Container -Path $dropFolder))
     {
         New-Item -Force -ItemType Directory -Path $dropFolder | Out-Null
     }
 
-    return (Join-Path $dropFolder $FileName)
+    return (Join-Path -Path $dropFolder -ChildPath $FileName)
 }
 
 function Show-ImageFileNames
@@ -1111,6 +1112,11 @@ function Main
     Show-ImageFileNames -LangImageNames $langImageNames -Release $Release
 }
 
+
+
+
+# Script body
+$OutPath = Resolve-UnverifiedPath -Path $OutPath
 
 # function Main invocation
 Main

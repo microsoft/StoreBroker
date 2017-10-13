@@ -24,6 +24,7 @@
     *   [IAP Overview](#iap-overview)
     *   [Creating Your IAP Payload](#creating-your-iap-payload)
     *   [IAP Commands](#iap-commands)
+*   [Schema Versions](#schema-versions)
 *   [Using INT vs PROD](#using-int-vs-prod)
 *   [Telemetry](#telemetry)
 *   [FAQ](#faq)
@@ -878,6 +879,104 @@ To delete an IAP submission:
 To monitor an IAP submission:
 Follow the steps in [monitoring a submission](#monitoring-a-submission), and be sure to include
 **`-IapId`** in the function parameters _instead of_ **`-AppId`**.
+
+## Schema Versions
+
+StoreBroker's packaging commands (`New-SubmissionPackage` and `New-InAppProductSubmissionPackage`)
+add properties to the generated .json file that are not part of the official Submission API JSON
+schema.  These additional properties are added in order to enable additional StoreBroker scenarios
+(like validating the `AppId` or `IapId` being used with a submission package, and determining which
+packages are redundant when using the `-UpdatePackages` switch).
+
+It is our intention to never change how these custom properties work once we've published out that
+version of StoreBroker, however it is possible that bugs or additional circumstances may simply make
+it necessary.
+
+To that end, starting with version `1.11.1` of StoreBroker, we will always add a `sbSchema` property
+to the generated json file, with a simple **integer value** that will be incremented whenever we make any
+change to those additional properties.  We'll document what those differences are below so that you'll
+be able to make corresponding changes to your own code if you depend on these properties.
+
+### App Submission Packages
+
+#### Version 1
+
+We never used the value `1` for a published schema.  Any App JSON package file that doesn't have an
+`sbSchema` property is effectively version 1.
+
+**Properties Added**
+ * `appId` - Stores the `appId` of the In-App Product that the submission package is for.
+ * `applicationPackages.minOSVersion` - An array of all Min Versions referenced in the app packages.
+ * `applicationPackages.targetFamiliesEx` - An array of all device families that the package targets.
+ * `applicationPackages.innerPackages.[architecture].minOSVersion` - An array of all Min OS Versions
+    referenced in the specific architecture app package.
+ * `applicationPackages.innerPackages.[architecture].targetFamiliesEx` - An array of all device
+    families targeted in this specific architecture app package.
+
+**Properties Removed**
+ * _None_
+
+**Properties Changed**
+ * _None_
+
+#### Version 2
+
+**Properties Added**
+ * `sbSchema` - Tracks the version number of the schema to identify what additional StoreBroker properties
+   should be expected within.
+
+**Properties Removed**
+ * `applicationPackages.minOSVersion` - This information can now be found in better context in
+   `applicationPackages.targetFamiliesEx.minOSVersion`
+ * `applicationPackages.innerPackages.[architecture].minOSVersion` - This information can now
+    be found in better context in `applicationPackages.innerPackages.[architecture].targetFamiliesEx.minOSVersion`
+
+**Properties Changed**
+ * `applicationPackages.targetDeviceFamiliesEx` - This used to be an array of strings of each
+   device family. This is now an array of dictionaries where each dictionary is a
+   `name`/`minOSVersion` pair, since a single appx can have different Min OS Versions depending
+   on which platform is being looked at.
+ * `applicationPackages.targetDeviceFamilies` - There was a bug here that if there was more than
+   one Min OS Version within a package, the string would look like this:
+   `Windows.Desktop min version System.Object[]`.  This is now fixed.
+ * `applicationPackages.innerPackages.[architecture].targetDeviceFamiliesEx` - This used to be
+   an array of strings of each device family. This is now an array of dictionaries where each dictionary
+   is a `name`/`minOSVersion` pair, since a single appx can have different Min OS Versions depending on
+   which platform is being looked at.
+ * `applicationPackages.innerPackages.[architecture].targetDeviceFamilies` - There was a bug here that
+   if there was more than one Min OS Version within a package, the string would look like this:
+   `Windows.Desktop min version System.Object[]`.  This is now fixed.
+
+### In-App Product (IAP) Submission Packages
+
+#### 1
+
+We never used the value `1` for a published schema.  Any IAP JSON package file that doesn't have an
+`sbSchema` property is effectively version 1.
+
+**Properties Added**
+ * `iapId` - Stores the `iapId` of the In-App Product that the submission package is for.
+
+**Properties Removed**
+ * _None_
+
+**Properties Changed**
+ * _None_
+
+#### 2
+
+This schema is equivalent to v1, but now with the addition of `sbSchema` tracking the schema version.
+
+**Properties Added**
+ * `sbSchema` - Tracks the version number of the schema to identify what additional StoreBroker properties
+   should be expected within.
+
+**Properties Removed**
+ * _None_
+
+**Properties Changed**
+ * _None_
+
 
 ## Using INT vs PROD
 

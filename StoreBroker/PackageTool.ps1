@@ -33,9 +33,19 @@ $script:applicationMetadataProperties = @(
     "capabilities",
     "targetDeviceFamilies",
     "targetDeviceFamiliesEx",
-    "minOSVersion",
     "innerPackages"
 )
+
+# The API formats version numbers as "[device family] min version [min version]"
+$script:minVersionFormatString = "{0} min version {1}"
+
+# The current version of the StoreBroker schema that PackageTool is authoring for app and IAP submissions.
+# The StoreBroker schema may include metadata that isn't a core part of the official Submission API
+# JSON schema (like the appId or iapId, package metadata, etc...). These values should be updated any time
+# we alter what additional metadata is added to the schema for that submission type.
+$script:appSchemaVersion = 2
+$script:iapSchemaVersion = 2
+$script:schemaPropertyName = 'sbSchema'
 
 function Get-StoreBrokerConfigFileContentForIapId
 {
@@ -1296,7 +1306,7 @@ function New-ApplicationMetadataTable
 
         The hashtable has keys for
          "version", "architecture", "targetPlatform", "languages",
-        "capabilities", "targetDeviceFamilies", "targetDeviceFamiliesEx", "minOSVersion",
+        "capabilities", "targetDeviceFamilies", "targetDeviceFamiliesEx"
         and "innerPackages"
 
     .OUTPUTS
@@ -1384,7 +1394,7 @@ function Read-AppxMetadata
         Reads various metadata properties about the input .appx file.
 
         The metadata read is "version", "architecture", "targetPlatform", "languages",
-        "capabilities", "targetDeviceFamilies", "targetDeviceFamiliesEx", "minOSVersion",
+        "capabilities", "targetDeviceFamilies", "targetDeviceFamiliesEx"
         and "innerPackages".  Not all of the metadata read is actually passed as
         part of the Store submission; some metadata is used as part of an app flighting
         workflow.
@@ -1437,7 +1447,6 @@ function Read-AppxMetadata
 
         $metadata.version        = $manifest.Package.Identity.Version
         $metadata.architecture   = $manifest.Package.Identity.ProcessorArchitecture
-        $metadata.minOSVersion   = $manifest.Package.Dependencies.TargetDeviceFamily.MinVersion
         $metadata.targetPlatform = Get-TargetPlatform -AppxManifestPath $appxManifest
         $metadata.name           = $manifest.Package.Identity.Name -creplace '^Microsoft\.', ''
         
@@ -1453,14 +1462,15 @@ function Read-AppxMetadata
             Sort-Object -Unique
 
         $metadata.targetDeviceFamiliesEx = @()
-        $metadata.targetDeviceFamiliesEx += $manifest.Package.Dependencies.TargetDeviceFamily.Name |
-            Where-Object { $null -ne $_ } |
-            Sort-Object -Unique
+        $metadata.targetDeviceFamiliesEx += $manifest.Package.Dependencies.TargetDeviceFamily |
+            Where-Object { $null -ne $_.Name } |
+            Sort-Object -Property Name -Unique |
+            ForEach-Object { [PSCustomObject]@{ 'name' = $_.Name; 'minOSVersion' = $_.MinVersion } }
 
         $metadata.targetDeviceFamilies = @()
         foreach ($family in $metadata.targetDeviceFamiliesEx)
         {
-            $metadata.targetDeviceFamilies += ("{0} min version {1}" -f $family, $metadata.minOSVersion)
+            $metadata.targetDeviceFamilies += ($script:minVersionFormatString -f $family.Name, $family.minOSVersion)
         }
 
         # A single .appx will never have an inner package, but we will still set this property to
@@ -1497,7 +1507,7 @@ function Read-AppxUploadMetadata
         Reads various metadata properties about the input .appxupload.
 
         The metadata read is "version", "architecture", "targetPlatform", "languages",
-        "capabilities", "targetDeviceFamilies", "targetDeviceFamiliesEx", "minOSVersion",
+        "capabilities", "targetDeviceFamilies", "targetDeviceFamiliesEx"
         and "innerPackages".  Not all of the metadata read is actually passed as
         part of the Store submission; some metadata is used as part of an app flighting
         workflow.
@@ -1596,7 +1606,7 @@ function Read-AppxBundleMetadata
         Reads various metadata properties about the input .appxbundle.
 
         The metadata read is "version", "architecture", "targetPlatform", "languages",
-        "capabilities", "targetDeviceFamilies", "targetDeviceFamiliesEx", "minOSVersion",
+        "capabilities", "targetDeviceFamilies", "targetDeviceFamiliesEx"
         and "innerPackages".  Not all of the metadata read is actually passed as
         part of the Store submission; some metadata is used as part of an app flighting
         workflow.
@@ -1677,8 +1687,7 @@ function Read-AppxBundleMetadata
             $appxFilePath = (Get-ChildItem -Recurse -Path $expandedContainerPath -Include $application).FullName
             $appxMetadata = Read-AppxMetadata -AppxPath $appxFilePath -AppxInfo $AppxInfo
 
-            # minOSVersion and targetPlatform will always be the values of the last .appx processed.
-            $metadata.minOSVersion    = $appxMetadata.minOSVersion
+            # targetPlatform will always be the values of the last .appx processed.
             $metadata.targetPlatform  = $appxMetadata.targetPlatform
 
             $capabilities            += $appxMetadata.capabilities
@@ -1686,12 +1695,12 @@ function Read-AppxBundleMetadata
             $targetDeviceFamiliesEx  += $appxMetadata.targetDeviceFamiliesEx
 
             $metadata.innerPackages.$($appxMetadata.architecture) = @{
-                version              = $appxMetadata.version;
-                targetDeviceFamilies = $appxMetadata.targetDeviceFamiliesEx;
-                languages            = $appxMetadata.languages;
-                capabilities         = $appxMetadata.capabilities;
-                minOSVersion         = $appxMetadata.minOSVersion;
-                targetPlatform       = $appxMetadata.targetPlatform;
+                version                = $appxMetadata.version;
+                targetDeviceFamiliesEx = $appxMetadata.targetDeviceFamiliesEx
+                targetDeviceFamilies   = $appxMetadata.targetDeviceFamiliesEx | ForEach-Object { $script:minVersionFormatString -f $_.name, $_.minOSVersion }
+                languages              = $appxMetadata.languages;
+                capabilities           = $appxMetadata.capabilities;
+                targetPlatform         = $appxMetadata.targetPlatform;
             }
         }
 
@@ -1701,7 +1710,11 @@ function Read-AppxBundleMetadata
         # results in $m.capabilities being a String type instead of Array type.
         $metadata.capabilities           += $capabilities | Sort-Object -Unique
         $metadata.targetDeviceFamilies   += $targetDeviceFamilies | Sort-Object -Unique
-        $metadata.targetDeviceFamiliesEx += $targetDeviceFamiliesEx | Sort-Object -Unique
+
+        # https://stackoverflow.com/questions/31343752/how-can-you-select-unique-objects-based-on-two-properties-of-an-object-in-powers
+        $metadata.targetDeviceFamiliesEx += $targetDeviceFamiliesEx |
+            Group-Object -Property name, minOSVersion |
+            ForEach-Object { $_.Group | Select-Object -Property name, minOSVersion -First 1 }
     }
     finally
     {
@@ -1741,7 +1754,7 @@ function Get-FormattedFilename
         System.String. The ManifestType_AppName_Version_Architecture string.
 
     .EXAMPLE
-        Get-FormattedFilename @{ name="Maps"; version="2.13.22002.0"; architecture="x86"; targetDeviceFamiliesEx=@("Windows.Desktop") }
+        Get-FormattedFilename @{ name="Maps"; version="2.13.22002.0"; architecture="x86"; targetDeviceFamiliesEx=@(@{ name = "Windows.Desktop"); minOSVersion="1.2.3.0" } }
 
         Would return something like "Desktop_Maps_2.13.22002.0_x86.appxupload"
 #>
@@ -1776,7 +1789,7 @@ function Get-FormattedFilename
     }
 
     # Simplify 'Windows.Universal' to 'Universal'
-    $deviceFamilyCollection = $Metadata.targetDeviceFamiliesEx | ForEach-Object { $_ -replace '^Windows\.', '' }
+    $deviceFamilyCollection = $Metadata.targetDeviceFamiliesEx.Name | ForEach-Object { $_ -replace '^Windows\.', '' }
 
     $formattedBundleTags = @($Metadata.name, $version, $architectureTag)
     if ($deviceFamilyCollection.Count -gt 0)
@@ -1798,7 +1811,7 @@ function Read-ApplicationMetadata
         Reads metadata used for submission of an .appx, .appxbundle, or appxupload.
 
         The metadata read is "version", "architecture", "targetPlatform", "languages",
-        "capabilities", "targetDeviceFamilies", "targetDeviceFamiliesEx", "minOSVersion",
+        "capabilities", "targetDeviceFamilies", "targetDeviceFamiliesEx",
         "innerPackages", and "name".  Not all of the metadata read is actually passed as
         part of the Store submission; some metadata is used as part of an app flighting
         workflow.
@@ -2149,6 +2162,8 @@ function Get-SubmissionRequestBody
 
     $submissionRequestBody = Remove-DeprecatedProperties -SubmissionRequestBody $submissionRequestBody
 
+    $submissionRequestBody | Add-Member -Name $script:schemaPropertyName -Value $script:appSchemaVersion -MemberType NoteProperty
+
     return $submissionRequestBody
 }
 
@@ -2260,6 +2275,8 @@ function Get-InAppProductSubmissionRequestBody
 
         $submissionRequestBody.listings = Convert-InAppProductListingsMetadata @listingsResources
     }
+
+    $submissionRequestBody | Add-Member -Name $script:schemaPropertyName -Value $script:iapSchemaVersion -MemberType NoteProperty
 
     return $submissionRequestBody
 }

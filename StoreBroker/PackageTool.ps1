@@ -23,6 +23,7 @@ $script:s_AppxPath = "AppxPath"
 $script:s_OutPath = "OutPath"
 $script:s_OutName = "OutName"
 $script:s_DisableAutoPackageNameFormatting = "DisableAutoPackageNameFormatting"
+$script:s_MediaFallbackLanguage = "MediaFallbackLanguage"
 
 # String constants for application metadata
 $script:applicationMetadataProperties = @(
@@ -669,6 +670,14 @@ function Convert-ListingToObject
     .PARAMETER XmlFilePath
         A full path to the localized .xml file to be parsed.
         
+    .PARAMETER MediaFallbackLanguage
+        Some apps may not localize all of their metadata media (images, trailers, etc..)
+        across all languages.  By default, StoreBroker will look in the PDP langcode's subfolder
+        within ImagesRootPath for that language's media content.  If the requested filename is
+        not found, StoreBroker packaging will fail. If you specify a fallback language here
+        (e.g. 'en-us'), then if the requested file isn't found in the PDP language's media
+        subfolder, StoreBroker will then look into the fallback language's media subfolder for
+        the exactly same-named image, and only fail then if it still cannot be found.
 #>
     [CmdletBinding(SupportsShouldProcess)]
     param(
@@ -681,12 +690,15 @@ function Convert-ListingToObject
         [string[]] $LanguageExclude,
 
         [Parameter(Mandatory)]
+        [Alias('MediaRootPath')]
         [string] $ImagesRootPath,
 
         [Parameter(
             Mandatory,
             ValueFromPipeline)]
-        [string[]] $XmlFilePaths
+        [string[]] $XmlFilePaths,
+
+        [string] $MediaFallbackLanguage
     )
 
     PROCESS
@@ -775,13 +787,7 @@ function Convert-ListingToObject
                                                     ForEach-Object { $_.Trim() })
                     }           
 
-                    # ScreenshotCaption node is special, needs to be consumed separately
-                    $packageImagePath = Join-Path $script:tempFolderPath (Join-Path $script:packageImageFolderName $language)
-                    if (-not (Test-Path -PathType Container -Path $packageImagePath))
-                    {
-                        New-Item -ItemType directory -Path $packageImagePath | Out-Null
-                    }
-
+                    # Handle screenshots and their captions.
                     $imageListings = @()
                     $captions = $ProductDescriptionNode.ScreenshotCaptions.ChildNodes |
                         Where-Object NodeType -eq Element
@@ -801,39 +807,36 @@ function Convert-ListingToObject
                             $imageFileName = $caption.$member
                             if (-not [System.String]::IsNullOrWhiteSpace($imageFileName))
                             { 
-                                #imageContainerPath = <imagesRootPath>/<release>/<lang-code>/
-                                $imageContainerPath = [System.IO.Path]::Combine($ImagesRootPath, $ProductDescriptionNode.Release, $language)
-                                if (Test-Path -Path $imageContainerPath -PathType Container)
+                                # We start with the fallback language specified on an individual caption.
+                                # If one is not specified, then we'll look to see if there is one specified
+                                # for all captions on the ScreenshotCaptions element.  If one is not specified
+                                # there, then we'll try using the one specified at the commandline/config file.
+                                $requestedFallbackLanguage = $caption.FallbackLanguage
+                                if ([String]::IsNullOrWhiteSpace($requestedFallbackLanguage))
                                 {
-                                    $image = Get-ChildItem -Recurse -File -Path $imageContainerPath -Include $imageFileName | Select-Object -First 1
-
-                                    if ($null -eq $image)
+                                    $requestedFallbackLanguage = $ProductDescriptionNode.ScreenshotCaptions.FallbackLanguage
+                                    if ([String]::IsNullOrWhiteSpace($requestedFallbackLanguage))
                                     {
-                                        $output = "Could not find image '$($imageFileName)' in any subdirectory of '$imageContainerPath'."
-                                        Write-Log $output -Level Error
-                                        throw $output
-                                    }
-                        
-                                    $destinationInPackage = Join-Path $packageImagePath $image.Name
-                                    if (-not (Test-Path -PathType Leaf $destinationInPackage))
-                                    {
-                                        Copy-Item -Path $image.FullName -Destination $destinationInPackage
-                                    }
-
-                                    $imageType = $imageTypeMap[$member]
-                        
-                                    $imageListings += @{
-                                        "fileName"     = [System.IO.Path]::Combine($script:packageImageFolderName, $language, $image.Name)
-                                        "fileStatus"   = "PendingUpload";
-                                        "description"  = $caption.InnerText.Trim();
-                                        "imageType"    = $imageType;
+                                        $requestedFallbackLanguage = $MediaFallbackLanguage
                                     }
                                 }
-                                else
-                                {
-                                    $output = "Provided image directory was not found: $imageContainerPath"
-                                    Write-Log $output -Level Error
-                                    throw $output
+
+                                $params = @{
+                                    'Filename' = $imageFileName
+                                    'ImagesRootPath' = $ImagesRootPath
+                                    'Language' = $language
+                                    'Release' = $ProductDescriptionNode.Release
+                                    'MediaFallbackLanguage' = $requestedFallbackLanguage
+                                }
+
+                                $fileRelativePackagePath = Get-LocalizedMediaFile @params
+
+                                $imageType = $imageTypeMap[$member]
+                                $imageListings += @{
+                                    "fileName" = $fileRelativePackagePath;
+                                    "fileStatus" = "PendingUpload";
+                                    "description" = $caption.InnerText.Trim();
+                                    "imageType" = $imageType;
                                 }
                             }
                         }
@@ -864,6 +867,139 @@ function Convert-ListingToObject
     }
 }
 
+function Get-LocalizedMediaFile
+{
+<#
+    .SYNOPSIS
+        Finds the appropriately localized media file, given the filename, requested language,
+        and an optional fallback language if the requested language does not contain that
+        media file.
+
+        The file will be copied to the temporary package path where the package is being
+        prepared, and the relative path within that folder will be returned.
+
+    .PARAMETER Filename
+        The name of the media file that is being looked for.
+
+    .PARAMETER ImagesRootPath
+        The root path to the directory where this submission's images are located.
+
+    .PARAMETER Language
+        The language of the PDP file that is requesting the localized media file.
+
+    .PARAMETER Release
+        The Release value from within an individual PDP file, indicating the sub-folder within
+        ImagesRootPath that the lang-code subfolders for media files can be found.
+
+    .PARAMETER MediaFallbackLanguage
+        Some apps may not localize all of their metadata media (images, trailers, etc..)
+        across all languages.  By default, StoreBroker will look in the PDP langcode's subfolder
+        within ImagesRootPath for that language's media content.  If the requested filename is
+        not found, StoreBroker packaging will fail. If you specify a fallback language here
+        (e.g. 'en-us'), then if the requested file isn't found in the PDP language's media
+        subfolder, StoreBroker will then look into the fallback language's media subfolder for
+        the exactly same-named image, and only fail then if it still cannot be found.
+
+    .OUTPUTS
+        System.String.  Relative path to the media file as it will be found within the final StoreBroker package.
+
+    .EXAMPLE
+        Get-LocalizedMediaFile -Filename 'foo.png' -ImagesRootPath 'c:\screenshots\' -Language 'fr-fr' -Release '1712'
+
+        Checks to see if c:\screenshots\1712\fr-fr\foo.png exists.  If it does, copies it to $script:tempFolderPath\Assets\fr-fr\foo.png
+        and returns 'Assets\fr-fr\foo.png'.  If it doesn't exist, throws an exception.
+
+    .EXAMPLE
+        Get-LocalizedMediaFile -Filename 'foo.png' -ImagesRootPath 'c:\screenshots\' -Language 'fr-fr' -Release '1712' -MediaFallbackLanguage 'en-us'
+
+        Checks to see if c:\screenshots\1712\fr-fr\foo.png exists.  If it does, copies it to $script:tempFolderPath\Assets\fr-fr\foo.png
+        and returns 'Assets\fr-fr\foo.png'.  If it doesn't exist, checks to see if c:\screenshots\1712\en-us\foo.png exists.  If it does,
+        copies it to $script:tempFolderPath\Assets\en-us\foo.png and returns 'Assets\en-us\foo.png'.  If it doesn't, throws an exception.
+#>
+
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(Mandatory)]
+        [string] $Filename,
+
+        [Parameter(Mandatory)]
+        [Alias('MediaRootPath')]
+        [string] $ImagesRootPath,
+
+        [Parameter(Mandatory)]
+        [string] $Language,
+
+        [Parameter(Mandatory)]
+        [string] $Release,
+
+        [string] $MediaFallbackLanguage
+    )
+
+    # This is the partial path where the media file will be located witin the context of the zip file.
+    $fileRelativePackagePath = $null
+
+    # The folder where we think the media file should be found.
+    $mediaLanguageSourcePath = [System.IO.Path]::Combine($ImagesRootPath, $Release, $Language)
+
+    # The folder where we think the media file should be found if using the fallback language.
+    $mediaFallbackLanguageSourcePath = $null
+    if (-not [string]::IsNullOrEmpty($MediaFallbackLanguage) -and ($MediaFallbackLanguage -ne $Language))
+    {
+        $mediaFallbackLanguageSourcePath = [System.IO.Path]::Combine($ImagesRootPath, $Release, $MediaFallbackLanguage)
+        if (-not (Test-Path -Path $mediaFallbackLanguageSourcePath -PathType Container))
+        {
+            Write-Log "A fallback language was specified [$MediaFallbackLanguage], but a folder for that language does not exist [$mediaFallbackLanguageSourcePath], so media fallback support has been disabled." -Level Warning
+            $mediaFallbackLanguageSourcePath = $null
+        }
+    }
+
+    if (Test-Path -Path $mediaLanguageSourcePath -PathType Container)
+    {
+        $image = Get-ChildItem -Recurse -File -Path $mediaLanguageSourcePath -Include $Filename
+        $fileRelativePackagePath = [System.IO.Path]::Combine($script:packageImageFolderName, $Language, $Filename)
+    }
+
+    if (($null -eq $image) -and ($null -ne $mediaFallbackLanguageSourcePath))
+    {
+        Write-Log "[$Language] version of $Filename not found.  Using fallback language [$MediaFallbackLanguage] version." -Level Verbose
+        $image = Get-ChildItem -Recurse -File -Path $mediaFallbackLanguageSourcePath -Include $Filename
+        $fileRelativePackagePath = [System.IO.Path]::Combine($script:packageImageFolderName, $MediaFallbackLanguage, $Filename)
+    }
+            
+    if ($null -eq $image)
+    {
+        $output = "Could not find image [$Filename] in any subdirectory of [$mediaLanguageSourcePath]."
+        if ($null -ne $mediaFallbackLanguageSourcePath)
+        {
+            $output += " Image also not found in fallback language location [$mediaFallbackLanguageSourcePath]";
+        }
+
+        Write-Log $output -Level Error
+        throw $output
+    }
+
+    if ($image.Count -gt 1)
+    {
+        $output = "More then one version of [$Filename] has been found for this language. Please ensure only one copy of this image exists within the language's sub-folders: [$($image.FullName -join ', ')]"
+        Write-Log $output -Level Error
+        throw $output
+    }
+
+    $fileFullPackagePath = Join-Path -Path $script:tempFolderPath -ChildPath $fileRelativePackagePath
+    if (-not (Test-Path -PathType Leaf $fileFullPackagePath))
+    {
+        $packageMediaFullPath = Split-Path -Path $fileFullPackagePath -Parent
+        if (-not (Test-Path -PathType Container -Path $packageMediaFullPath))
+        {
+            New-Item -ItemType directory -Path $packageMediaFullPath | Out-Null
+        }
+        
+        Copy-Item -Path $image.FullName -Destination $fileFullPackagePath
+    }
+
+    return $fileRelativePackagePath
+}
+
 function Convert-ListingsMetadata
 {
 <#
@@ -889,6 +1025,15 @@ function Convert-ListingsMetadata
 
     .PARAMETER ImagesRootPath
         The root path to the directory where this submission's images are located.
+
+    .PARAMETER MediaFallbackLanguage
+        Some apps may not localize all of their metadata media (images, trailers, etc..)
+        across all languages.  By default, StoreBroker will look in the PDP langcode's subfolder
+        within ImagesRootPath for that language's media content.  If the requested filename is
+        not found, StoreBroker packaging will fail. If you specify a fallback language here
+        (e.g. 'en-us'), then if the requested file isn't found in the PDP language's media
+        subfolder, StoreBroker will then look into the fallback language's media subfolder for
+        the exactly same-named image, and only fail then if it still cannot be found.
 
     .OUTPUTS
         Hashtable  A hastable with each key being a language and the corresponding value, an object
@@ -926,10 +1071,13 @@ function Convert-ListingsMetadata
         [string[]] $LanguageExclude,
 
         [Parameter(Mandatory)]
-        [ValidateScript({ 
+        [ValidateScript( { 
             if (Test-Path -PathType Container -Path $_) { $true }
             else { throw "'$_' is not a directory or cannot be found." } })]
-        [string] $ImagesRootPath
+        [Alias('MediaRootPath')]
+        [string] $ImagesRootPath,
+
+        [string] $MediaFallbackLanguage
     )
 
     $listings = @{}
@@ -937,7 +1085,7 @@ function Convert-ListingsMetadata
     Write-Log "Converting application listings metadata." -Level Verbose
 
     (Get-ChildItem -File $PDPRootPath -Recurse -Include $PDPInclude -Exclude $PDPExclude).FullName |
-        Convert-ListingToObject -PDPRootPath $PDPRootPath -LanguageExclude $LanguageExclude -ImagesRootPath $ImagesRootPath |
+        Convert-ListingToObject -PDPRootPath $PDPRootPath -LanguageExclude $LanguageExclude -ImagesRootPath $ImagesRootPath -MediaFallbackLanguage $MediaFallbackLanguage |
         ForEach-Object { $listings[$_."lang"] = $_."listing" }
 
     Write-Log "Conversion complete." -Level Verbose
@@ -971,7 +1119,16 @@ function Convert-InAppProductListingToObject
 
     .PARAMETER XmlFilePath
         A full path to the localized .xml file to be parsed.
-#>
+
+    .PARAMETER MediaFallbackLanguage
+        Some apps may not localize all of their metadata media (images, trailers, etc..)
+        across all languages.  By default, StoreBroker will look in the PDP langcode's subfolder
+        within ImagesRootPath for that language's media content.  If the requested filename is
+        not found, StoreBroker packaging will fail. If you specify a fallback language here
+        (e.g. 'en-us'), then if the requested file isn't found in the PDP language's media
+        subfolder, StoreBroker will then look into the fallback language's media subfolder for
+        the exactly same-named image, and only fail then if it still cannot be found.
+ #>
     [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter(Mandatory)]
@@ -983,12 +1140,15 @@ function Convert-InAppProductListingToObject
         [string[]] $LanguageExclude,
 
         [Parameter(Mandatory)]
+        [Alias('MediaRootPath')]
         [string] $ImagesRootPath,
 
         [Parameter(
             Mandatory,
             ValueFromPipeline)]
-        [string[]] $XmlFilePaths
+        [string[]] $XmlFilePaths,
+
+        [string] $MediaFallbackLanguage
     )
 
     PROCESS
@@ -1056,48 +1216,32 @@ function Convert-InAppProductListingToObject
                         $listing['title'] = $null
                     }
         
-                    # Icon node is special, needs to be consumed separately
-                    $packageImagePath = Join-Path -Path $script:tempFolderPath -ChildPath (Join-Path -Path $script:packageImageFolderName -ChildPath $language)
-                    if (-not (Test-Path -PathType Container -Path $packageImagePath))
-                    {
-                        New-Item -ItemType directory -Path $packageImagePath | Out-Null
-                    }
-
+                    # Handle the icon for the IAP.
                     $imageFileName = $InAppProductDescriptionNode.icon.fileName
                     if (-not [System.String]::IsNullOrWhiteSpace($imageFileName))
                     { 
-                        #imageContainerPath = <imagesRootPath>/<release>/<lang-code>/
-                        $imageContainerPath = [System.IO.Path]::Combine($ImagesRootPath, $InAppProductDescriptionNode.Release, $language)
-
-                        if (Test-Path -Path $imageContainerPath -PathType Container)
+                        $requestedFallbackLanguage = $InAppProductDescriptionNode.icon.FallbackLanguage
+                        if ([String]::IsNullOrWhiteSpace($requestedFallbackLanguage))
                         {
-                            $image = Get-ChildItem -Recurse -File -Path $imageContainerPath -Include $imageFileName | Select-Object -First 1
-                            if ($null -eq $image)
-                            {
-                                $output = "Could not find image '$($imageFileName)' in any subdirectory of '$imageContainerPath'."
-                                Write-Log $output -Level Error
-                                throw $output
-                            }
-                        
-                            $destinationInPackage = Join-Path -Path $packageImagePath -ChildPath $image.Name
-                            if (-not (Test-Path -PathType Leaf $destinationInPackage))
-                            {
-                                Copy-Item -Path $image.FullName -Destination $destinationInPackage
-                            }
-
-                            $iconListing += @{
-                                "fileName"     = [System.IO.Path]::Combine($script:packageImageFolderName, $language, $image.Name)
-                                "fileStatus"   = "PendingUpload";
-                            }
-
-                            $listing['icon'] = $iconListing
+                            $requestedFallbackLanguage = $MediaFallbackLanguage
                         }
-                        else
-                        {
-                            $output = "Provided image directory was not found: $imageContainerPath"
-                            Write-Log $output -Level Error
-                            throw $output
+
+                        $params = @{
+                            'Filename' = $imageFileName
+                            'ImagesRootPath' = $ImagesRootPath
+                            'Language' = $language
+                            'Release' = $InAppProductDescriptionNode.Release
+                            'MediaFallbackLanguage' = $requestedFallbackLanguage
                         }
+
+                        $fileRelativePackagePath = Get-LocalizedMediaFile @params
+
+                        $iconListing += @{
+                            "fileName"     = $fileRelativePackagePath;
+                            "fileStatus"   = "PendingUpload";
+                        }
+
+                        $listing['icon'] = $iconListing
                     }
 
                     Write-Output @{ "lang" = $language.ToLowerInvariant(); "listing" = $listing }
@@ -1139,6 +1283,15 @@ function Convert-InAppProductListingsMetadata
     .PARAMETER ImagesRootPath
         The root path to the directory where this submission's images are located.
 
+    .PARAMETER MediaFallbackLanguage
+        Some apps may not localize all of their metadata media (images, trailers, etc..)
+        across all languages.  By default, StoreBroker will look in the PDP langcode's subfolder
+        within ImagesRootPath for that language's media content.  If the requested filename is
+        not found, StoreBroker packaging will fail. If you specify a fallback language here
+        (e.g. 'en-us'), then if the requested file isn't found in the PDP language's media
+        subfolder, StoreBroker will then look into the fallback language's media subfolder for
+        the exactly same-named image, and only fail then if it still cannot be found.
+
     .OUTPUTS
         Hashtable  A hastable with each key being a language and the corresponding value, an object
                    containing localized data for the app (Title, Description, Icon, etc.)
@@ -1178,7 +1331,10 @@ function Convert-InAppProductListingsMetadata
         [ValidateScript({ 
             if (Test-Path -PathType Container -Path $_) { $true }
             else { throw "'$_' is not a directory or cannot be found." } })]
-        [string] $ImagesRootPath
+        [Alias('MediaRootPath')]
+        [string] $ImagesRootPath,
+
+        [string] $MediaFallbackLanguage
     )
 
     $listings = @{}
@@ -1186,7 +1342,7 @@ function Convert-InAppProductListingsMetadata
     Write-Log "Converting IAP listings metadata." -Level Verbose
 
     (Get-ChildItem -File $PDPRootPath -Recurse -Include $PDPInclude -Exclude $PDPExclude).FullName |
-        Convert-InAppProductListingToObject -PDPRootPath $PDPRootPath -LanguageExclude $LanguageExclude -ImagesRootPath $ImagesRootPath |
+        Convert-InAppProductListingToObject -PDPRootPath $PDPRootPath -LanguageExclude $LanguageExclude -ImagesRootPath $ImagesRootPath -MediaFallbackLanguage $MediaFallbackLanguage |
         ForEach-Object { $listings[$_."lang"] = $_."listing" }
         
     Write-Log "Conversion complete." -Level Verbose
@@ -2075,6 +2231,15 @@ function Get-SubmissionRequestBody
         embeds the application name, version, as well as targeted platform and architecture.
         To retain the existing package filenames, specify this switch.
 
+    .PARAMETER MediaFallbackLanguage
+        Some apps may not localize all of their metadata media (images, trailers, etc..)
+        across all languages.  By default, StoreBroker will look in the PDP langcode's subfolder
+        within ImagesRootPath for that language's media content.  If the requested filename is
+        not found, StoreBroker packaging will fail. If you specify a fallback language here
+        (e.g. 'en-us'), then if the requested file isn't found in the PDP language's media
+        subfolder, StoreBroker will then look into the fallback language's media subfolder for
+        the exactly same-named image, and only fail then if it still cannot be found.
+
     .OUTPUTS
         PSCustomObject  An object representing the full application submission request.
 
@@ -2111,13 +2276,16 @@ function Get-SubmissionRequestBody
 
         [string[]] $LanguageExclude,
         
+        [Alias('MediaRootPath')]
         [string] $ImagesRootPath,
 
         [string[]] $AppxPath,
 
         [ref] $AppxInfo,
 
-        [switch] $DisableAutoPackageNameFormatting
+        [switch] $DisableAutoPackageNameFormatting,
+
+        [string] $MediaFallbackLanguage
     )
 
     # Add static properties and metadata about packaged binaries.
@@ -2161,6 +2329,7 @@ function Get-SubmissionRequestBody
             $script:s_PDPExclude = $PDPExclude;
             $script:s_LanguageExclude = $LanguageExclude;
             $script:s_ImagesRootPath = $ImagesRootPath;
+            $script:s_MediaFallbackLanguage = $MediaFallbackLanguage;
         }
 
         $submissionRequestBody.listings = Convert-ListingsMetadata @listingsResources
@@ -2208,6 +2377,15 @@ function Get-InAppProductSubmissionRequestBody
     .PARAMETER ImagesRootPath
         Root path to the directory containing release subfolders of images to be packaged.
 
+    .PARAMETER MediaFallbackLanguage
+        Some apps may not localize all of their metadata media (images, trailers, etc..)
+        across all languages.  By default, StoreBroker will look in the PDP langcode's subfolder
+        within ImagesRootPath for that language's media content.  If the requested filename is
+        not found, StoreBroker packaging will fail. If you specify a fallback language here
+        (e.g. 'en-us'), then if the requested file isn't found in the PDP language's media
+        subfolder, StoreBroker will then look into the fallback language's media subfolder for
+        the exactly same-named image, and only fail then if it still cannot be found.
+
     .OUTPUTS
         PSCustomObject  An object representing the full In-App Product submission request.
 
@@ -2238,7 +2416,10 @@ function Get-InAppProductSubmissionRequestBody
 
         [string[]] $LanguageExclude,
         
-        [string] $ImagesRootPath
+        [Alias('MediaRootPath')]
+        [string] $ImagesRootPath,
+
+        [string] $MediaFallbackLanguage
     )
 
     # Add static properties and metadata about packaged binaries.
@@ -2277,6 +2458,7 @@ function Get-InAppProductSubmissionRequestBody
             $script:s_PDPExclude = $PDPExclude;
             $script:s_LanguageExclude = $LanguageExclude;
             $script:s_ImagesRootPath = $ImagesRootPath;
+            $script:s_MediaFallbackLanguage = $MediaFallbackLanguage;
         }
 
         $submissionRequestBody.listings = Convert-InAppProductListingsMetadata @listingsResources
@@ -2312,7 +2494,8 @@ function Resolve-PackageParameters
 
     .OUTPUTS
         Hashtable with keys "PDPRootPath", "Release", "PDPInclude", "PDPExclude",
-        "ImagesRootPath", "AppxPath", "OutPath", and "OutName", each with validated values.
+        "ImagesRootPath", "MediaFallbackLanguage", "AppxPath", "OutPath", and "OutName",
+        each with validated values.
 
     .EXAMPLE
         Resolve-PackagePaths -ConfigObject (Convert-AppConfig $ConfigPath) -ParamMap @{"AppxPath"=$null;"OutPath"=$null;"OutPath"=$null;"Release"=$null}
@@ -2551,6 +2734,19 @@ function Resolve-PackageParameters
             Write-Log ($fromConfig -f $script:s_DisableAutoPackageNameFormatting, $configVal) -Level Verbose
         }
     }
+
+    # 'MediaFallbackLanguage' is optional.
+    # Look for a value but do not fail if none is found.
+    if ([String]::IsNullOrWhiteSpace($ParamMap[$script:s_MediaFallbackLanguage]))
+    {
+        $configVal = $ConfigObject.packageParameters.MediaFallbackLanguage
+        if (-not [String]::IsNullOrWhiteSpace($configVal))
+        {
+            $ParamMap[$script:s_MediaFallbackLanguage] = $configVal
+            Write-Log ($fromConfig -f $script:s_MediaFallbackLanguage, $configVal) -Level Verbose
+        }
+    }
+
     return $ParamMap
 }
 
@@ -2879,6 +3075,15 @@ function New-SubmissionPackage
         embeds the application name, version, as well as targeted platform and architecture.
         To retain the existing package filenames, specify this switch.
 
+    .PARAMETER MediaFallbackLanguage
+        Some apps may not localize all of their metadata media (images, trailers, etc..)
+        across all languages.  By default, StoreBroker will look in the PDP langcode's subfolder
+        within ImagesRootPath for that language's media content.  If the requested filename is
+        not found, StoreBroker packaging will fail. If you specify a fallback language here
+        (e.g. 'en-us'), then if the requested file isn't found in the PDP language's media
+        subfolder, StoreBroker will then look into the fallback language's media subfolder for
+        the exactly same-named image, and only fail then if it still cannot be found.
+
     .EXAMPLE
         New-SubmissionPackage -ConfigPath 'C:\Config\StoreBrokerConfig.json' -OutPath 'C:\Out\Path\' -OutName 'Upload' -Release MarchRelease -AppxPath 'C:\bin\App.appxbundle'
         
@@ -2917,6 +3122,7 @@ function New-SubmissionPackage
         [string[]] $LanguageExclude,
 
         [ValidateScript({ if (Test-Path -PathType Container $_) { $true } else { throw "$_ cannot be found." } })]
+        [Alias('MediaRootPath')]
         [string] $ImagesRootPath,
 
         [ValidateScript({ 
@@ -2936,7 +3142,9 @@ function New-SubmissionPackage
 
         [string] $OutName,
 
-        [switch] $DisableAutoPackageNameFormatting
+        [switch] $DisableAutoPackageNameFormatting,
+
+        [string] $MediaFallbackLanguage
     )
 
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
@@ -2953,7 +3161,7 @@ function New-SubmissionPackage
         # Resolve-PackageParameters will take care of validating the values, we only need
         # to avoid splatting null values as this will generate a runtime exception.
         # Log the value of each parameter.
-        $validationSet = $script:s_PDPRootPath, $script:s_Release, $script:s_PDPInclude, $script:s_PDPExclude, $script:s_LanguageExclude, $script:s_ImagesRootPath, $script:s_AppxPath, $script:s_OutPath, $script:s_OutName, $script:s_DisableAutoPackageNameFormatting
+        $validationSet = $script:s_PDPRootPath, $script:s_Release, $script:s_PDPInclude, $script:s_PDPExclude, $script:s_LanguageExclude, $script:s_ImagesRootPath, $script:s_AppxPath, $script:s_OutPath, $script:s_OutName, $script:s_DisableAutoPackageNameFormatting, $script:s_MediaFallbackLanguage
         $packageParams = @{}
         foreach ($param in $validationSet)
         {
@@ -2993,7 +3201,7 @@ function New-SubmissionPackage
                                    (Test-Path -PathType Container $script:tempFolderPath)
 
         # Get the submission request object
-        $resourceParams = $script:s_PDPRootPath, $script:s_Release, $script:s_PDPInclude, $script:s_PDPExclude, $script:s_LanguageExclude, $script:s_ImagesRootPath, $script:s_AppxPath, $script:s_DisableAutoPackageNameFormatting
+        $resourceParams = $script:s_PDPRootPath, $script:s_Release, $script:s_PDPInclude, $script:s_PDPExclude, $script:s_LanguageExclude, $script:s_ImagesRootPath, $script:s_AppxPath, $script:s_DisableAutoPackageNameFormatting, $script:s_MediaFallbackLanguage
 
         # Note: PSScriptAnalyzer falsely flags this next line as PSUseDeclaredVarsMoreThanAssignment due to:
         # https://github.com/PowerShell/PSScriptAnalyzer/issues/699
@@ -3128,6 +3336,15 @@ function New-InAppProductSubmissionPackage
     .PARAMETER OutName
         Common name to give to the .json and .zip files outputted by the Packaging Tool.
 
+    .PARAMETER MediaFallbackLanguage
+        Some apps may not localize all of their metadata media (images, trailers, etc..)
+        across all languages.  By default, StoreBroker will look in the PDP langcode's subfolder
+        within ImagesRootPath for that language's media content.  If the requested filename is
+        not found, StoreBroker packaging will fail. If you specify a fallback language here
+        (e.g. 'en-us'), then if the requested file isn't found in the PDP language's media
+        subfolder, StoreBroker will then look into the fallback language's media subfolder for
+        the exactly same-named image, and only fail then if it still cannot be found.
+
     .EXAMPLE
         New-InAppProductSubmissionPackage -ConfigPath 'C:\Config\StoreBrokerIAPConfig.json' -OutPath 'C:\Out\Path\' -OutName 'Upload' -Release MarchRelease
         
@@ -3160,11 +3377,14 @@ function New-InAppProductSubmissionPackage
         [string[]] $LanguageExclude,
 
         [ValidateScript({ if (Test-Path -PathType Container $_) { $true } else { throw "$_ cannot be found." } })]
+        [Alias('MediaRootPath')]
         [string] $ImagesRootPath,
 
         [string] $OutPath,
 
-        [string] $OutName
+        [string] $OutName,
+
+        [string] $MediaFallbackLanguage
     )
 
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
@@ -3181,7 +3401,7 @@ function New-InAppProductSubmissionPackage
         # Resolve-PackageParameters will take care of validating the values, we only need
         # to avoid splatting null values as this will generate a runtime exception.
         # Log the value of each parameter.
-        $validationSet = $script:s_PDPRootPath, $script:s_Release, $script:s_PDPInclude, $script:s_PDPExclude, $script:s_LanguageExclude, $script:s_ImagesRootPath, $script:s_OutPath, $script:s_OutName
+        $validationSet = $script:s_PDPRootPath, $script:s_Release, $script:s_PDPInclude, $script:s_PDPExclude, $script:s_LanguageExclude, $script:s_ImagesRootPath, $script:s_OutPath, $script:s_OutName, $script:s_MediaFallbackLanguage
         $packageParams = @{}
         foreach ($param in $validationSet)
         {
@@ -3221,7 +3441,7 @@ function New-InAppProductSubmissionPackage
                                    (Test-Path -PathType Container $script:tempFolderPath)
 
         # Get the submission request object
-        $resourceParams = $script:s_PDPRootPath, $script:s_Release, $script:s_PDPInclude, $script:s_PDPExclude, $script:s_LanguageExclude, $script:s_ImagesRootPath
+        $resourceParams = $script:s_PDPRootPath, $script:s_Release, $script:s_PDPInclude, $script:s_PDPExclude, $script:s_LanguageExclude, $script:s_ImagesRootPath, $script:s_MediaFallbackLanguage
 
         # Note: PSScriptAnalyzer falsely flags this next line as PSUseDeclaredVarsMoreThanAssignment due to:
         # https://github.com/PowerShell/PSScriptAnalyzer/issues/699

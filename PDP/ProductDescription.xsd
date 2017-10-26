@@ -40,6 +40,12 @@
     </xs:restriction>
   </xs:simpleType>
 
+  <xs:simpleType name="LangCodeString">
+    <xs:restriction base="xs:normalizedString">
+      <xs:pattern value="\s*(\S(\r|\n|.){0,29}\s*)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
   <xs:attributeGroup name="ScreenshotImageGroup">
     <xs:attribute name="DesktopImage">
       <xs:simpleType>
@@ -76,6 +82,7 @@
         </xs:restriction>
       </xs:simpleType>
     </xs:attribute>
+    <xs:attribute name="FallbackLanguage" type="tns:LangCodeString" />
   </xs:attributeGroup>
   
   <xs:simpleType name="CaptionStringContent">
@@ -137,7 +144,6 @@
   <xs:simpleType name="AppStoreNameString">
     <xs:restriction base="xs:string"/>
   </xs:simpleType>
-
 
   <xs:element name="ProductDescription">
     <xs:annotation>
@@ -245,6 +251,7 @@
                 </xs:complexType>
               </xs:element>
             </xs:sequence>
+            <xs:attribute name="FallbackLanguage" type="tns:LangCodeString" />
           </xs:complexType>
         </xs:element>
 

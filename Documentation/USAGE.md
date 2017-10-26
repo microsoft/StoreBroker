@@ -302,11 +302,11 @@ this submission.
    > Changing the percentage to 100 is not the same as Finalizing the package rollout.  For more information
    > on this topic, refer to the [Store documentation](https://docs.microsoft.com/en-us/windows/uwp/publish/gradual-package-rollout).
 
-* **`ExistingPackageRolloutAction`** _[NoAction, Halt, Finalize]_ You can't create a new submission if
-  the current pending submission is currently using package rollout.  In that scenario, prior to calling
-  this command, you can manually call `Complete-ApplicationSubmissionPackageRollout` or
-  `Stop-ApplicationSubmissionPackageRollout`, or you can just specify this parameter and the action it
-  should take, and it will do that for you automatically prior to cloning the submission.
+ * **`ExistingPackageRolloutAction`** _[NoAction, Halt, Finalize]_ You can't create a new submission if
+   the current pending submission is currently using package rollout.  In that scenario, prior to calling
+   this command, you can manually call `Complete-ApplicationSubmissionPackageRollout` or
+   `Stop-ApplicationSubmissionPackageRollout`, or you can just specify this parameter and the action it
+   should take, and it will do that for you automatically prior to cloning the submission.
 
 > Due to the nature of how the Store API works, you won't see any of your changes in the
 > dev portal until your submission has entered into certification.  It doesn't have to _complete_
@@ -1141,5 +1141,18 @@ us for analysis.  We expose it here for complete transparency.
      different number of screenshots in the store for your app, depending on the platform accessing
      the Store.  If you need to have a different set of screenshots based on language/locale,
      see the earlier FAQ on that very question.
+
+* **Can I use the same screenshots/icons/media file for different languages?**
+
+   * Yes.  Both `New-SubmissionPackage` and `New-InAppProductSubmissionPackage` support a
+     `MediaFallbackLanguage` commandline parameter (and similarly named config file option).
+     If specified, and a language-specific version of the media can't be found during packaging,
+     then StoreBroker will look in that fallback language's images/media sub-folder for the
+     same-named media file.
+
+     You can also be even more specific and specify a `FallbackLanguage` attribute on a media element
+     (`ScreenshotCaptions`, `Caption` or `Icon`) in a language's PDP file if you want more fine-tuned
+     control over which files fallback and which ones don't (and specify different languages in each
+     instance).  You can find out more about that in [PDP.md](./PDP.md#fallback-language-support).
 
 ----------

@@ -102,6 +102,15 @@
 
         "ImagesRootPath": "",
 
+        // Some apps may not localize all of their metadata media (images, trailers, etc..) across all languages.
+        // By default, StoreBroker will look in the PDP langcode's subfolder within ImagesRootPath for that
+        // language's media content.  If the requested filename is not found, StoreBroker packaging will fail.
+        // If you specify a fallback language here (e.g. 'en-us'), then if the requested file isn't found in
+        // the PDP language's media subfolder, StoreBroker will then look into the fallback language's media
+        // subfolder for the exactly same-named image before failing.
+
+        "MediaFallbackLanguage": "",
+
         // Full path to a directory where the Packaging Tool can write the .json submission request
         //     body and .zip package to upload.
         //

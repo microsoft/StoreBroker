@@ -77,6 +77,9 @@ function Initialize-StoreIngestionApiGlobalVariables
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars", "", Justification="We use global variables sparingly and intentionally for module configuration, and employ a consistent naming convention.")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification="This is where we would initialize any global variables for this script.")]
+
+    # Note, this doesn't currently work due to https://github.com/PowerShell/PSScriptAnalyzer/issues/698
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseDeclaredVarsMoreThanAssignment", "", Justification = "These are global variables and so are used elsewhere.")]
     param()
 
     # We only set their values if they don't already have values defined.
@@ -1792,7 +1795,12 @@ function Invoke-SBRestMethod
             if ($PSCmdlet.ShouldProcess($jobName, "Start-Job"))
             {
                 [scriptblock]$scriptBlock = {
-                    param($Url, $method, $Headers, $Body, $HeaderName, $TimeoutSec)
+                    param($Url, $method, $Headers, $Body, $HeaderName, $TimeoutSec, $ScriptRootPath)
+
+                    # We need to "dot invoke" Helpers.ps1 within the context of this script block since
+                    # we're running in a different PowerShell process and need access to
+                    # Get-HttpWebResponseContent
+                    . (Join-Path -Path $ScriptRootPath -ChildPath 'Helpers.ps1')
 
                     # Because this is running in a different PowerShell process, we need to
                     # redefine this script variable (for use within the exception)
@@ -1829,6 +1837,7 @@ function Invoke-SBRestMethod
                         $ex.StatusCode = $_.Exception.Response.StatusCode
                         $ex.StatusDescription = $_.Exception.Response.StatusDescription
                         $ex.InnerMessage = $_.ErrorDetails.Message
+                        $ex.RawContent = Get-HttpWebResponseContent -WebResponse $_.Exception.Response
                         if ($_.Exception.Response.Headers.Count -gt 0)
                         {
                             $ex.CorrelationId = $_.Exception.Response.Headers[$script:headerMSCorrelationId]
@@ -1838,7 +1847,7 @@ function Invoke-SBRestMethod
                     }
                 }
 
-                $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($url, $Method, $headers, $Body, $script:headerMSCorrelationId, $global:SBWebRequestTimeoutSec)
+                $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($url, $Method, $headers, $Body, $script:headerMSCorrelationId, $global:SBWebRequestTimeoutSec, $PSScriptRoot)
 
                 if ($PSCmdlet.ShouldProcess($jobName, "Wait-JobWithAnimation"))
                 {
@@ -1883,7 +1892,9 @@ function Invoke-SBRestMethod
         }
         catch [ArgumentException]
         {
-            # The content must not be JSON.  We'll return the raw content result instead.
+            # The content must not be JSON (which is a legitimate situation).  We'll return the raw content result instead.
+            # We do this unnecessary assignment to avoid PSScriptAnalyzer's PSAvoidUsingEmptyCatchBlock.
+            $finalResult = $finalResult
         }
 
         return $finalResult
@@ -1898,6 +1909,7 @@ function Invoke-SBRestMethod
         $statusDescription = $null
         $correlationId = $null
         $innerMessage = $null
+        $rawContent = $null
 
         if ($_.Exception -is [System.Net.WebException])
         {
@@ -1906,6 +1918,7 @@ function Invoke-SBRestMethod
             $statusCode = $ex.Response.StatusCode.value__ # Note that value__ is not a typo.
             $statusDescription = $ex.Response.StatusDescription
             $innerMessage = $_.ErrorDetails.Message
+            $rawContent = Get-HttpWebResponseContent -WebResponse $ex.Response
             if ($ex.Response.Headers.Count -gt 0)
             {
                 $correlationId = $ex.Response.Headers[$script:headerMSCorrelationId]
@@ -1924,20 +1937,21 @@ function Invoke-SBRestMethod
                 $statusDescription = $deserialized.StatusDescription
                 $innerMessage = $deserialized.InnerMessage
                 $correlationId = $deserialized.CorrelationId
+                $rawContent = $deserialized.RawContent
             }
             catch [System.ArgumentException]
             {
                 # Will be thrown if $ex.Message isn't JSON content
                 Write-Log $ex.Message -Level Error
                 Set-TelemetryException -Exception $ex -ErrorBucket $errorBucket -Properties $localTelemetryProperties
-                throw;
+                throw
             }
         }
         else
         {
             Write-Log $_.Exception.Message -Level Error
             Set-TelemetryException -Exception $_.Exception -ErrorBucket $errorBucket -Properties $localTelemetryProperties
-            throw $script:headerMSCorrelationId + ' : ' + $correlationId + [Environment]::NewLine + $_.Exception.Message;
+            throw
         }
 
         $output = @()
@@ -1970,6 +1984,37 @@ function Invoke-SBRestMethod
             {
                 # Will be thrown if $innerMessage isn't JSON content
                 $output += $innerMessage.Trim()
+            }
+        }
+
+        # It's possible that the API returned JSON content in its error response.
+        # If it did, we want to extract the "activityId" property from it for
+        # logging purposes in order to assist the Submission API team with 
+        # post-mortem debugging.
+        if (-not [String]::IsNullOrWhiteSpace($rawContent))
+        {
+            try
+            {
+                $rawContentJson = $rawContent | ConvertFrom-Json
+                $activityId = $rawContentJson.activityId
+                if (-not [String]::IsNullOrWhiteSpace($activityId))
+                {
+                    $output += "ActivityId: $activityId"
+                }
+                else
+                {
+                    # The property we wanted wasn't there, but we'll capture the full
+                    # content for logging purposes anyway since it's rare for an API
+                    # error to return additional content -- seeing it might be helpful.
+                    $output += $rawContent    
+                }
+            }
+            catch [ArgumentException]
+            {
+                # The content must not be JSON.
+                # We'll capture it for logging purposes anyway since it's rare for an API
+                # error to return additional content -- seeing it might be helpful.
+                $output += $rawContent
             }
         }
 
@@ -2164,6 +2209,8 @@ function Remove-UnofficialSubmissionProperties
         Valid properties for applicationPackages are taken from https://docs.microsoft.com/en-us/windows/uwp/monetize/manage-app-submissions#application-package-object
 #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification="This really does remove multiple properties.")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "", Justification="This has no impact to system state.")]
     param(
         [Parameter(Mandatory)]
         [PSCustomObject] $Submission

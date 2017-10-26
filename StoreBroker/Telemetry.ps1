@@ -78,6 +78,9 @@ function Initialize-TelemetryGlobalVariables
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars", "", Justification="We use global variables sparingly and intentionally for module configuration, and employ a consistent naming convention.")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification="We are initializing multiple variables.")]
+
+    # Note, this doesn't currently work due to https://github.com/PowerShell/PSScriptAnalyzer/issues/698
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseDeclaredVarsMoreThanAssignment", "", Justification = "These are global variables and so are used elsewhere.")]
     param()
 
     # We only set their values if they don't already have values defined.

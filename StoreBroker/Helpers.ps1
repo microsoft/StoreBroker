@@ -27,6 +27,9 @@ function Initialize-HelpersGlobalVariables
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars", "", Justification="We use global variables sparingly and intentionally for module configuration, and employ a consistent naming convention.")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification="We are initializing multiple variables.")]
+
+    # Note, this doesn't currently work due to https://github.com/PowerShell/PSScriptAnalyzer/issues/698
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseDeclaredVarsMoreThanAssignment", "", Justification="These are global variables and so are used elsewhere.")]
     param()
 
     # We only set their values if they don't already have values defined.
@@ -858,6 +861,7 @@ function Ensure-Directory
         Uses the Resolve-UnverifiedPath function to resolve relative paths.
 #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseApprovedVerbs", "", Justification = "Unable to find a standard verb that satisfies describing the purpose of this internal helper method.")]
     param(
         [Parameter(Mandatory)]
         [string] $Path
@@ -878,5 +882,60 @@ function Ensure-Directory
         Write-Log "Could not ensure directory: [$Path]" -Level Error
 
         throw 
+    }
+}
+
+function Get-HttpWebResponseContent
+{
+<#
+    .SYNOPSIS
+        Returns the content that may be contained within an HttpWebResponse object.
+
+    .DESCRIPTION
+        Returns the content that may be contained within an HttpWebResponse object.
+
+        This would commonly be used when trying to get the potential content
+        returned within a failing WebResponse.  Normally, when you call
+        Invoke-WebRequest, it returns back a BasicHtmlWebResponseObject which
+        directly contains a Content property, however if the web request fails,
+        you get a WebException which contains a simpler WebResponse, which
+        requires a bit more effort in order to acccess the raw response content.
+
+    .PARAMETER WebResponse
+        An HttpWebResponse object, typically the Response property on a WebException.
+
+    .OUTPUTS
+        System.String - The raw content that was included in a WebResponse; $null otherwise.
+#>
+    [CmdletBinding()]
+    [OutputType([String])]
+    param(
+        [Parameter(Mandatory)]
+        [System.Net.HttpWebResponse] $WebResponse
+    )
+
+    $streamReader = $null
+
+    try
+    {
+        $content = $null
+
+        if ($WebResponse.ContentLength -gt 0)
+        {
+            $stream = $Response.GetResponseStream()
+            $encoding = [System.Text.Encoding]::GetEncoding($WebResponse.ContentEncoding)
+
+            $streamReader = New-Object -TypeName System.IO.StreamReader -ArgumentList ($stream, $encoding)
+            $content = $streamReader.ReadToEnd()
+        }
+
+        return $content
+    }
+    finally
+    {
+        if ($null -ne $streamReader)
+        {
+            $streamReader.Close()
+        }
     }
 }

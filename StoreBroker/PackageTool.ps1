@@ -628,6 +628,9 @@ function Test-Xml
     {
         $msg = @()
         $msg += "Provided XML file:`n`t$($XmlFile)`nis not valid under its referenced schema:`n`t$($XsdFile)"
+
+        # Note: PSScriptAnalyzer falsely flags this next line as PSUseDeclaredVarsMoreThanAssignment due to:
+        # https://github.com/PowerShell/PSScriptAnalyzer/issues/699
         $script:validationErrors | ForEach-Object { $msg += $_ }
         $msg = $msg -join [Environment]::NewLine
 
@@ -1313,6 +1316,9 @@ function New-ApplicationMetadataTable
         Hashtable    A hashtable with $null values and keys for the properties mentioned
                      in the description.
 #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "", Justification="This doesn't change any system state...just creates a new object.")]
+    param()
+
     $table = @{}
     foreach ($property in $script:applicationMetadataProperties)
     {
@@ -1784,7 +1790,7 @@ function Get-FormattedFilename
         $architectureTag = ($Metadata.innerPackages.Keys | Sort-Object) -join '.'
 
         # Grab an arbitrary one and use that version.
-        $arch = $Metadata.innerPackages.Keys | Sort-Object | Select -First 1
+        $arch = $Metadata.innerPackages.Keys | Sort-Object | Select-Object -First 1
         $version = $Metadata.innerPackages.$arch.version
     }
 
@@ -2988,6 +2994,9 @@ function New-SubmissionPackage
 
         # Get the submission request object
         $resourceParams = $script:s_PDPRootPath, $script:s_Release, $script:s_PDPInclude, $script:s_PDPExclude, $script:s_LanguageExclude, $script:s_ImagesRootPath, $script:s_AppxPath, $script:s_DisableAutoPackageNameFormatting
+
+        # Note: PSScriptAnalyzer falsely flags this next line as PSUseDeclaredVarsMoreThanAssignment due to:
+        # https://github.com/PowerShell/PSScriptAnalyzer/issues/699
         $params = Get-Variable -Name $resourceParams -ErrorAction SilentlyContinue |
                   ForEach-Object { $m = @{} } { $m[$_.Name] = $_.Value } { $m } # foreach begin{} process{} end{}
 
@@ -3213,6 +3222,9 @@ function New-InAppProductSubmissionPackage
 
         # Get the submission request object
         $resourceParams = $script:s_PDPRootPath, $script:s_Release, $script:s_PDPInclude, $script:s_PDPExclude, $script:s_LanguageExclude, $script:s_ImagesRootPath
+
+        # Note: PSScriptAnalyzer falsely flags this next line as PSUseDeclaredVarsMoreThanAssignment due to:
+        # https://github.com/PowerShell/PSScriptAnalyzer/issues/699
         $params = Get-Variable -Name $resourceParams -ErrorAction SilentlyContinue |
                   ForEach-Object { $m = @{} } { $m[$_.Name] = $_.Value } { $m } # foreach begin{} process{} end{}
 

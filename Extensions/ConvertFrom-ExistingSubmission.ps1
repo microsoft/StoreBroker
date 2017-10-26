@@ -498,6 +498,8 @@ function Add-ScreenshotCaptions
 
             if ($null -eq $captionImageMap[$description])
             {
+                # Note: PSScriptAnalyzer falsely flags this next line as PSUseDeclaredVarsMoreThanAssignment due to:
+                # https://github.com/PowerShell/PSScriptAnalyzer/issues/699
                 $captionImageMap[$description] = @{}
             }
                         

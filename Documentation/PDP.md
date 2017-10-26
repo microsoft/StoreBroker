@@ -10,6 +10,7 @@
     *   [Screenshots and Captions](#screenshots-and-captions)
         *   [Folder Structure](#folder-structure)
     *   [Icons](#icons)
+    *   [Fallback Language Support](#fallback-language-support)
 *   [Schemas And Samples](#schemas-and-samples)
 *   [Loc Attributes and Comments](#loc-attributes-and-comments)
     *   [Marking A String To Not Be Localized](#marking-a-string-to-not-be-localized)
@@ -123,6 +124,37 @@ is needed based on that region's culture), and so the icon is part of the PDP.
 
 The only thing that can be specified for the Icon is the filename of that icon.  It is expected
 that the filename will be found within the defined [folder structure](#folder-structure).
+
+### Fallback Language Support
+
+PDP files are language-specific, and as we saw in the [Folder Structure](#folder-structure) section,
+any screenhots or icons that are referenced by a PDP are only searched for within that same language's
+media sub-folder within `ImagesRootPath`.
+
+There are situations however where you might want to share an image/media file across more than one language.
+For instance: maybe you want all Spanish language PDP's to use the images from `es-es`.
+Both `New-SubmissionPackage` and `New-InAppProductSubmissionPackage` support a `MediaFallbackLanguage` parameter
+which lets you specify the language where StoreBroker should look if any of the referenced media files cannot
+be found in the language-specific images/media folder.
+
+For screenshot and icons, you can specify a `FallbackLanguage` attribute whose value would be a lang-code
+(ex. `en-US`, `es-es`, etc...).  For icons, the attribute is directly on the `<Icon />` element.  For
+screenshots, the attribute is available on both the `<ScreenshotCaptions />` _and_ `<Caption />` elements.
+It can be set on either, or both, of those elements.  If specified on both, the value in the `<Caption />`
+node value will win, since it is the more-specific value.
+
+As usual, StoreBroker will first search for any media files referenced by that element in that PDP's
+langcode-specific images/media sub-folder.  If not found, it will then look in the fallback language's
+images/media sub-folder.  Only then will StoreBroker fail if the file still cannot be found.
+
+The key to remember is that this behaves in a "fallback" fashion, similar to language localization, and not
+as an override.  StoreBroker will always attempt to use the language-specific version of the file unless
+it can't be found.
+
+> Specifying the `FallbackLanguage` attribute will override the `MediaFallbackLanguage` parameter/config value
+> for `New-SubmissionPackage` and `New-InAppProductSubmissionPackage` for that specific media element.
+> There can only be _one_ fallback language for any given media file.  So, at most, StoreBroker will search
+> for a given media file twice (original language and fallback language) before failing the packaging action.
 
 ----------
 

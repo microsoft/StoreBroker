@@ -36,6 +36,13 @@
         </xs:restriction>
       </xs:simpleType>
     </xs:attribute>
+    <xs:attribute name="FallbackLanguage">
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:maxLength value="255" />
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
   </xs:attributeGroup>
 
   <xs:simpleType name="ReleaseString">

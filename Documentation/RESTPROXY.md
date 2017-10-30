@@ -331,7 +331,7 @@ here's what you need to do.
 First, get the IP address of the machine you want to remote into.
 
 1. Go to the [Azure Portal](http://portal.azure.com)
-2. Click on All Resources -> `storebrokerrestproxy` (the one that says: _Cloud service (classic)_)
+2. Click on All Resources -> `storebrokerproxy` (the one that says: _Cloud service (classic)_)
 3. In the _Overview_ blade, choose the appropriate slot (production or staging) from the dropdown
    at the top.
 4. Lower in that blade, click on the "instance" of the Proxy Service that you care about (the
@@ -659,7 +659,7 @@ so that it points to the right IP.
 > downtime during this period.
 
 1. Go to the [Azure Portal](http://portal.azure.com)
-2. Click on All Resources -> `storebrokerrestproxy` (the one that says: _Cloud service (classic)_)
+2. Click on All Resources -> `storebrokerproxy` (the one that says: _Cloud service (classic)_)
 3. In the _Overview_ blade, make sure that the top dropdown says **Production slot** and then
    look at the "public IP address" (the one before the comma is the ILB, the one after the comma
    is a public IP that doesn't actually work, by design of ExpressRoute).

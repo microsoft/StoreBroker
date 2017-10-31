@@ -1837,7 +1837,15 @@ function Invoke-SBRestMethod
                         $ex.StatusCode = $_.Exception.Response.StatusCode
                         $ex.StatusDescription = $_.Exception.Response.StatusDescription
                         $ex.InnerMessage = $_.ErrorDetails.Message
-                        $ex.RawContent = Get-HttpWebResponseContent -WebResponse $_.Exception.Response
+                        try
+                        {
+                            $ex.RawContent = Get-HttpWebResponseContent -WebResponse $_.Exception.Response
+                        }
+                        catch
+                        {
+                            Write-Log "Unable to retrieve the raw HTTP Web Response: $($_.Exception.Message)" -Level Warning
+                        }
+                        
                         if ($_.Exception.Response.Headers.Count -gt 0)
                         {
                             $ex.CorrelationId = $_.Exception.Response.Headers[$script:headerMSCorrelationId]
@@ -1918,7 +1926,15 @@ function Invoke-SBRestMethod
             $statusCode = $ex.Response.StatusCode.value__ # Note that value__ is not a typo.
             $statusDescription = $ex.Response.StatusDescription
             $innerMessage = $_.ErrorDetails.Message
-            $rawContent = Get-HttpWebResponseContent -WebResponse $ex.Response
+            try
+            {
+                $rawContent = Get-HttpWebResponseContent -WebResponse $ex.Response                
+            }
+            catch
+            {
+                Write-Log "Unable to retrieve the raw HTTP Web Response: $($_.Exception.Message)" -Level Warning
+            }
+            
             if ($ex.Response.Headers.Count -gt 0)
             {
                 $correlationId = $ex.Response.Headers[$script:headerMSCorrelationId]

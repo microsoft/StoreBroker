@@ -84,19 +84,20 @@ function Initialize-TelemetryGlobalVariables
     param()
 
     # We only set their values if they don't already have values defined.
-    # We use -ErrorAction SilentlyContinue during the Get-Variable check since it throws an exception
+    # We use -ErrorAction Ignore during the Get-Variable check since it throws an exception
     # by default if the variable we're getting doesn't exist, and we just want the bool result.
-    if (!(Get-Variable -Name SBDisableTelemetry -Scope Global -ValueOnly -ErrorAction SilentlyContinue))
+    # SilentlyContinue would cause it to go into the global $Error array, Ignore prevents that as well.
+    if (!(Get-Variable -Name SBDisableTelemetry -Scope Global -ValueOnly -ErrorAction Ignore))
     {
         $global:SBDisableTelemetry = $false
     }
 
-    if (!(Get-Variable -Name SBDisablePiiProtection -Scope Global -ValueOnly -ErrorAction SilentlyContinue))
+    if (!(Get-Variable -Name SBDisablePiiProtection -Scope Global -ValueOnly -ErrorAction Ignore))
     {
         $global:SBDisablePiiProtection = $false
     }
 
-    if (!(Get-Variable -Name SBApplicationInsightsKey -Scope Global -ValueOnly -ErrorAction SilentlyContinue))
+    if (!(Get-Variable -Name SBApplicationInsightsKey -Scope Global -ValueOnly -ErrorAction Ignore))
     {
         $global:SBApplicationInsightsKey = '4cdaa89f-33c5-46b4-ba5a-3befb5d8fe01'
     }

@@ -83,9 +83,10 @@ function Initialize-StoreIngestionApiGlobalVariables
     param()
 
     # We only set their values if they don't already have values defined.
-    # We use -ErrorAction SilentlyContinue during the Get-Variable check since it throws an exception
+    # We use -ErrorAction Ignore during the Get-Variable check since it throws an exception
     # by default if the variable we're getting doesn't exist, and we just want the bool result.
-    if (!(Get-Variable -Name SBDefaultProxyEndpoint -Scope Global -ValueOnly -ErrorAction SilentlyContinue))
+    # SilentlyContinue would cause it to go into the global $Error array, Ignore prevents that as well.
+    if (!(Get-Variable -Name SBDefaultProxyEndpoint -Scope Global -ValueOnly -ErrorAction Ignore))
     {
         $global:SBDefaultProxyEndpoint = $null
     }

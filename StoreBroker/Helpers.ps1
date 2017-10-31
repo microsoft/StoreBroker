@@ -33,9 +33,10 @@ function Initialize-HelpersGlobalVariables
     param()
 
     # We only set their values if they don't already have values defined.
-    # We use -ErrorAction SilentlyContinue during the Get-Variable check since it throws an exception
+    # We use -ErrorAction Ignore during the Get-Variable check since it throws an exception
     # by default if the variable we're getting doesn't exist, and we just want the bool result.
-    if (!(Get-Variable -Name SBLoggingEnabled -Scope Global -ValueOnly -ErrorAction SilentlyContinue))
+    # SilentlyContinue would cause it to go into the global $Error array, Ignore prevents that as well.
+    if (!(Get-Variable -Name SBLoggingEnabled -Scope Global -ValueOnly -ErrorAction Ignore))
     {
         $global:SBLoggingEnabled = $true
     }
@@ -43,7 +44,7 @@ function Initialize-HelpersGlobalVariables
     # $Home relies on existence of $env:HOMEDRIVE and $env:HOMEPATH which are only 
     # set when a user logged in interactively, which may not be the case for some build machines.
     # $env:USERPROFILE is the equivalent of $Home, and should always be available.
-    if (!(Get-Variable -Name SBLogPath -Scope Global -ValueOnly -ErrorAction SilentlyContinue))
+    if (!(Get-Variable -Name SBLogPath -Scope Global -ValueOnly -ErrorAction Ignore))
     {
         if (-not [System.String]::IsNullOrEmpty($env:USERPROFILE))
         {
@@ -55,37 +56,37 @@ function Initialize-HelpersGlobalVariables
         }
     }
 
-    if (!(Get-Variable -Name SBShouldLogPid -Scope Global -ValueOnly -ErrorAction SilentlyContinue))
+    if (!(Get-Variable -Name SBShouldLogPid -Scope Global -ValueOnly -ErrorAction Ignore))
     {
         $global:SBShouldLogPid = $false
     }
 
-    if (!(Get-Variable -Name SBNotifyDefaultDomain -Scope Global -ValueOnly -ErrorAction SilentlyContinue))
+    if (!(Get-Variable -Name SBNotifyDefaultDomain -Scope Global -ValueOnly -ErrorAction Ignore))
     {
         $global:SBNotifyDefaultDomain = $null
     }
 
-    if (!(Get-Variable -Name SBNotifySmtpServer -Scope Global -ValueOnly -ErrorAction SilentlyContinue))
+    if (!(Get-Variable -Name SBNotifySmtpServer -Scope Global -ValueOnly -ErrorAction Ignore))
     {
         $global:SBNotifySmtpServer = $null
     }
 
-    if (!(Get-Variable -Name SBNotifyDefaultFrom -Scope Global -ValueOnly -ErrorAction SilentlyContinue))
+    if (!(Get-Variable -Name SBNotifyDefaultFrom -Scope Global -ValueOnly -ErrorAction Ignore))
     {
         $global:SBNotifyDefaultFrom = $env:username
     }
 
-    if (!(Get-Variable -Name SBNotifyCredential -Scope Global -ValueOnly -ErrorAction SilentlyContinue))
+    if (!(Get-Variable -Name SBNotifyCredential -Scope Global -ValueOnly -ErrorAction Ignore))
     {
         $global:SBNotifyCredential = [PSCredential]$null
     }
 
-    if (!(Get-Variable -Name SBUseUTC -Scope Global -ValueOnly -ErrorAction SilentlyContinue))
+    if (!(Get-Variable -Name SBUseUTC -Scope Global -ValueOnly -ErrorAction Ignore))
     {
         $global:SBUseUTC = $false
     }
 
-    if (!(Get-Variable -Name SBWebRequestTimeoutSec -Scope Global -ValueOnly -ErrorAction SilentlyContinue))
+    if (!(Get-Variable -Name SBWebRequestTimeoutSec -Scope Global -ValueOnly -ErrorAction Ignore))
     {
         $global:SBWebRequestTimeoutSec = 0
     }

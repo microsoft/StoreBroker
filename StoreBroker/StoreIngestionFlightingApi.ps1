@@ -1283,12 +1283,15 @@ function Update-ApplicationFlightSubmission
     # payload to the wrong application
     if ([String]::IsNullOrWhiteSpace($submission.appId))
     {
+        $configPath = Join-Path -Path ([System.Environment]::GetFolderPath('Desktop')) -ChildPath 'newconfig.json'
+
         $output = @()
         $output += "The config file used to generate this submission did not have an AppId defined in it."
         $output += "The AppId entry in the config helps ensure that payloads are not submitted to the wrong application."
-        $output += "Please update your app's StoreBroker config file by adding an ""appId"" property with"
-        $output += "your app's AppId to the ""appSubmission"" section.  If you're unclear on what change"
-        $output += "needs to be done, you can re-generate your config file using ""New-PackageToolConfigFile -AppId $AppId"" -Path ""`$home\desktop\newconfig.json"""
+        $output += "Please update your app's StoreBroker config file by adding an `"appId`" property with"
+        $output += "your app's AppId to the `"appSubmission`" section.  If you're unclear on what change"
+        $output += "needs to be done, you can re-generate your config file using"
+        $output += "   New-PackageToolConfigFile -AppId $AppId -Path `"$configPath`""
         $output += "and then diff the new config file against your current one to see the requested appId change."
         Write-Log $($output -join [Environment]::NewLine) -Level Warning
     }

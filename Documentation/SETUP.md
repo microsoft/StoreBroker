@@ -69,11 +69,12 @@ From an **Administrator** PowerShell console, run the following command:
 
 You need to choose a folder that you're going to store the module in.  We recommend choosing to
 use a **new sub-folder** within one of the folders in your `$env:PSModulePath`.  By default,
-even if the folder doesn't exist yet, `$Home\Documents\WindowsPowerShell\Modules` is one of
-those folders -- this is the one that we'd recommend that you use.  If it doesn't exist yet, just
+even if the folder doesn't exist yet,
+`Join-Path -Path ([System.Environment]::GetFolderPath('MyDocuments')) -ChildPath 'WindowsPowerShell\Modules'`
+is one of those folders -- this is the one that we'd recommend that you use.  If it doesn't exist yet, just
 go ahead and create it:
 
-    New-Item -Type Directory -Force -Path $Home\Documents\WindowsPowerShell\Modules\StoreBroker
+    New-Item -Type Directory -Force -Path (Join-Path -Path ([System.Environment]::GetFolderPath('MyDocuments')) -ChildPath 'WindowsPowerShell\Modules\StoreBroker')
 
 If you follow that advice, then the module will automatically be available in any PowerShell
 console session implicitly.  If you choose to store the module somewhere else, then you will need
@@ -292,12 +293,12 @@ One way to do this would be the following:
      password into a plain-text file, and only the same user logged-in to the exact same computer
      will be able to decrypt it.
           
-         $cred.Password | ConvertFrom-SecureString | Set-Content $HOME\Documents\clientSecret.txt
+         $cred.Password | ConvertFrom-SecureString | Set-Content -Path (Join-Path -Path ([System.Environment]::GetFolderPath('MyDocuments')) -ChildPath 'clientSecret.txt')
 
   4. When you want to create the credentials yourself later on and authenticate (being sure to
      replace `<tenantId>` and `<clientId>` with the proper values):
  
-         $clientSecret = Get-Content $HOME\Documents\clientSecret.txt | ConvertTo-SecureString
+         $clientSecret = Get-Content -Path (Join-Path -Path ([System.Environment]::GetFolderPath('MyDocuments')) -ChildPath 'clientSecret.txt') | ConvertTo-SecureString
          $cred = New-Object System.Management.Automation.PSCredential "<clientId>", $clientSecret
          Set-StoreBrokerAuthentication -TenantId <tenantId> -Credential $cred
 
@@ -431,7 +432,7 @@ Every project should have its own StoreBroker config file.  The config file has 
 
 #### Config Setup Steps
 
-1. Now run `New-StoreBrokerConfigFile -Path $home\desktop\SBConfig.json -AppId <AppId>`,
+1. Now run `New-StoreBrokerConfigFile -Path (Join-Path -Path ([System.Environment]::GetFolderPath('Desktop')) -ChildPath 'SBConfig.json') -AppId <AppId>`,
    substituting in your [AppId](#getting-your-appid), and that will generate a pre-populated config
    file to your desktop, based on the current configuration of your app in the Store. (Feel free
    to name this file whatever you want).
@@ -603,7 +604,7 @@ Every IAP should have its own StoreBroker config file.  The config file has two 
 
 #### IAP Config Setup Steps
 
-1. Now run `New-StoreBrokerInAppProductConfigFile -Path $home\desktop\SBConfig.json -IapId <IapId>`,
+1. Now run `New-StoreBrokerInAppProductConfigFile -Path (Join-Path -Path ([System.Environment]::GetFolderPath('Desktop')) -ChildPath 'SBConfig.json') -IapId <IapId>`,
    substituting in your [IapId](#getting-your-iapid), and that will generate a pre-populated config
    file to your desktop, based on the current configuration of your IAP in the Store. (Feel free
    to name this file whatever you want).

@@ -1310,13 +1310,15 @@ function Update-InAppProductSubmission
     # Extra layer of validation to protect users from trying to submit a payload to the wrong IAP
     if ([String]::IsNullOrWhiteSpace($submission.iapId))
     {
+        $configPath = Join-Path -Path ([System.Environment]::GetFolderPath('Desktop')) -ChildPath 'newconfig.json'
+        
         $output = @()
         $output += "The config file used to generate this submission did not have an IapId defined in it."
         $output += "The IapId entry in the config helps ensure that payloads are not submitted to the wrong In-App Product."
-        $output += "Please update your app's StoreBroker config file by adding an ""iapId"" property with"
-        $output += "your IAP's IapId to the ""iapSubmission"" section.  If you're unclear on what change"
+        $output += "Please update your app's StoreBroker config file by adding an `"iapId`" property with"
+        $output += "your IAP's IapId to the `"iapSubmission`" section.  If you're unclear on what change"
         $output += "needs to be done, you can re-generate your config file using"
-        $output += "   ""New-StoreBrokerInAppProductConfigFile -IapId $IapId"" -Path ""`$home\desktop\newconfig.json"""
+        $output += "   New-StoreBrokerInAppProductConfigFile -IapId $IapId -Path `"$configPath`""
         $output += "and then diff the new config file against your current one to see the requested iapId change."
         Write-Log $($output -join [Environment]::NewLine) -Level Warning
     }

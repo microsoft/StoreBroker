@@ -41,14 +41,12 @@ function Initialize-HelpersGlobalVariables
         $global:SBLoggingEnabled = $true
     }
 
-    # $Home relies on existence of $env:HOMEDRIVE and $env:HOMEPATH which are only 
-    # set when a user logged in interactively, which may not be the case for some build machines.
-    # $env:USERPROFILE is the equivalent of $Home, and should always be available.
     if (!(Get-Variable -Name SBLogPath -Scope Global -ValueOnly -ErrorAction Ignore))
     {
-        if (-not [System.String]::IsNullOrEmpty($env:USERPROFILE))
+        $documentsFolder = [System.Environment]::GetFolderPath('MyDocuments')
+        if (-not [System.String]::IsNullOrEmpty($documentsFolder))
         {
-            $global:SBLogPath = $(Join-Path $env:USERPROFILE "Documents\StoreBroker.log")
+            $global:SBLogPath = Join-Path -Path $documentsFolder -ChildPath 'StoreBroker.log'
         }
         else
         {

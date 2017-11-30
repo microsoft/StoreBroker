@@ -1627,6 +1627,16 @@ function Patch-ApplicationFlightSubmission
         }
     }
 
+    if (($AddPackages -or $ReplacePackages) -and ($NewSubmission.applicationPackages.Count -eq 0))
+    {
+        $output = @()
+        $output += "Your submission doesn't contain any packages, so you cannot Add or Replace packages." 
+        $output += "Please check your input settings to New-SubmissionPackage and ensure you're providing a value for AppxPath."
+        $output = $output -join [Environment]::NewLine
+        Write-Log $output -Level Error
+        throw $output
+    }
+
     # Caller wants to simply append the new packages to the existing set of packages in the
     # submission.
     if ($AddPackages)

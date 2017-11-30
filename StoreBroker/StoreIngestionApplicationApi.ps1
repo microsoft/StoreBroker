@@ -1453,6 +1453,16 @@ function Patch-ApplicationSubmission
         }
     }
 
+    if (($AddPackages -or $ReplacePackages) -and ($NewSubmission.applicationPackages.Count -eq 0))
+    {
+        $output = @()
+        $output += "Your submission doesn't contain any packages, so you cannot Add or Replace packages." 
+        $output += "Please check your input settings to New-SubmissionPackage and ensure you're providing a value for AppxPath."
+        $output = $output -join [Environment]::NewLine
+        Write-Log $output -Level Error
+        throw $output
+    }
+    
     # When updating packages, we'll simply add the new packages to the list of existing packages.
     # At some point when the API provides more signals to us with regard to what platform/OS
     # an existing package is for, we may want to mark "older" packages for the same platform

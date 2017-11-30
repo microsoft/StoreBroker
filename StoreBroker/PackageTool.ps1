@@ -2398,9 +2398,9 @@ function Resolve-PackageParameters
             $configVal = $ConfigObject.packageParameters.OutPath
             if ([System.String]::IsNullOrWhiteSpace($configVal))
             {
-                $newLineOutput = ($out -join [Environment]::NewLine)
-                Write-Log $newLineOutput -Level Error
-                throw $newLineOutput
+                $output = ($out -f $script:s_OutPath) 
+                Write-Log $output -Level Error
+                throw $output
             }
             else
             {

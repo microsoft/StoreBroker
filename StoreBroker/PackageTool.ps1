@@ -929,7 +929,6 @@ function Get-LocalizedMediaFile
         [Parameter(Mandatory)]
         [string] $Language,
 
-        [Parameter(Mandatory)]
         [string] $Release,
 
         [string] $MediaFallbackLanguage

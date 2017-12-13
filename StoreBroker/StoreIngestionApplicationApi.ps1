@@ -1141,7 +1141,7 @@ function Update-ApplicationSubmission
             {
                 $output = @()
                 $output += "We can only modify a submission that is in the '$script:keywordPendingCommit' state."
-                $output += "The submission that you requested to modify ($SubmissionId) is in '$(submissionToUpdate.status)' state."
+                $output += "The submission that you requested to modify ($SubmissionId) is in '$($submissionToUpdate.status)' state."
                 
                 $newLineOutput = ($output -join [Environment]::NewLine)
                 Write-Log $newLineOutput -Level Error

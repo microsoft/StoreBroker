@@ -980,8 +980,8 @@ function Get-LocalizedMediaFile
     if ($image.Count -gt 1)
     {
         $output = "More then one version of [$Filename] has been found for this language. Please ensure only one copy of this image exists within the language's sub-folders: [$($image.FullName -join ', ')]"
-        Write-Log $output -Level Error
-        throw $output
+        Write-Log $output -Level Warning
+        #throw $output
     }
 
     $fileFullPackagePath = Join-Path -Path $script:tempFolderPath -ChildPath $fileRelativePackagePath

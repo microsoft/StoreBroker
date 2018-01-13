@@ -1608,6 +1608,11 @@ function Read-AppxMetadata
 
         $metadata.version        = $manifest.Package.Identity.Version
         $metadata.architecture   = $manifest.Package.Identity.ProcessorArchitecture
+        if ([String]::IsNullOrWhiteSpace($metadata.architecture))
+        {
+            $metadata.architecture = "neutral"
+        }
+
         $metadata.targetPlatform = Get-TargetPlatform -AppxManifestPath $appxManifest
         $metadata.name           = $manifest.Package.Identity.Name -creplace '^Microsoft\.', ''
         

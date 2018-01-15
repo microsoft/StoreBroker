@@ -9,40 +9,40 @@ regarding the basic functionality of certain command.
 Clears out any cached tenantId, client id, and client secret credential from this PowerShell session. Also disables usage of the proxy server if that had been previously enabled. All future remote commands from this module will once again prompt for credentials.
 
 ## Complete-ApplicationFlightSubmission
+**Alias:** Commit-ApplicationFlightSubmission
+
 Commits the specified application flight submission so that it can start the approval process.
 
 Once committed, it is necessary to wait for the submission to either complete or fail the approval process before a new flight submission can be created/submitted.
 
-**Alias:** Commit-ApplicationFlightSubmission
-
 
 ## Complete-ApplicationFlightSubmissionPackageRollout
+**Alias:** Finalize-ApplicationFlightSubmissionPackageRollout
+
 Finalizes the package rollout for the specified application flight submission.
 
 All users will now begin receiving this submission's packages.
 
-**Alias:** Finalize-ApplicationFlightSubmissionPackageRollout
-
 ## Complete-ApplicationSubmission
+**Alias:** Commit-ApplicationSubmission
+
 Commits the specified application submission so that it can start the approval process.
 
 Once committed, it is necessary to wait for the submission to either complete or fail the approval process before a new application submission can be created/submitted.
 
-**Alias:** Commit-ApplicationSubmission
-
 ## Complete-ApplicationSubmissionPackageRollout
+**Alias:** Finalize-ApplicationSubmissionPackageRollout
+
 Finalizes the package rollout for the specified application submission.
 
 All users will now begin receiving this submission's packages.
 
-**Alias:** Finalize-ApplicationSubmissionPackageRollout
-
 ## Complete-InAppProductSubmission
+**Aliases:** Commit-IapSubmission, Commit-InAppProductSubmission
+
 Commits the specified In-App Product submission so that it can start the approval process.
 
 Once committed, it is necessary to wait for the submission to either complete or fail the approval process before a new IAP submission can be created/submitted.
-
-**Aliases:** Commit-IapSubmission, Commit-InAppProductSubmission
 
 ## Format-Application
 Takes the result from Get-Application and presents it in a more easily-viewable manner.
@@ -57,9 +57,9 @@ Takes the result from Get-ApplicationFlightSubmission and presents it in a more 
 Takes the result from Get-ApplicationFlights and presents it in a more easily-viewable manner.
 
 ## Format-ApplicationInAppProducts
-Takes the result from Get-ApplicationInAppProducts and presents it in a more easily-viewable manner.
-
 **Alias:** Format-ApplicationIaps
+
+Takes the result from Get-ApplicationInAppProducts and presents it in a more easily-viewable manner.
 
 ## Format-ApplicationSubmission
 Takes the result from Get-ApplicationSubmission and presents it in a more easily-viewable manner.
@@ -68,19 +68,19 @@ Takes the result from Get-ApplicationSubmission and presents it in a more easily
 Takes the result from Get-Applications and presents it in a more easily-viewable manner.
 
 ## Format-InAppProduct
-Takes the result from Get-InAppProduct and presents it in a more easily-viewable manner.
-
 **Alias:** Format-Iap
 
-## Format-InAppProductSubmission
-Takes the result from Get-InAppProductSubmission and presents it in a more easily-viewable manner.
+Takes the result from Get-InAppProduct and presents it in a more easily-viewable manner.
 
+## Format-InAppProductSubmission
 **Alias:** Format-IapSubmission
 
-## Format-InAppProducts
-Takes the result from Get-InAppProducts and presents it in a more easily-viewable manner.
+Takes the result from Get-InAppProductSubmission and presents it in a more easily-viewable manner.
 
+## Format-InAppProducts
 **Alias:** Format-Iaps
+
+Takes the result from Get-InAppProducts and presents it in a more easily-viewable manner.
 
 ## Get-Application
 Retrieves the detail for the specified application associated with this developer account. This information is almost identical to the information you would see by just calling Get-Applications.
@@ -107,12 +107,12 @@ Retrieves all flights associated with the specified application for this develop
 Pipe the result of this command into Format-ApplicationFlights for a pretty-printed display of the results.
 
 ## Get-ApplicationInAppProducts
+**Alias:** Get-ApplicationIaps
+
 Retrieves all IAP's associated with the specified application for this developer account.
 
 Pipe the result of this command into Format-ApplicationInAppProducts for a
 pretty-printed display of the results.
-
-**Alias:** Get-ApplicationIaps
 
 ## Get-ApplicationSubmission
 Gets the details of a specific application submission.
@@ -134,30 +134,30 @@ Launches the Dev Portal in the default web browser to display all of the availab
 Viewing in the Dev Portal is necessary because there currently exists no API to programatically browse these groups.
 
 ## Get-InAppProduct
+**Alias:** Get-Iap
+
 Retrieves the detail for the specified IAP associated with the developer account.
     
 Pipe the result of this command into Format-InAppProduct for a pretty-printed display of the result.
 
-**Alias:** Get-Iap
-
 ## Get-InAppProductSubmission
-Retrieves the details of a specific In-App Product submission.
-
 **Alias:** Get-IapSubmission
 
-## Get-InAppProductSubmissionStatus
-Retrieves just the status of a specific In-App Product submission.
+Retrieves the details of a specific In-App Product submission.
 
+## Get-InAppProductSubmissionStatus
 **Alias:** Get-IapSubmissionStatus
 
+Retrieves just the status of a specific In-App Product submission.
+
 ## Get-InAppProducts
+**Alias:** Get-Iaps
+
 Retrieves all IAP's associated across all applications for this
 developer account.
 
 Pipe the result of this command into Format-InAppProducts for a
 pretty-printed display of the results.
-
-**Alias:** Get-Iaps
 
 ## Get-SubmissionPackage
 Downloads the existing package from the URL provided after calling New-ApplicationSubmission.
@@ -197,23 +197,25 @@ You cannot submit a new application submission if there is an existing pending
 application submission for $AppId already.  You can use -Force to work around this.
 
 ## New-InAppProduct
-Creates a new In-App Product associated with this developer account.
-
 **Alias:** New-Iap
 
+Creates a new In-App Product associated with this developer account.
+
 ## New-InAppProductSubmission
+**Alias:** New-IapSubmission
+
 Creates a submission for an existing In-App Product.
 
 You cannot create a new In-App Product submission if there is an existing pending
 application submission for this IAP already.  You can use -Force to work around this.
-
-**Alias:** New-IapSubmission
 
 **Required inputs:** IapId
 
 **Returns:** A submission \<PSCustomObject>
 
 ## New-InAppProductSubmissionPackage
+**Alias:** New-IapSubmissionPackage
+
 Top-level function for creating an in-app product submission's JSON body and .zip package for upload.
 
 Creates the JSON body for a submission request.  Localized listing metadata
@@ -225,25 +227,23 @@ images to a .zip file.
 The .json and .zip files generated by this tool are given a common name specified by
 the -OutName parameter.
 
-**Alias:** New-IapSubmissionPackage
-
 **Required inputs:** ConfigPath (existing SBConfig.json file)
 
 ## New-StoreBrokerConfigFile
+**Alias:** New-PackageToolConfigFile
+
 Creates a new configuration file as a template for an app submission.
 
 The full path to the new file can be provided by the -Path parameter.
 
-**Alias:** New-PackageToolConfigFile
-
 **Required inputs:** Path (for generated SBConfig.json file)
 
 ## New-StoreBrokerInAppProductConfigFile
+**Alias:** New-StoreBrokerIapConfigFile
+
 Creates a new configuration file as a template for an In-App Product submission.
 
 The full path to the new file can be provided by the -Path parameter.
-
-**Alias:** New-StoreBrokerIapConfigFile
 
 **Required inputs:** Path (for generated SBConfig.json file)
 
@@ -309,14 +309,16 @@ this method must be called to remove any existing pending submission.
 - SubmissionId
 
 ## Remove-InAppProduct
-Deletes the specified In-App Product from the developer's account.
-
 **Alias:** Remove-Iap
+
+Deletes the specified In-App Product from the developer's account.
 
 **Required inputs:**
 - IapId
 
 ## Remove-InAppProductSubmission
+**Alias:** Remove-IapSubmission
+
 Deletes the specified In-App Product submission from a developer account.
 
 An IAP can only have a single "pending" submission at any given time,
@@ -324,21 +326,19 @@ and submissions cannot be modified via the REST API once started.
 Therefore, before a new IAP submission can be submitted,
 this method must be called to remove any existing pending submission.
 
-**Alias:** Remove-IapSubmission
-
 **Required inputs:**
 - IapId
 - SubmissionId
 
 ## Set-ApplicationFlightSubmission
+**Alias:** Replace-ApplicationFlightSubmission
+
 Replaces the content of an existing application flight submission with the supplied submission content.
 
 This should be called after having cloned an application flight submission via New-ApplicationFlightSubmission.
     
 The ID of the submission and flight being updated/replaced will be inferred by the
 ID's defined in UpdatedSubmission.
-
-**Alias:** Replace-ApplicationFlightSubmission
 
 **Required inputs:**
 - AppID
@@ -347,14 +347,14 @@ ID's defined in UpdatedSubmission.
 **Returns:** A submission \<PSCustomObject>
 
 ## Set-ApplicationSubmission
+**Alias:** Replace-ApplicationSubmission
+
 Replaces the content of an existing application submission with the supplied submission content.
 
 This should be called after having cloned an application submission via New-ApplicationSubmission.
 
 The ID of the submission being updated/replaced will be inferred by the
 submissionId defined in UpdatedSubmission.
-
-**Alias:** Replace-ApplicationSubmission
 
 **Required inputs:**
 - AppID
@@ -363,13 +363,13 @@ submissionId defined in UpdatedSubmission.
 **Returns:** A submission \<PSCustomObject>
 
 ## Set-InAppProductSubmission
+**Aliases:** Replace-IapSubmission, Replace-InAppProductSubmission, Set-IapSubmission
+
 Replaces the content of an existing In-App Product submission with the supplied submission content.
 
 This should be called after having cloned an In-App Product submission via New-InAppProductSubmission.
 
 The ID of the submission being updated/replaced will be inferred by the ID's defined in UpdatedSubmission.
-
-**Aliases:** Replace-IapSubmission, Replace-InAppProductSubmission, Set-IapSubmission
 
 **Required inputs:**
 - IapId
@@ -384,9 +384,9 @@ this PowerShell session to avoid repeated prompts.
 The cached credential can always be cleared by calling Clear-StoreBrokerAuthentication.
 
 ## Set-SubmissionPackage
-Uploads the package to the URL provided after calling New-ApplicationSubmission.
-
 **Aliases:** Upload-ApplicationSubmissionPackage, Upload-SubmissionPackage
+
+Uploads the package to the URL provided after calling New-ApplicationSubmission.
 
 **Required inputs:**
 - PackagePath
@@ -406,12 +406,12 @@ its state enters the final state that its targetPublishMode allows for.
 **Returns:** The last retrieved submission \<PSCustomObject>
 
 ## Start-InAppProductSubmissionMonitor
+**Alias:** Start-IapSubmissionMonitor
+
 Auto-checks an In-App Product submission for status changes every 60 seconds with optional email notification.
 
 The monitoring will automatically end if the submission enters a failed state, or once
 its state enters the final state that its targetPublishMode allows for.
-
-**Alias:** Start-IapSubmissionMonitor
 
 **Required inputs:**
 - IapId
@@ -420,12 +420,12 @@ its state enters the final state that its targetPublishMode allows for.
 **Returns:** The last retrieved submission \<PSCustomObject>
 
 ## Start-SubmissionMonitor
+**Alias:** Start-ApplicationSubmissionMonitor
+
 Auto-checks an application submission for status changes every 60 seconds with optional email notification.
 
 The monitoring will automatically end if the submission enters a failed state, or once
 its state enters the final state that its targetPublishMode allows for.
-
-**Alias:** Start-ApplicationSubmissionMonitor
 
 **Required inputs:**
 - AppId or IapId
@@ -434,11 +434,11 @@ its state enters the final state that its targetPublishMode allows for.
 **Returns:** The last retrieved submission \<PSCustomObject>
 
 ## Stop-ApplicationFlightSubmissionPackageRollout
+**Alias:** Halt-ApplicationFlightSubmissionPackageRollout
+
 Stops the package rollout for the specified application flight submission.
 
 All users will now begin receiving the fallback submission.
-
-**Alias:** Halt-ApplicationFlightSubmissionPackageRollout
 
 **Required inputs:**
 - AppId
@@ -446,11 +446,11 @@ All users will now begin receiving the fallback submission.
 - SubmissionId
 
 ## Stop-ApplicationSubmissionPackageRollout
+**Alias:** Halt-ApplicationSubmissionPackageRollout
+
 Stops the package rollout for the specified application submission.
 
 All users will now begin receiving the fallback submission.
-
-**Alias:** Halt-ApplicationSubmissionPackageRollout
 
 **Required inputs:**
 - AppId
@@ -510,14 +510,14 @@ Updates the package rollout percentage displayed in the console for the specifie
 - Percentage
 
 ## Update-InAppProductSubmission
+**Alias:** Update-IapSubmission
+
 Creates a new submission for an existing In-App Product on the developer account
 by cloning the existing submission and modifying specific parts of it. The
 parts that will be modified depend solely on the switches that are passed in.
 
 You cannot submit a new application submission if there is an existing pending
 application submission for this IAP already.  You can use -Force to work around this.
-
-**Alias:** Update-IapSubmission
 
 **Required inputs:**
 - IapId

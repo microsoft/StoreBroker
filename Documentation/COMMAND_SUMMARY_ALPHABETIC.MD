@@ -1,4 +1,4 @@
-# Summary of StoreBroker Commands
+# Summary of StoreBroker Commands (Alphabetic)
 
 The following is an alphabetic listing of StoreBroker commands,
 with brief descriptions. All aliases are documented. 
@@ -7,6 +7,10 @@ Some details on required inputs and return values are mentioned to provide more 
 regarding the basic functionality of certain command. Note: if either required inputs or
 a return value are mentioned, then all required inputs and any return value will be
 covered.
+
+Many StoreBroker commands directly correspond to Microsoft Store submission REST APIs.
+For some commands, links are provided to documentation for the corresponding REST API or
+related resources/objects.
 
 ## Clear-StoreBrokerAuthentication
 Clears out any cached tenantId, client id, and client secret credential from this PowerShell session. Also disables usage of the proxy server if that had been previously enabled. All future remote commands from this module will once again prompt for credentials.
@@ -130,6 +134,10 @@ Gets just the status of a specific application submission.
 Retrieves all of the applications associated with this developer account.
 
 For formatted output of this result, consider piping the result into Format-Applications.
+
+Wraps the [Get all apps](https://docs.microsoft.com/en-us/windows/uwp/monetize/get-all-apps) Microsoft Store submission API.
+
+**Returns:** Array of [application](https://docs.microsoft.com/en-us/windows/uwp/monetize/get-app-data#application_object) objects \<PSCustomObject>
 
 ## Get-FlightGroups
 Launches the Dev Portal in the default web browser to display all of the available flight groups.

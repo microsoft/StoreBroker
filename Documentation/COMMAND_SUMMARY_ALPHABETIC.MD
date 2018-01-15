@@ -40,6 +40,18 @@ Commits the specified application submission so that it can start the approval p
 
 Once committed, it is necessary to wait for the submission to either complete or fail the approval process before a new application submission can be created/submitted.
 
+Note: This completes the submission API transaction, but not necessarily the publication
+of the submission. The decision whether to publish after successful certification depends
+on the TargetPublishMode setting when the submission was created.
+
+Wraps the [Commit An App Submission](https://docs.microsoft.com/en-us/windows/uwp/monetize/commit-an-app-submission) Microsoft Store Submission API.
+
+**Required inputs:**
+- AppId
+- SubmissionId
+
+**Returns:** A status. (See [JSON response body](https://docs.microsoft.com/en-us/windows/uwp/monetize/commit-an-app-submission#response).)
+
 ## Complete-ApplicationSubmissionPackageRollout
 **Alias:** Finalize-ApplicationSubmissionPackageRollout
 
@@ -235,15 +247,19 @@ application submission for $AppId already.  You can use -Force to work around th
 ## New-ApplicationSubmission
 Creates a submission for an existing application on the developer account.
 
-This app must already have at least one *published* submission completed via the website in order for this function to work.
+This app must already have at least one *published* submission completed via the
+Dev Portal in order for this function to work. The submission that is returned is
+a clone of the currently-published submission.
 
 You cannot submit a new application submission if there is an existing pending
 application submission for $AppId already.  You can use -Force to work around this.
 
+Wraps the [Create an App Submission](https://docs.microsoft.com/en-us/windows/uwp/monetize/create-an-app-submission) Microsoft Store Submission API.
+
 **Required inputs:**
 - AppId
 
-**Returns:** A submission \<PSCustomObject>
+**Returns:** A [submission](https://docs.microsoft.com/en-us/windows/uwp/monetize/manage-app-submissions#app-submission-object) object \<PSCustomObject>
 
 ## New-InAppProduct
 **Alias:** New-Iap
@@ -410,11 +426,13 @@ This should be called after having cloned an application submission via New-Appl
 The ID of the submission being updated/replaced will be inferred by the
 submissionId defined in UpdatedSubmission.
 
+Wraps the [Update an App Submission](https://docs.microsoft.com/en-us/windows/uwp/monetize/update-an-app-submission) Microsoft Store Submission API.
+
 **Required inputs:**
 - AppID
 - UpdatedSubmission \<PSObject>
 
-**Returns:** A submission \<PSCustomObject>
+**Returns:** A [submission](https://docs.microsoft.com/en-us/windows/uwp/monetize/manage-app-submissions#app-submission-object) object \<PSCustomObject>
 
 ## Set-InAppProductSubmission
 **Aliases:** Replace-IapSubmission, Replace-InAppProductSubmission, Set-IapSubmission

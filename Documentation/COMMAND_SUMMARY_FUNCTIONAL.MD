@@ -77,6 +77,21 @@ Wraps the [Commit An App Submission](https://docs.microsoft.com/en-us/windows/uw
 ### Join-SubmissionPackage
 
 ### New-ApplicationSubmission
+Creates a submission for an existing application on the developer account.
+
+This app must already have at least one *published* submission completed via the
+Dev Portal in order for this function to work. The submission that is returned is
+a clone of the currently-published submission.
+
+You cannot submit a new application submission if there is an existing pending
+application submission for $AppId already.  You can use -Force to work around this.
+
+Wraps the [Create an App Submission](https://docs.microsoft.com/en-us/windows/uwp/monetize/create-an-app-submission) Microsoft Store Submission API.
+
+**Required inputs:**
+- AppId
+
+**Returns:** A [submission](https://docs.microsoft.com/en-us/windows/uwp/monetize/manage-app-submissions#app-submission-object) object \<PSCustomObject>
 
 ### New-StoreBrokerConfigFile
 

@@ -1,9 +1,12 @@
 # Summary of StoreBroker Commands
 
 The following is an alphabetic listing of StoreBroker commands,
-with brief descriptions. All aliases are documented. Some details
-on inputs and return values are mentioned to provide more clarity
-regarding the basic functionality of certain command.
+with brief descriptions. All aliases are documented. 
+
+Some details on required inputs and return values are mentioned to provide more clarity
+regarding the basic functionality of certain command. Note: if either required inputs or
+a return value are mentioned, then all required inputs and any return value will be
+covered.
 
 ## Clear-StoreBrokerAuthentication
 Clears out any cached tenantId, client id, and client secret credential from this PowerShell session. Also disables usage of the proxy server if that had been previously enabled. All future remote commands from this module will once again prompt for credentials.

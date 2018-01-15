@@ -1,7 +1,10 @@
 # Summary of StoreBroker Commands (Alphabetic)
 
 The following is an alphabetic listing of StoreBroker commands,
-with brief descriptions. All aliases are documented. 
+with brief descriptions. All aliases are documented.
+
+Note: This is only summary information. For fuller documentation of StoreBroker commands,
+use the PowerShell Get-Help command.
 
 Some details on required inputs and return values are mentioned to provide more clarity
 regarding the basic functionality of certain command. Note: if either required inputs or
@@ -94,6 +97,12 @@ Retrieves the detail for the specified application associated with this develope
 
 Pipe the result of this command into Format-Application for a pretty-printed display of the result.
 
+Wraps the [Get An APP](https://docs.microsoft.com/en-us/windows/uwp/monetize/get-an-app) Microsoft Store Submission API.
+
+**Required input:** AppId
+
+**Returns:** An [application](https://docs.microsoft.com/en-us/windows/uwp/monetize/get-app-data#application_object) object \<PSCustomObject>
+
 ## Get-ApplicationFlight
 Retrieves the detail for the specified flight associated with the application in this developer account.
 
@@ -124,6 +133,14 @@ pretty-printed display of the results.
 ## Get-ApplicationSubmission
 Gets the details of a specific application submission.
 
+Wraps the [Get An App Submission](https://docs.microsoft.com/en-us/windows/uwp/monetize/get-an-app-submission) Microsoft Store Submission API.
+
+**Required input:**
+- AppId
+- SubmissionId
+
+**Returns:** A [submission](https://docs.microsoft.com/en-us/windows/uwp/monetize/manage-app-submissions#app-submission-object) object \<PSCustomObject>
+
 ## Get-ApplicationSubmissionPackageRollout
 Gets the package rollout information for the specified application submission.
 
@@ -135,7 +152,7 @@ Retrieves all of the applications associated with this developer account.
 
 For formatted output of this result, consider piping the result into Format-Applications.
 
-Wraps the [Get all apps](https://docs.microsoft.com/en-us/windows/uwp/monetize/get-all-apps) Microsoft Store submission API.
+Wraps the [Get All Apps](https://docs.microsoft.com/en-us/windows/uwp/monetize/get-all-apps) Microsoft Store Submission API.
 
 **Returns:** Array of [application](https://docs.microsoft.com/en-us/windows/uwp/monetize/get-app-data#application_object) objects \<PSCustomObject>
 

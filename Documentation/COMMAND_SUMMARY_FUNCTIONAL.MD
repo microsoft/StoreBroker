@@ -46,6 +46,23 @@ related resources/objects.
 ## Working with Application Submissions
 
 ### Complete-ApplicationSubmission
+**Alias:** Commit-ApplicationSubmission
+
+Commits the specified application submission so that it can start the approval process.
+
+Once committed, it is necessary to wait for the submission to either complete or fail the approval process before a new application submission can be created/submitted.
+
+Note: This completes the submission API transaction, but not necessarily the publication
+of the submission. The decision whether to publish after successful certification depends
+on the TargetPublishMode setting when the submission was created.
+
+Wraps the [Commit An App Submission](https://docs.microsoft.com/en-us/windows/uwp/monetize/commit-an-app-submission) Microsoft Store Submission API.
+
+**Required inputs:**
+- AppId
+- SubmissionId
+
+**Returns:** A status. (See [JSON response body](https://docs.microsoft.com/en-us/windows/uwp/monetize/commit-an-app-submission#response).)
 
 ### Complete-ApplicationSubmissionPackageRollout
 

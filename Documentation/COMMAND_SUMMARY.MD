@@ -182,14 +182,30 @@ builds that should all be part of the same Store submission update.
 Users will only specify the .json files for the two payloads, with the expectation that
 the .zip will be at the same location and same name as its complementary .json file.
 
+**Required inputs:**
+- MasterJsonPath
+- AdditionalJsonPath
+- OutJsonPath
+
 ## New-ApplicationFlight
 Creates a new flight (with associated flight groups) for an application.
+
+**Required inputs:**
+- AppId
+- FriendlyName
+- GroupIds (array)
 
 ## New-ApplicationFlightSubmission
 Creates a submission for an existing application flight.
 
 You cannot create a new application submission if there is an existing pending
 application submission for $AppId already.  You can use -Force to work around this.
+
+**Required inputs:**
+- AppId
+- FlightId
+
+**Returns:** A submission \<PSCustomObject>
 
 ## New-ApplicationSubmission
 Creates a submission for an existing application on the developer account.
@@ -199,10 +215,20 @@ This app must already have at least one *published* submission completed via the
 You cannot submit a new application submission if there is an existing pending
 application submission for $AppId already.  You can use -Force to work around this.
 
+**Required inputs:**
+- AppId
+
+**Returns:** A submission \<PSCustomObject>
+
 ## New-InAppProduct
 **Alias:** New-Iap
 
 Creates a new In-App Product associated with this developer account.
+
+**Required inputs:**
+- ProductId
+- ProductType
+- ApplicatonIds
 
 ## New-InAppProductSubmission
 **Alias:** New-IapSubmission

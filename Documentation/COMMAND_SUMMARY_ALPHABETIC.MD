@@ -557,8 +557,15 @@ Updates the package rollout percentage displayed in the console for the specifie
 - Percentage
 
 ## Update-ApplicationSubmission
-Creates a new submission for an existing application on the developer account by cloning the existing submission and modifying specific parts of it. The
+Creates a new submission for an existing application on the developer account by
+cloning the existing submission and modifying specific parts of it. The
 parts that will be modified depend solely on the switches that are passed in.
+
+This is a high-level method that wraps other submission-related methods:
+- New-ApplicationSubmission
+- Set-ApplicationSubmission
+- Set-SubmissionPackage
+- Complete-ApplicationSubmission
 
 This app must already have at least one *published* submission completed via
 the website in order for this function to work.

@@ -67,6 +67,15 @@ Wraps the [Commit An App Submission](https://docs.microsoft.com/en-us/windows/uw
 ### Complete-ApplicationSubmissionPackageRollout
 
 ### Get-ApplicationSubmission
+Gets the details of a specific application submission.
+
+Wraps the [Get An App Submission](https://docs.microsoft.com/en-us/windows/uwp/monetize/get-an-app-submission) Microsoft Store Submission API.
+
+**Required input:**
+- AppId
+- SubmissionId
+
+**Returns:** A [submission](https://docs.microsoft.com/en-us/windows/uwp/monetize/manage-app-submissions#app-submission-object) object \<PSCustomObject>
 
 ### Get-ApplicationSubmissionPackageRollout
 

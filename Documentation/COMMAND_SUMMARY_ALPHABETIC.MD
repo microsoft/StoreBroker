@@ -16,24 +16,41 @@ For some commands, links are provided to documentation for the corresponding RES
 related resources/objects.
 
 ## Clear-StoreBrokerAuthentication
-> Clears out any cached tenantId, client id, and client secret credential from this PowerShell session. Also disables usage of the proxy server if that had been previously enabled. All future remote commands from this module will once again prompt for credentials.
+
+<dl><dd>
+
+Clears out any cached tenantId, client id, and client secret credential from this PowerShell session. Also disables usage of the proxy server if that had been previously enabled. All future remote commands from this module will once again prompt for credentials.
+
+</dd></dl>
 
 ## Complete-ApplicationFlightSubmission
-> **Alias:** Commit-ApplicationFlightSubmission
 
-> Commits the specified application flight submission so that it can start the approval process.
+<dl><dd>
 
-> Once committed, it is necessary to wait for the submission to either complete or fail the approval process before a new flight submission can be created/submitted.
+**Alias:** Commit-ApplicationFlightSubmission
 
+Commits the specified application flight submission so that it can start the approval process.
+
+Once committed, it is necessary to wait for the submission to either complete or fail the approval process before a new flight submission can be created/submitted.
+
+</dd></dl>
 
 ## Complete-ApplicationFlightSubmissionPackageRollout
+
+<dl><dd>
+
 **Alias:** Finalize-ApplicationFlightSubmissionPackageRollout
 
 Finalizes the package rollout for the specified application flight submission.
 
 All users will now begin receiving this submission's packages.
 
+</dd></dl>
+
 ## Complete-ApplicationSubmission
+
+<dl><dd>
+
 **Alias:** Commit-ApplicationSubmission
 
 Commits the specified application submission so that it can start the approval process.
@@ -52,12 +69,19 @@ Wraps the [Commit An App Submission](https://docs.microsoft.com/en-us/windows/uw
 
 **Returns:** A status. (See [JSON response body](https://docs.microsoft.com/en-us/windows/uwp/monetize/commit-an-app-submission#response).)
 
+</dd></dl>
+
 ## Complete-ApplicationSubmissionPackageRollout
+
+<dl><dd>
+
 **Alias:** Finalize-ApplicationSubmissionPackageRollout
 
 Finalizes the package rollout for the specified application submission.
 
 All users will now begin receiving this submission's packages.
+
+</dd></dl>
 
 ## Complete-InAppProductSubmission
 **Aliases:** Commit-IapSubmission, Commit-InAppProductSubmission

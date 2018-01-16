@@ -16,14 +16,14 @@ For some commands, links are provided to documentation for the corresponding RES
 related resources/objects.
 
 ## Clear-StoreBrokerAuthentication
-Clears out any cached tenantId, client id, and client secret credential from this PowerShell session. Also disables usage of the proxy server if that had been previously enabled. All future remote commands from this module will once again prompt for credentials.
+> Clears out any cached tenantId, client id, and client secret credential from this PowerShell session. Also disables usage of the proxy server if that had been previously enabled. All future remote commands from this module will once again prompt for credentials.
 
 ## Complete-ApplicationFlightSubmission
-**Alias:** Commit-ApplicationFlightSubmission
+> **Alias:** Commit-ApplicationFlightSubmission
 
-Commits the specified application flight submission so that it can start the approval process.
+> Commits the specified application flight submission so that it can start the approval process.
 
-Once committed, it is necessary to wait for the submission to either complete or fail the approval process before a new flight submission can be created/submitted.
+> Once committed, it is necessary to wait for the submission to either complete or fail the approval process before a new flight submission can be created/submitted.
 
 
 ## Complete-ApplicationFlightSubmissionPackageRollout

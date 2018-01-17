@@ -92,7 +92,7 @@ Note: This completes the submission API transaction, but not necessarily the pub
 of the submission. The decision whether to publish after successful certification depends
 on the TargetPublishMode setting when the submission was created.
 
-Wraps the [Commit An App Submission](https://docs.microsoft.com/en-us/windows/uwp/monetize/commit-an-app-submission) Microsoft Store Submission API.
+Wraps the [commit](https://docs.microsoft.com/en-us/windows/uwp/monetize/commit-an-app-submission) Microsoft Store Submission API.
 
 **Required inputs:**
 - AppId
@@ -113,13 +113,13 @@ Wraps the [Commit An App Submission](https://docs.microsoft.com/en-us/windows/uw
 
 Gets the details of a specific application submission.
 
-Wraps the [Get An App Submission](https://docs.microsoft.com/en-us/windows/uwp/monetize/get-an-app-submission) Microsoft Store Submission API.
+Wraps the [submissions](https://docs.microsoft.com/en-us/windows/uwp/monetize/get-an-app-submission) Microsoft Store Submission API.
 
 **Required input:**
 - AppId
 - SubmissionId
 
-**Returns:** A [submission](https://docs.microsoft.com/en-us/windows/uwp/monetize/manage-app-submissions#app-submission-object) object \<PSCustomObject>
+**Returns:** A [submission resource](https://docs.microsoft.com/en-us/windows/uwp/monetize/manage-app-submissions#app-submission-object) object \<PSCustomObject>
 
 </dd></dl>
 
@@ -133,6 +133,14 @@ Wraps the [Get An App Submission](https://docs.microsoft.com/en-us/windows/uwp/m
 <dl><dd>
 
 Gets just the status of a specific application submission.
+
+Wraps the [status](https://docs.microsoft.com/en-us/windows/uwp/monetize/get-status-for-an-app-submission) Microsoft Store Submission API.
+
+**Required inputs:**
+* AppId
+* SubmissionId
+
+**Returns:** A [status response](https://docs.microsoft.com/en-us/windows/uwp/monetize/get-status-for-an-app-submission#response) object \<PSCustomObject>
 
 </dd></dl>
 

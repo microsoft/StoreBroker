@@ -90,6 +90,16 @@ function Initialize-StoreIngestionApiGlobalVariables
     {
         $global:SBDefaultProxyEndpoint = $null
     }
+
+    if (!(Get-Variable -Name SBAutoRetryErrorCodes -Scope Global -ValueOnly -ErrorAction Ignore))
+    {
+        $global:SBAutoRetryErrorCodes = @(429, 503)
+    }
+
+    if (!(Get-Variable -Name SBMaxAutoRetries -Scope Global -ValueOnly -ErrorAction Ignore))
+    {
+        $global:SBMaxAutoRetries = 5
+    }
 }
 
 # We need to be sure to call this explicitly so that the global variables get initialized.
@@ -1716,13 +1726,14 @@ function Invoke-SBRestMethod
 
     $serviceEndpointVersion = "1.0"
 
-    if ([System.String]::IsNullOrEmpty($AccessToken))
-    {
-        $AccessToken = Get-AccessToken -NoStatus:$NoStatus
-    }
+    # The initial number of minutes we'll wait before retrying this command when we've hit an
+    # error with a status code that is configured to auto-retry.  To reduce repeated contention, we
+    # stagger the initial wait time (and thus, the resulting spread when it exponentially backs off).
+    $retryDelayMin = (1, 1.25, 1.5, 1.75, 2) | Get-Random
+    $numRetries = 0
 
     # Telemetry-related
-    $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    $stopwatch = New-Object -TypeName System.Diagnostics.Stopwatch
     $localTelemetryProperties = @{ [StoreBrokerTelemetryProperty]::UriFragment = $UriFragment }
     $TelemetryProperties.Keys | ForEach-Object { $localTelemetryProperties[$_] = $TelemetryProperties[$_] }
     $errorBucket = $TelemetryExceptionBucket
@@ -1730,90 +1741,69 @@ function Invoke-SBRestMethod
     {
         $errorBucket = $TelemetryEventName
     }
-
-    $serviceEndpoint = Get-ServiceEndpoint
-    $url = "$serviceEndpoint/v$serviceEndpointVersion/my/$UriFragment"
-
-    $headers = @{"Authorization" = "Bearer $AccessToken"}
-    if ($Method -in ('post', 'put'))
+    
+    do
     {
-        $headers.Add("Content-Type", "application/json; charset=UTF-8")
-    }
-
-    # Add any special headers when using the proxy.
-    if ($serviceEndpoint -eq $script:proxyEndpoint)
-    {
-        if ($global:SBUseInt)
+        if ([System.String]::IsNullOrEmpty($AccessToken))
         {
-            $headers.Add("UseINT", "true")
+            # We get an AccessToken during each instance of the loop if one wasn't provided,
+            # because an AccessToken has a limited lifetime, and we if we loop enough times,
+            # one that was retrieved at the first iteration may no longer be valid during a
+            # later iteration.  This might be a problem for callers that pass-in their own
+            # AccessToken (since the looping is opaque to them), but in those situations,
+            # they will eventually get a failure due to unauthorized access and a retry
+            # would then help them recover.
+            $AccessToken = Get-AccessToken -NoStatus:$NoStatus
         }
+
+        # Since we have retry logic, we won't create a new stopwatch every time,
+        # we'll just always continue the existing one...
+        $stopwatch.Start()
         
-        if (-not [String]::IsNullOrWhiteSpace($script:authTenantId))
+        $serviceEndpoint = Get-ServiceEndpoint
+        $url = "$serviceEndpoint/v$serviceEndpointVersion/my/$UriFragment"
+
+        $headers = @{"Authorization" = "Bearer $AccessToken"}
+        if ($Method -in ('post', 'put'))
         {
-            $headers.Add("TenantId", $script:authTenantId)
+            $headers.Add("Content-Type", "application/json; charset=UTF-8")
         }
 
-        if (-not [String]::IsNullOrWhiteSpace($script:authTenantName))
+        # Add any special headers when using the proxy.
+        if ($serviceEndpoint -eq $script:proxyEndpoint)
         {
-            $headers.Add("TenantName", $script:authTenantName)
-        }
-    }
-
-    try
-    {
-        Write-Log $Description -Level Verbose
-        Write-Log "Accessing [$Method] $url [Timeout = $global:SBWebRequestTimeoutSec]" -Level Verbose
-
-        if ($NoStatus)
-        {
-            if ($PSCmdlet.ShouldProcess($url, "Invoke-WebRequest"))
+            if ($global:SBUseInt)
             {
-                $params = @{}
-                $params.Add("Uri", $url)
-                $params.Add("Method", $Method)
-                $params.Add("Headers", $headers)
-                $params.Add("UseDefaultCredentials", $true)
-                $params.Add("UseBasicParsing", $true)
-                $params.Add("TimeoutSec", $global:SBWebRequestTimeoutSec)
-                
-                if ($Method -in ('post', 'put') -and (-not [String]::IsNullOrEmpty($Body)))
-                {
-                    $bodyAsBytes = [System.Text.Encoding]::UTF8.GetBytes($Body)
-                    $params.Add("Body", $bodyAsBytes)
-                }
+                $headers.Add("UseINT", "true")
+            }
+        
+            if (-not [String]::IsNullOrWhiteSpace($script:authTenantId))
+            {
+                $headers.Add("TenantId", $script:authTenantId)
+            }
 
-                $result = Invoke-WebRequest @params
-                if ($Method -eq 'delete')
-                {
-                    Write-Log "Successfully removed." -Level Verbose
-                }
+            if (-not [String]::IsNullOrWhiteSpace($script:authTenantName))
+            {
+                $headers.Add("TenantName", $script:authTenantName)
             }
         }
-        else
+
+        try
         {
-            $jobName = "Invoke-SBRestMethod-" + (Get-Date).ToFileTime().ToString()
+            Write-Log $Description -Level Verbose
+            Write-Log "Accessing [$Method] $url [Timeout = $global:SBWebRequestTimeoutSec]" -Level Verbose
 
-            if ($PSCmdlet.ShouldProcess($jobName, "Start-Job"))
+            if ($NoStatus)
             {
-                [scriptblock]$scriptBlock = {
-                    param($Url, $method, $Headers, $Body, $HeaderName, $TimeoutSec, $ScriptRootPath)
-
-                    # We need to "dot invoke" Helpers.ps1 within the context of this script block since
-                    # we're running in a different PowerShell process and need access to
-                    # Get-HttpWebResponseContent
-                    . (Join-Path -Path $ScriptRootPath -ChildPath 'Helpers.ps1')
-
-                    # Because this is running in a different PowerShell process, we need to
-                    # redefine this script variable (for use within the exception)
-                    $script:headerMSCorrelationId = $HeaderName
-
+                if ($PSCmdlet.ShouldProcess($url, "Invoke-WebRequest"))
+                {
                     $params = @{}
-                    $params.Add("Uri", $Url)
+                    $params.Add("Uri", $url)
                     $params.Add("Method", $Method)
-                    $params.Add("Headers", $Headers)
+                    $params.Add("Headers", $headers)
                     $params.Add("UseDefaultCredentials", $true)
                     $params.Add("UseBasicParsing", $true)
-                    $params.Add("TimeoutSec", $TimeoutSec)
+                    $params.Add("TimeoutSec", $global:SBWebRequestTimeoutSec)
                 
                     if ($Method -in ('post', 'put') -and (-not [String]::IsNullOrEmpty($Body)))
                     {
@@ -1821,231 +1811,295 @@ function Invoke-SBRestMethod
                         $params.Add("Body", $bodyAsBytes)
                     }
 
-                    try
+                    $result = Invoke-WebRequest @params
+                    if ($Method -eq 'delete')
                     {
-                        Invoke-WebRequest @params
+                        Write-Log "Successfully removed." -Level Verbose
                     }
-                    catch [System.Net.WebException]
-                    {
-                        # We need to access the CorrelationId header in the exception handling,
-                        # but the actual *values* of the headers of a WebException don't get serialized
-                        # when the RemoteException wraps it.  To work around that, we'll extract the
-                        # information that we actually care about *now*, and then we'll throw our own exception
-                        # that is just a JSON object with the data that we'll later extract for processing in
-                        # the main catch.
-                        $ex = @{}
-                        $ex.Message = $_.Exception.Message
-                        $ex.StatusCode = $_.Exception.Response.StatusCode
-                        $ex.StatusDescription = $_.Exception.Response.StatusDescription
-                        $ex.InnerMessage = $_.ErrorDetails.Message
+                }
+            }
+            else
+            {
+                $jobName = "Invoke-SBRestMethod-" + (Get-Date).ToFileTime().ToString()
+
+                if ($PSCmdlet.ShouldProcess($jobName, "Start-Job"))
+                {
+                    [scriptblock]$scriptBlock = {
+                        param($Url, $method, $Headers, $Body, $HeaderName, $TimeoutSec, $ScriptRootPath)
+
+                        # We need to "dot invoke" Helpers.ps1 within the context of this script block since
+                        # we're running in a different PowerShell process and need access to
+                        # Get-HttpWebResponseContent
+                        . (Join-Path -Path $ScriptRootPath -ChildPath 'Helpers.ps1')
+
+                        # Because this is running in a different PowerShell process, we need to
+                        # redefine this script variable (for use within the exception)
+                        $script:headerMSCorrelationId = $HeaderName
+
+                        $params = @{}
+                        $params.Add("Uri", $Url)
+                        $params.Add("Method", $Method)
+                        $params.Add("Headers", $Headers)
+                        $params.Add("UseDefaultCredentials", $true)
+                        $params.Add("UseBasicParsing", $true)
+                        $params.Add("TimeoutSec", $TimeoutSec)
+                
+                        if ($Method -in ('post', 'put') -and (-not [String]::IsNullOrEmpty($Body)))
+                        {
+                            $bodyAsBytes = [System.Text.Encoding]::UTF8.GetBytes($Body)
+                            $params.Add("Body", $bodyAsBytes)
+                        }
+
                         try
                         {
-                            $ex.RawContent = Get-HttpWebResponseContent -WebResponse $_.Exception.Response
+                            Invoke-WebRequest @params
                         }
-                        catch
+                        catch [System.Net.WebException]
                         {
-                            Write-Log "Unable to retrieve the raw HTTP Web Response: $($_.Exception.Message)" -Level Warning
-                        }
+                            # We need to access the CorrelationId header in the exception handling,
+                            # but the actual *values* of the headers of a WebException don't get serialized
+                            # when the RemoteException wraps it.  To work around that, we'll extract the
+                            # information that we actually care about *now*, and then we'll throw our own exception
+                            # that is just a JSON object with the data that we'll later extract for processing in
+                            # the main catch.
+                            $ex = @{}
+                            $ex.Message = $_.Exception.Message
+                            $ex.StatusCode = $_.Exception.Response.StatusCode
+                            $ex.StatusDescription = $_.Exception.Response.StatusDescription
+                            $ex.InnerMessage = $_.ErrorDetails.Message
+                            try
+                            {
+                                $ex.RawContent = Get-HttpWebResponseContent -WebResponse $_.Exception.Response
+                            }
+                            catch
+                            {
+                                Write-Log "Unable to retrieve the raw HTTP Web Response: $($_.Exception.Message)" -Level Warning
+                            }
                         
-                        if ($_.Exception.Response.Headers.Count -gt 0)
-                        {
-                            $ex.CorrelationId = $_.Exception.Response.Headers[$script:headerMSCorrelationId]
+                            if ($_.Exception.Response.Headers.Count -gt 0)
+                            {
+                                $ex.CorrelationId = $_.Exception.Response.Headers[$script:headerMSCorrelationId]
+                            }
+
+                            throw ($ex | ConvertTo-Json -Depth 20)
                         }
-
-                        throw ($ex | ConvertTo-Json -Depth 20)
                     }
-                }
 
-                $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($url, $Method, $headers, $Body, $script:headerMSCorrelationId, $global:SBWebRequestTimeoutSec, $PSScriptRoot)
+                    $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($url, $Method, $headers, $Body, $script:headerMSCorrelationId, $global:SBWebRequestTimeoutSec, $PSScriptRoot)
 
-                if ($PSCmdlet.ShouldProcess($jobName, "Wait-JobWithAnimation"))
-                {
-                    Wait-JobWithAnimation -JobName $jobName -Description $Description
-                }
-
-                if ($PSCmdlet.ShouldProcess($jobName, "Receive-Job"))
-                {
-                    $result = Receive-Job $jobName -AutoRemoveJob -Wait -ErrorAction SilentlyContinue -ErrorVariable remoteErrors
-                }
-            }
-
-            if ($remoteErrors.Count -gt 0)
-            {
-                throw $remoteErrors[0].Exception
-            }
-
-            if ($Method -eq 'delete')
-            {
-                Write-Log "Successfully removed." -Level Verbose
-            }
-        }
-
-        $correlationId = $result.Headers[$script:headerMSCorrelationId]
-        if (-not [String]::IsNullOrEmpty($correlationId))
-        {
-            Write-Log "$($script:headerMSCorrelationId) : $correlationId" -Level Verbose
-        }
-
-        # Record the telemetry for this event.
-        $stopwatch.Stop()
-        if (-not [String]::IsNullOrEmpty($TelemetryEventName))
-        {
-            $telemetryMetrics = @{ [StoreBrokerTelemetryMetric]::Duration = $stopwatch.Elapsed.TotalSeconds }
-            Set-TelemetryEvent -EventName $TelemetryEventName -Properties $localTelemetryProperties -Metrics $telemetryMetrics
-        }
-
-        $finalResult = $result.Content
-        try
-        {
-            $finalResult = $finalResult | ConvertFrom-Json
-        }
-        catch [ArgumentException]
-        {
-            # The content must not be JSON (which is a legitimate situation).  We'll return the raw content result instead.
-            # We do this unnecessary assignment to avoid PSScriptAnalyzer's PSAvoidUsingEmptyCatchBlock.
-            $finalResult = $finalResult
-        }
-
-        return $finalResult
-    }
-    catch
-    {
-        # We only know how to handle WebExceptions, which will either come in "pure" when running with -NoStatus,
-        # or will come in as a RemoteException when running normally (since it's coming from the asynchronous Job).
-        $ex = $null
-        $message = $null
-        $statusCode = $null
-        $statusDescription = $null
-        $correlationId = $null
-        $innerMessage = $null
-        $rawContent = $null
-
-        if ($_.Exception -is [System.Net.WebException])
-        {
-            $ex = $_.Exception
-            $message = $ex.Message
-            $statusCode = $ex.Response.StatusCode.value__ # Note that value__ is not a typo.
-            $statusDescription = $ex.Response.StatusDescription
-            $innerMessage = $_.ErrorDetails.Message
-            try
-            {
-                $rawContent = Get-HttpWebResponseContent -WebResponse $ex.Response                
-            }
-            catch
-            {
-                Write-Log "Unable to retrieve the raw HTTP Web Response: $($_.Exception.Message)" -Level Warning
-            }
-            
-            if ($ex.Response.Headers.Count -gt 0)
-            {
-                $correlationId = $ex.Response.Headers[$script:headerMSCorrelationId]
-            }
-
-        }
-        elseif (($_.Exception -is [System.Management.Automation.RemoteException]) -and
-                ($_.Exception.SerializedRemoteException.PSObject.TypeNames[0] -eq 'Deserialized.System.Management.Automation.RuntimeException'))
-        {
-            $ex = $_.Exception
-            try
-            {
-                $deserialized = $ex.Message | ConvertFrom-Json
-                $message = $deserialized.Message
-                $statusCode = $deserialized.StatusCode
-                $statusDescription = $deserialized.StatusDescription
-                $innerMessage = $deserialized.InnerMessage
-                $correlationId = $deserialized.CorrelationId
-                $rawContent = $deserialized.RawContent
-            }
-            catch [System.ArgumentException]
-            {
-                # Will be thrown if $ex.Message isn't JSON content
-                Write-Log $ex.Message -Level Error
-                Set-TelemetryException -Exception $ex -ErrorBucket $errorBucket -Properties $localTelemetryProperties
-                throw
-            }
-        }
-        else
-        {
-            Write-Log $_.Exception.Message -Level Error
-            Set-TelemetryException -Exception $_.Exception -ErrorBucket $errorBucket -Properties $localTelemetryProperties
-            throw
-        }
-
-        $output = @()
-        if (-not [string]::IsNullOrEmpty($statusCode))
-        {
-            $output += "$statusCode | $($statusDescription.Trim())"
-        }
-
-        $output += $message
-
-        if (-not [string]::IsNullOrEmpty($innerMessage))
-        {
-            try
-            {
-                $innerMessageJson = ($innerMessage | ConvertFrom-Json)
-                if ($innerMessageJson -is [String])
-                {
-                    $output += $innerMessageJson.Trim()
-                }
-                else
-                {
-                    $output += "$($innerMessageJson.code) : $($innerMessageJson.message.Trim())"
-                    if ($innerMessageJson.details)
+                    if ($PSCmdlet.ShouldProcess($jobName, "Wait-JobWithAnimation"))
                     {
-                        $output += "$($innerMessageJson.details | Format-Table | Out-String)"
+                        Wait-JobWithAnimation -JobName $jobName -Description $Description
+                    }
+
+                    if ($PSCmdlet.ShouldProcess($jobName, "Receive-Job"))
+                    {
+                        $result = Receive-Job $jobName -AutoRemoveJob -Wait -ErrorAction SilentlyContinue -ErrorVariable remoteErrors
                     }
                 }
-            }
-            catch [System.ArgumentException]
-            {
-                # Will be thrown if $innerMessage isn't JSON content
-                $output += $innerMessage.Trim()
-            }
-        }
 
-        # It's possible that the API returned JSON content in its error response.
-        # If it did, we want to extract the "activityId" property from it for
-        # logging purposes in order to assist the Submission API team with 
-        # post-mortem debugging.
-        if (-not [String]::IsNullOrWhiteSpace($rawContent))
-        {
+                if ($remoteErrors.Count -gt 0)
+                {
+                    throw $remoteErrors[0].Exception
+                }
+
+                if ($Method -eq 'delete')
+                {
+                    Write-Log "Successfully removed." -Level Verbose
+                }
+            }
+
+            $correlationId = $result.Headers[$script:headerMSCorrelationId]
+            if (-not [String]::IsNullOrEmpty($correlationId))
+            {
+                Write-Log "$($script:headerMSCorrelationId) : $correlationId" -Level Verbose
+            }
+
+            # Record the telemetry for this event.
+            $stopwatch.Stop()
+            if (-not [String]::IsNullOrEmpty($TelemetryEventName))
+            {
+                $telemetryMetrics = @{ [StoreBrokerTelemetryMetric]::Duration = $stopwatch.Elapsed.TotalSeconds }
+                Set-TelemetryEvent -EventName $TelemetryEventName -Properties $localTelemetryProperties -Metrics $telemetryMetrics
+            }
+
+            $finalResult = $result.Content
             try
             {
-                $rawContentJson = $rawContent | ConvertFrom-Json
-                $activityId = $rawContentJson.activityId
-                if (-not [String]::IsNullOrWhiteSpace($activityId))
-                {
-                    $output += "ActivityId: $activityId"
-                }
-                else
-                {
-                    # The property we wanted wasn't there, but we'll capture the full
-                    # content for logging purposes anyway since it's rare for an API
-                    # error to return additional content -- seeing it might be helpful.
-                    $output += $rawContent    
-                }
+                $finalResult = $finalResult | ConvertFrom-Json
             }
             catch [ArgumentException]
             {
-                # The content must not be JSON.
-                # We'll capture it for logging purposes anyway since it's rare for an API
-                # error to return additional content -- seeing it might be helpful.
-                $output += $rawContent
+                # The content must not be JSON (which is a legitimate situation).  We'll return the raw content result instead.
+                # We do this unnecessary assignment to avoid PSScriptAnalyzer's PSAvoidUsingEmptyCatchBlock.
+                $finalResult = $finalResult
+            }
+
+            return $finalResult
+        }
+        catch
+        {
+            # We only know how to handle WebExceptions, which will either come in "pure" when running with -NoStatus,
+            # or will come in as a RemoteException when running normally (since it's coming from the asynchronous Job).
+            $ex = $null
+            $message = $null
+            $statusCode = $null
+            $statusDescription = $null
+            $correlationId = $null
+            $innerMessage = $null
+            $rawContent = $null
+
+            if ($_.Exception -is [System.Net.WebException])
+            {
+                $ex = $_.Exception
+                $message = $ex.Message
+                $statusCode = $ex.Response.StatusCode.value__ # Note that value__ is not a typo.
+                $statusDescription = $ex.Response.StatusDescription
+                $innerMessage = $_.ErrorDetails.Message
+                try
+                {
+                    $rawContent = Get-HttpWebResponseContent -WebResponse $ex.Response                
+                }
+                catch
+                {
+                    Write-Log "Unable to retrieve the raw HTTP Web Response: $($_.Exception.Message)" -Level Warning
+                }
+            
+                if ($ex.Response.Headers.Count -gt 0)
+                {
+                    $correlationId = $ex.Response.Headers[$script:headerMSCorrelationId]
+                }
+
+            }
+            elseif (($_.Exception -is [System.Management.Automation.RemoteException]) -and
+                ($_.Exception.SerializedRemoteException.PSObject.TypeNames[0] -eq 'Deserialized.System.Management.Automation.RuntimeException'))
+            {
+                $ex = $_.Exception
+                try
+                {
+                    $deserialized = $ex.Message | ConvertFrom-Json
+                    $message = $deserialized.Message
+                    $statusCode = $deserialized.StatusCode
+                    $statusDescription = $deserialized.StatusDescription
+                    $innerMessage = $deserialized.InnerMessage
+                    $correlationId = $deserialized.CorrelationId
+                    $rawContent = $deserialized.RawContent
+                }
+                catch [System.ArgumentException]
+                {
+                    # Will be thrown if $ex.Message isn't JSON content
+                    Write-Log $ex.Message -Level Error
+                    Set-TelemetryException -Exception $ex -ErrorBucket $errorBucket -Properties $localTelemetryProperties
+                    throw
+                }
+            }
+            else
+            {
+                Write-Log $_.Exception.Message -Level Error
+                Set-TelemetryException -Exception $_.Exception -ErrorBucket $errorBucket -Properties $localTelemetryProperties
+                throw
+            }
+
+            $output = @()
+            if (-not [string]::IsNullOrEmpty($statusCode))
+            {
+                $output += "$statusCode | $($statusDescription.Trim())"
+            }
+
+            $output += $message
+
+            if (-not [string]::IsNullOrEmpty($innerMessage))
+            {
+                try
+                {
+                    $innerMessageJson = ($innerMessage | ConvertFrom-Json)
+                    if ($innerMessageJson -is [String])
+                    {
+                        $output += $innerMessageJson.Trim()
+                    }
+                    else
+                    {
+                        $output += "$($innerMessageJson.code) : $($innerMessageJson.message.Trim())"
+                        if ($innerMessageJson.details)
+                        {
+                            $output += "$($innerMessageJson.details | Format-Table | Out-String)"
+                        }
+                    }
+                }
+                catch [System.ArgumentException]
+                {
+                    # Will be thrown if $innerMessage isn't JSON content
+                    $output += $innerMessage.Trim()
+                }
+            }
+
+            # It's possible that the API returned JSON content in its error response.
+            # If it did, we want to extract the "activityId" property from it for
+            # logging purposes in order to assist the Submission API team with 
+            # post-mortem debugging.
+            if (-not [String]::IsNullOrWhiteSpace($rawContent))
+            {
+                try
+                {
+                    $rawContentJson = $rawContent | ConvertFrom-Json
+                    $activityId = $rawContentJson.activityId
+                    if (-not [String]::IsNullOrWhiteSpace($activityId))
+                    {
+                        $output += "ActivityId: $activityId"
+                    }
+                    else
+                    {
+                        # The property we wanted wasn't there, but we'll capture the full
+                        # content for logging purposes anyway since it's rare for an API
+                        # error to return additional content -- seeing it might be helpful.
+                        $output += $rawContent    
+                    }
+                }
+                catch [ArgumentException]
+                {
+                    # The content must not be JSON.
+                    # We'll capture it for logging purposes anyway since it's rare for an API
+                    # error to return additional content -- seeing it might be helpful.
+                    $output += $rawContent
+                }
+            }
+
+            if (-not [String]::IsNullOrEmpty($correlationId))
+            {
+                $output += $script:headerMSCorrelationId + ': ' + $correlationId 
+                Write-Log "$($script:headerMSCorrelationId): $correlationId" -Level Verbose
+            }
+
+            $newLineOutput = ($output -join [Environment]::NewLine)
+            if ($statusCode -in $global:SBAutoRetryErrorCodes)
+            {
+                if ($numRetries -ge $global:SBMaxAutoRetries)
+                {
+                    Write-Log $newLineOutput -Level Error
+                    Write-Log "Maximum retries for request has been reached ($global:SBMaxAutoRetries).  Will now fail." -Level Error
+                    Set-TelemetryException -Exception $ex -ErrorBucket $errorBucket -Properties $localTelemetryProperties
+                    throw $newLineOutput
+                }
+                else
+                {
+                    $numRetries++
+                    $localTelemetryProperties[[StoreBrokerTelemetryProperty]::NumRetries] = $numRetries
+                    $localTelemetryProperties[[StoreBrokerTelemetryProperty]::RetryStatusCode] = $statusCode
+                    Write-Log $newLineOutput -Level Warning
+                    Write-Log "This status code ($statusCode) is configured to auto-retry (via `$global:SBAutoRetryErrorCodes).  StoreBroker will auto-retry (attempt #$numRetries) in $retryDelayMin minute(s). Sleeping..." -Level Warning
+                    Start-Sleep -Seconds ($retryDelayMin * 60)
+                    $retryDelayMin = $retryDelayMin * 2 # Exponential sleep increase for next retry
+                }
+            }
+            else
+            {
+                Write-Log $newLineOutput -Level Error
+                Set-TelemetryException -Exception $ex -ErrorBucket $errorBucket -Properties $localTelemetryProperties
+                throw $newLineOutput
             }
         }
-
-        if (-not [String]::IsNullOrEmpty($correlationId))
-        {
-            $output += $script:headerMSCorrelationId + ': ' + $correlationId 
-            Write-Log "$($script:headerMSCorrelationId): $correlationId" -Level Verbose
-        }
-       
-        Set-TelemetryException -Exception $ex -ErrorBucket $errorBucket -Properties $localTelemetryProperties
-        $newLineOutput = ($output -join [Environment]::NewLine)
-        Write-Log $newLineOutput -Level Error
-        throw $newLineOutput
     }
+    while ($true) # infinite loop for retrying is ok, since we early return in the postive case, and throw an exception in the failure case.
 }
 
 function Invoke-SBRestMethodMultipleResult

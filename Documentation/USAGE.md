@@ -103,6 +103,19 @@ values of these variables will be honored if they already exist, otherwise they 
  **`$global:SBWebRequestTimeoutSec`** - [int] Number of seconds to use for the timeout of the
    internal `Invoke-WebRequest` call. Defaults to `0` (indefinite)
 
+ **`$global:SBAutoRetryErrorCodes`** - [int[]] Some error status codes indicate that a retry is
+   likely to be met with success.  StoreBroker will use an exponential back-off strategy for
+   the status codes contained within this list of values.  Defaults to `@(429, 503)`.
+
+  * `429` - The Submission API limits a Tenant to 20 requests per minute.  Any requests exceeding
+       that will receive this error code until that minute has expired.
+  * `503` - An underlying service component was unavailable, and the Submission API suggests that
+       you try again.
+
+ **`$global:SBMaxAutoRetries`** - [int] The maximum number of times a request will be retried if
+   previous attempts result in an error code within the list of values in `$global:SBAutoRetryErrorCodes`.
+   Defaults to `5`
+
 ### Common Switches
 
 All commands support the `-Verbose` switch in the event that you want fine-grained detail

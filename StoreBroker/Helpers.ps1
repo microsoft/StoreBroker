@@ -417,6 +417,125 @@ function ConvertTo-Array
     }
 }
 
+function Write-LogHelper
+{
+<#
+    .SYNOPSIS
+        A helper cmdlet for Write-Log that performs the work of writing/logging the provided strings.
+
+    .DESCRIPTION
+        A helper cmdlet for Write-Log that performs the work of writing/logging the provided strings.
+
+        This cmdlet is _not_ intended to be called directly. Instead, it should support the use of
+        Write-Log.
+
+        The -LogMessage will always be appended to the file at -Path (if it exists), whereas
+        the -ConsoleMessage will be routed through one of Write-Error, Write-Warning, Write-Verbose,
+        Write-Debug, Write-Information, or Write-Host, depending on the -Level specified.
+
+        If -LogMessage fails to be appended to the file, the message contents will be written as a
+        warning for the user.
+
+    .PARAMETER ConsoleMessage
+        The message to be written to the screen. The contents will be routed through one of Write-Error,
+        Write-Warning, Write-Verbose, Write-Debug, Write-Information, or Write-Host, depending on
+        the -Level specified.
+
+    .PARAMETER LogMessage
+        The message to append to the file at -Path. The cmdlet will only attempt to append the message
+        if $global:SBLoggingEnabled is $true and -Path is not null.
+
+    .PARAMETER Level
+        The level of logging to use. The value affects the choice of Write-* cmdlet to use when printing
+        the console message.
+
+    .PARAMETER Path
+        The path to the file where -LogMessage should be appended. The file will only be modified if
+        this parameter is not null and $global:SBLoggingEnabled is true. If there is an error during
+        the append operation, the -LogMessage will be written to the screen as a warning.
+
+    .EXAMPLE
+        Write-LogHelper -ConsoleMessage "To screen" -LogMessage "To file" -Level Warning -Path 'C:\Debug.log'
+
+        Writes the message "To screen" as a warning and appends "To file" to 'C:\Debug.log'.
+#>
+    [CmdletBinding(SupportsShouldProcess)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars", "", Justification="We use global variables sparingly and intentionally for module configuration, and employ a consistent naming convention.")]
+    param(
+        [Parameter(Mandatory)]
+        [AllowEmptyString()]
+        [AllowNull()]
+        [string] $ConsoleMessage,
+
+        [Parameter(Mandatory)]
+        [AllowEmptyString()]
+        [AllowNull()]
+        [string] $LogMessage,
+
+        [Parameter(Mandatory)]
+        [ValidateSet('Error', 'Warning', 'Info', 'Verbose', 'Debug')]
+        [string] $Level,
+
+        [Parameter(Mandatory)]
+        [AllowNull()]
+        [IO.FileInfo] $Path
+    )
+
+    switch ($Level)
+    {
+        'Error'   { Write-Error $ConsoleMessage }
+        'Warning' { Write-Warning $ConsoleMessage }
+        'Verbose' { Write-Verbose $ConsoleMessage }
+        'Debug'   { Write-Debug $ConsoleMessage }
+        'Info'    {
+            # We'd prefer to use Write-Information to enable users to redirect that pipe if
+            # they want, unfortunately it's only available on v5 and above.  We'll fallback to
+            # using Write-Host for earlier versions (since we still need to support v4).
+            if ($PSVersionTable.PSVersion.Major -ge 5)
+            {
+                Write-Information $ConsoleMessage -InformationAction Continue
+            }
+            else
+            {
+                Write-InteractiveHost $ConsoleMessage
+            }
+        }
+    }
+
+    try
+    {
+        if ($global:SBLoggingEnabled -and ($null -ne $Path))
+        {
+            $LogMessage | Out-File -FilePath $Path -Append
+        }
+    }
+    catch
+    {
+        $output = @()
+        $output += "Failed to add log entry to [$Path]. The error was:"
+        $output += Out-String -InputObject $_
+
+        if (Test-Path -Path $Path -PathType Leaf)
+        {
+            # The file exists, but likely is being held open by another process.
+            # Let's do best effort here and if we can't log something, just report
+            # it and move on.
+            $output += "This is non-fatal, and your command will continue.  Your log file will be missing this entry:"
+            $output += $ConsoleMessage
+            Write-Warning ($output -join [Environment]::NewLine)
+        }
+        else
+        {
+            # If the file doesn't exist and couldn't be created, it likely will never
+            # be valid.  In that instance, let's stop everything so that the user can
+            # fix the problem, since they have indicated that they want this logging to
+            # occur.
+            throw ($output -join [Environment]::NewLine)
+        }
+    }
+}
+
 function Write-Log
 {
 <#
@@ -429,7 +548,9 @@ function Write-Log
         The Git repo for this module can be found here: http://aka.ms/StoreBroker
 
     .PARAMETER Message
-        The message to be logged.
+        The message(s) to be logged. This parameter supports pipelining but there are no
+        performance benefits to doing so. For more information, see the .NOTES for this
+        cmdlet.
 
     .PARAMETER Level
         The type of message to be logged.
@@ -441,11 +562,24 @@ function Write-Log
         The log file path.
         Defaults to $env:USERPROFILE\Documents\StoreBroker.log
 
+    .PARAMETER Exception
+        If present, the exception information will be logged after the messages provided.
+        The actual string that is logged is obtained by passing this object to Out-String.
+
     .EXAMPLE
         Write-Log -Message "Everything worked." -Path C:\Debug.log
 
-        Writes the message "It's all good!" to the screen as well as to a log file at "c:\Debug.log",
+        Writes the message "Everything worked." to the screen as well as to a log file at "c:\Debug.log",
         with the caller's username and a date/time stamp prepended to the message.
+
+    .EXAMPLE
+        Write-Log -Message ("Everything worked.", "No cause for alarm.") -Path C:\Debug.log
+
+        Writes the following message to the screen as well as to a log file at "c:\Debug.log",
+        with the caller's username and a date/time stamp prepended to the message:
+
+        Everything worked.
+        No cause for alarm.
 
     .EXAMPLE
         Write-Log -Message "There may be a problem..." -Level Warning -Indent 2
@@ -454,6 +588,21 @@ function Write-Log
         as well as to the default log file with the caller's username and a date/time stamp
         prepended to the message.
 
+    .EXAMPLE
+        try { $null.Do() }
+        catch { Write-Log -Message ("There was a problem.", "Here is the exception information:") -Exception $_ -Level Error }
+
+        Logs the message:
+
+        Write-LogHelper : 2018-01-23 12:57:37 : dabelc : There was a problem.
+        Here is the exception information:
+        You cannot call a method on a null-valued expression.
+        At line:1 char:7
+        + try { $null.Do() } catch { Write-Log -Message ("There was a problem." ...
+        +       ~~~~~~~~~~
+            + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+            + FullyQualifiedErrorId : InvokeMethodOnNull
+
     .INPUTS
         System.String
 
@@ -461,29 +610,26 @@ function Write-Log
         $global:SBLogPath indicates where the log file will be created.
         $global:SBLoggingEnabled determines if log entries will be made to the log file.
            If $false, log entries will ONLY go to the relevant output pipeline.
+
+        Note that, although this function supports pipeline input to the -Message parameter,
+        there is NO performance benefit to using the pipeline. This is because the pipeline
+        input is simply accumulated and not acted upon until all input has been received.
+        This behavior is intentional, in order for a statement like:
+            "Multiple", "messages" | Write-Log -Exception $ex -Level Error
+        to make sense.  In this case, the cmdlet should accumulate the messages and, at the end,
+        include the exception information.
 #>
-    [CmdletBinding(
-        SupportsShouldProcess,
-        DefaultParameterSetName="LogString")]
+    [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars", "", Justification="We use global variables sparingly and intentionally for module configuration, and employ a consistent naming convention.")]
     param(
         [Parameter(
-            ParameterSetName="LogString",
             Mandatory,
-            Position=0,
             ValueFromPipeline)]
+        [AllowEmptyCollection()]
         [AllowEmptyString()]
         [AllowNull()]
-        [string] $Message,
-
-        [Parameter(
-            ParameterSetName="LogException",
-            Mandatory,
-            Position=0,
-            ValueFromPipeline)]
-        [AllowNull()]
-        [System.Management.Automation.ErrorRecord] $Exception,
+        [string[]] $Message,
 
         [ValidateSet('Error', 'Warning', 'Info', 'Verbose', 'Debug')]
         [string] $Level = 'Info',
@@ -491,18 +637,37 @@ function Write-Log
         [ValidateRange(1, 30)]
         [Int16] $Indent = 0,
 
-        [IO.FileInfo] $Path = "$global:SBLogPath"
+        [IO.FileInfo] $Path = "$global:SBLogPath",
+
+        [System.Management.Automation.ErrorRecord] $Exception
     )
+
+    Begin
+    {
+        # Accumulate the list of Messages, whether by pipeline or parameter.
+        $messages = @()
+    }
 
     Process
     {
-        if ($PSCmdlet.ParameterSetName -eq "LogException")
+        foreach ($m in $Message)
         {
-            # Convert the exception to a string for logging.
-            # If $Exception happens to be $null, $Message will be empty string.
-            $Message = Out-String -InputObject $Exception
+            $messages += $m
+        }
+    }
+
+    End
+    {
+        # If we have an exception, add it after the accumulated messages.
+        if ($null -ne $Exception)
+        {
+            $messages += Out-String -InputObject $Exception
         }
 
+        # Finalize the string to log.
+        $finalMessage = $messages -join [Environment]::NewLine
+
+        # Build the console and log-specific messages.
         $date = Get-Date
         $dateString = $date.ToString("yyyy-MM-dd HH:mm:ss")
         if ($global:SBUseUTC)
@@ -514,19 +679,19 @@ function Write-Log
             (" " * $Indent),
             $dateString,
             $env:username,
-            $Message
+            $finalMessage
 
         if ($global:SBShouldLogPid)
         {
-            $MaxPidDigits = 10 # This is an estimate (see https://stackoverflow.com/questions/17868218/what-is-the-maximum-process-id-on-windows)
-            $pidColumnLength = $MaxPidDigits + "[]".Length
+            $maxPidDigits = 10 # This is an estimate (see https://stackoverflow.com/questions/17868218/what-is-the-maximum-process-id-on-windows)
+            $pidColumnLength = $maxPidDigits + "[]".Length
             $logFileMessage = "{0}{1} : {2, -$pidColumnLength} : {3} : {4} : {5}" -f
                 (" " * $Indent),
                 $dateString,
                 "[$global:PID]",
                 $env:username,
                 $Level.ToUpper(),
-                $Message
+                $finalMessage
         }
         else
         {
@@ -535,61 +700,18 @@ function Write-Log
                 $dateString,
                 $env:username,
                 $Level.ToUpper(),
-                $Message
+                $finalMessage
         }
 
-        switch ($Level)
-        {
-            'Error'   { Write-Error $consoleMessage }
-            'Warning' { Write-Warning $consoleMessage }
-            'Verbose' { Write-Verbose $consoleMessage }
-            'Debug'   { Write-Debug $consoleMessage }
-            'Info'    {
-                # We'd prefer to use Write-Information to enable users to redirect that pipe if
-                # they want, unfortunately it's only available on v5 and above.  We'll fallback to
-                # using Write-Host for earlier versions (since we still need to support v4).
-                if ($PSVersionTable.PSVersion.Major -ge 5)
-                {
-                    Write-Information $consoleMessage -InformationAction Continue
-                }
-                else
-                {
-                    Write-InteractiveHost $consoleMessage
-                }
-            }
+        # Write the message using helper cmdlet.
+        $helperParams = @{
+            ConsoleMessage = $consoleMessage
+            LogMessage = $logFileMessage
+            Level = $Level
+            Path = $Path
         }
 
-        try
-        {
-            if ($global:SBLoggingEnabled)
-            {
-                $logFileMessage | Out-File -FilePath $Path -Append
-            }
-        }
-        catch
-        {
-            $output = @()
-            $output += "Failed to add log entry to [$Path]. The error was:"
-            $output += Out-String -InputObject $_
-
-            if (Test-Path -Path $Path -PathType Leaf)
-            {
-                # The file exists, but likely is being held open by another process.
-                # Let's do best effort here and if we can't log something, just report
-                # it and move on.
-                $output += "This is non-fatal, and your command will continue.  Your log file will be missing this entry:"
-                $output += $consoleMessage
-                Write-Warning ($output -join [Environment]::NewLine)
-            }
-            else
-            {
-                # If the file doesn't exist and couldn't be created, it likely will never
-                # be valid.  In that instance, let's stop everything so that the user can
-                # fix the problem, since they have indicated that they want this logging to
-                # occur.
-                throw ($output -join [Environment]::NewLine)
-            }
-        }
+        Write-LogHelper @helperParams
     }
 }
 

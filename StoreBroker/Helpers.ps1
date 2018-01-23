@@ -417,125 +417,6 @@ function ConvertTo-Array
     }
 }
 
-function Write-LogHelper
-{
-<#
-    .SYNOPSIS
-        A helper cmdlet for Write-Log that performs the work of writing/logging the provided strings.
-
-    .DESCRIPTION
-        A helper cmdlet for Write-Log that performs the work of writing/logging the provided strings.
-
-        This cmdlet is _not_ intended to be called directly. Instead, it should support the use of
-        Write-Log.
-
-        The -LogMessage will always be appended to the file at -Path (if it exists), whereas
-        the -ConsoleMessage will be routed through one of Write-Error, Write-Warning, Write-Verbose,
-        Write-Debug, Write-Information, or Write-Host, depending on the -Level specified.
-
-        If -LogMessage fails to be appended to the file, the message contents will be written as a
-        warning for the user.
-
-    .PARAMETER ConsoleMessage
-        The message to be written to the screen. The contents will be routed through one of Write-Error,
-        Write-Warning, Write-Verbose, Write-Debug, Write-Information, or Write-Host, depending on
-        the -Level specified.
-
-    .PARAMETER LogMessage
-        The message to append to the file at -Path. The cmdlet will only attempt to append the message
-        if $global:SBLoggingEnabled is $true and -Path is not null.
-
-    .PARAMETER Level
-        The level of logging to use. The value affects the choice of Write-* cmdlet to use when printing
-        the console message.
-
-    .PARAMETER Path
-        The path to the file where -LogMessage should be appended. The file will only be modified if
-        this parameter is not null and $global:SBLoggingEnabled is true. If there is an error during
-        the append operation, the -LogMessage will be written to the screen as a warning.
-
-    .EXAMPLE
-        Write-LogHelper -ConsoleMessage "To screen" -LogMessage "To file" -Level Warning -Path 'C:\Debug.log'
-
-        Writes the message "To screen" as a warning and appends "To file" to 'C:\Debug.log'.
-#>
-    [CmdletBinding(SupportsShouldProcess)]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars", "", Justification="We use global variables sparingly and intentionally for module configuration, and employ a consistent naming convention.")]
-    param(
-        [Parameter(Mandatory)]
-        [AllowEmptyString()]
-        [AllowNull()]
-        [string] $ConsoleMessage,
-
-        [Parameter(Mandatory)]
-        [AllowEmptyString()]
-        [AllowNull()]
-        [string] $LogMessage,
-
-        [Parameter(Mandatory)]
-        [ValidateSet('Error', 'Warning', 'Info', 'Verbose', 'Debug')]
-        [string] $Level,
-
-        [Parameter(Mandatory)]
-        [AllowNull()]
-        [IO.FileInfo] $Path
-    )
-
-    switch ($Level)
-    {
-        'Error'   { Write-Error $ConsoleMessage }
-        'Warning' { Write-Warning $ConsoleMessage }
-        'Verbose' { Write-Verbose $ConsoleMessage }
-        'Debug'   { Write-Debug $ConsoleMessage }
-        'Info'    {
-            # We'd prefer to use Write-Information to enable users to redirect that pipe if
-            # they want, unfortunately it's only available on v5 and above.  We'll fallback to
-            # using Write-Host for earlier versions (since we still need to support v4).
-            if ($PSVersionTable.PSVersion.Major -ge 5)
-            {
-                Write-Information $ConsoleMessage -InformationAction Continue
-            }
-            else
-            {
-                Write-InteractiveHost $ConsoleMessage
-            }
-        }
-    }
-
-    try
-    {
-        if ($global:SBLoggingEnabled -and ($null -ne $Path))
-        {
-            $LogMessage | Out-File -FilePath $Path -Append
-        }
-    }
-    catch
-    {
-        $output = @()
-        $output += "Failed to add log entry to [$Path]. The error was:"
-        $output += Out-String -InputObject $_
-
-        if (Test-Path -Path $Path -PathType Leaf)
-        {
-            # The file exists, but likely is being held open by another process.
-            # Let's do best effort here and if we can't log something, just report
-            # it and move on.
-            $output += "This is non-fatal, and your command will continue.  Your log file will be missing this entry:"
-            $output += $ConsoleMessage
-            Write-Warning ($output -join [Environment]::NewLine)
-        }
-        else
-        {
-            # If the file doesn't exist and couldn't be created, it likely will never
-            # be valid.  In that instance, let's stop everything so that the user can
-            # fix the problem, since they have indicated that they want this logging to
-            # occur.
-            throw ($output -join [Environment]::NewLine)
-        }
-    }
-}
-
 function Write-Log
 {
 <#
@@ -627,7 +508,7 @@ function Write-Log
         [AllowEmptyCollection()]
         [AllowEmptyString()]
         [AllowNull()]
-        [string[]] $Message,
+        [string[]] $Message = @(),
 
         [ValidateSet('Error', 'Warning', 'Info', 'Verbose', 'Debug')]
         [string] $Level = 'Info',
@@ -667,7 +548,7 @@ function Write-Log
             return
         }
 
-        # Finalize the string to log.
+        # Finalize the string to be logged.
         $finalMessage = $messages -join [Environment]::NewLine
 
         # Build the console and log-specific messages.
@@ -706,15 +587,64 @@ function Write-Log
                 $finalMessage
         }
 
-        # Write the message using helper cmdlet.
-        $helperParams = @{
-            ConsoleMessage = $consoleMessage
-            LogMessage = $logFileMessage
-            Level = $Level
-            Path = $Path
+        # Write the message to screen/log.
+        # Note that the below logic could easily be moved to a separate helper function, but a concious
+        # decision was made to leave it here. When this cmdlet is called with -Level Error, Write-Error
+        # will generate a WriteErrorException with the origin being Write-Log. If this call is moved to
+        # a helper function, the origin of the WriteErrorException will be the helper function, which
+        # could confuse an end user.
+        switch ($Level)
+        {
+            'Error'   { Write-Error $consoleMessage }
+            'Warning' { Write-Warning $consoleMessage }
+            'Verbose' { Write-Verbose $consoleMessage }
+            'Debug'   { Write-Debug $consoleMessage }
+            'Info'    {
+                # We'd prefer to use Write-Information to enable users to redirect that pipe if
+                # they want, unfortunately it's only available on v5 and above.  We'll fallback to
+                # using Write-Host for earlier versions (since we still need to support v4).
+                if ($PSVersionTable.PSVersion.Major -ge 5)
+                {
+                    Write-Information $consoleMessage -InformationAction Continue
+                }
+                else
+                {
+                    Write-InteractiveHost $consoleMessage
+                }
+            }
         }
 
-        Write-LogHelper @helperParams
+        try
+        {
+            if ($global:SBLoggingEnabled)
+            {
+                $logFileMessage | Out-File -FilePath $Path -Append
+            }
+        }
+        catch
+        {
+            $output = @()
+            $output += "Failed to add log entry to [$Path]. The error was:"
+            $output += Out-String -InputObject $_
+
+            if (Test-Path -Path $Path -PathType Leaf)
+            {
+                # The file exists, but likely is being held open by another process.
+                # Let's do best effort here and if we can't log something, just report
+                # it and move on.
+                $output += "This is non-fatal, and your command will continue.  Your log file will be missing this entry:"
+                $output += $consoleMessage
+                Write-Warning ($output -join [Environment]::NewLine)
+            }
+            else
+            {
+                # If the file doesn't exist and couldn't be created, it likely will never
+                # be valid.  In that instance, let's stop everything so that the user can
+                # fix the problem, since they have indicated that they want this logging to
+                # occur.
+                throw ($output -join [Environment]::NewLine)
+            }
+        }
     }
 }
 

@@ -65,7 +65,7 @@ function Initialize-StoreIngestionApiGlobalVariables
 
     .NOTES
         Internal-only helper method.
-    
+
         The only reason this exists is so that we can leverage CodeAnalysis.SuppressMessageAttribute,
         which can only be applied to functions.  Otherwise, we would have just had the relevant
         initialization code directly above the function that references the variable.
@@ -370,7 +370,7 @@ function Get-AccessToken
 
     .OUTPUTS
         System.String
-    
+
     .NOTES
         The access token will only be valid for ONE HOUR.
 #>
@@ -514,7 +514,7 @@ function Get-AccessToken
         # This type of exception occurs when NOT using -NoStatus
         $output = @()
         $output += "Be sure to check that your client id/secret are valid."
-        $output += "$($_.Exception.Message)"
+        $output += Out-String -InputObject $_
         if ($_.ErrorDetails.Message)
         {
             $message = ($_.ErrorDetails.Message | ConvertFrom-Json)
@@ -605,14 +605,14 @@ function Get-AzureStorageDllPath
         on the machine, and returns the path to it.
 
         This will first look for the assembly in the module's script directory.
-        
+
         Next it will look for the assembly in the location defined by
         $SBAlternateAssemblyDir.  This value would have to be defined by the user
         prior to execution of this cmdlet.
-        
+
         If not found there, it will look in a temp folder established during this
         PowerShell session.
-        
+
         If still not found, it will download the nuget package
         for it to a temp folder accessible during this PowerShell session.
 
@@ -665,14 +665,14 @@ function Get-AzureStorageDataMovementDllPath {
         is available on the machine, and returns the path to it.
 
         This will first look for the assembly in the module's script directory.
-        
+
         Next it will look for the assembly in the location defined by
         $SBAlternateAssemblyDir.  This value would have to be defined by the user
         prior to execution of this cmdlet.
-        
+
         If not found there, it will look in a temp folder established during this
         PowerShell session.
-        
+
         If still not found, it will download the nuget package
         for it to a temp folder accessible during this PowerShell session.
 
@@ -771,7 +771,7 @@ function Set-SubmissionPackage
             Mandatory,
             ValueFromPipeline=$True)]
         [string] $UploadUrl,
-        
+
         [switch] $NoStatus
     )
 
@@ -782,9 +782,9 @@ function Set-SubmissionPackage
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::PackagePath = (Get-PiiSafeString -PlainText $PackagePath) }
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose 
+    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
 
-    Write-Log "Attempting to upload the package ($PackagePath) for the submission to $UploadUrl..." -Level Verbose 
+    Write-Log "Attempting to upload the package ($PackagePath) for the submission to $UploadUrl..." -Level Verbose
 
     $azureStorageDll = Get-AzureStorageDllPath -NoStatus:$NoStatus
     $azureStorageDataMovementDll = Get-AzureStorageDataMovementDllPath -NoStatus:$NoStatus
@@ -807,7 +807,7 @@ function Set-SubmissionPackage
 
             $bytes = [System.IO.File]::ReadAllBytes($azureStorageDataMovementDll)
             [System.Reflection.Assembly]::Load($bytes) | Out-Null
-            
+
             $uri = New-Object -TypeName System.Uri -ArgumentList $UploadUrl
             $cloudBlockBlob = New-Object -TypeName Microsoft.WindowsAzure.Storage.Blob.CloudBlockBlob -ArgumentList $uri
 
@@ -826,7 +826,7 @@ function Set-SubmissionPackage
             {
                 [scriptblock]$scriptBlock = {
                     param($UploadUrl, $PackagePath, $AzureStorageDll, $AzureStorageDataMovementDll)
-                    
+
                     # Recommendations per https://github.com/Azure/azure-storage-net-data-movement#best-practice
                     [System.Net.ServicePointManager]::DefaultConnectionLimit = [Environment]::ProcessorCount * 8
                     [System.Net.ServicePointManager]::Expect100Continue = $false
@@ -867,14 +867,14 @@ function Set-SubmissionPackage
         # Record the telemetry for this event.
         $stopwatch.Stop()
         $telemetryMetrics = @{ [StoreBrokerTelemetryMetric]::Duration = $stopwatch.Elapsed.TotalSeconds }
-        Set-TelemetryEvent -EventName Set-SubmissionPackage -Properties $telemetryProperties -Metrics $telemetryMetrics 
+        Set-TelemetryEvent -EventName Set-SubmissionPackage -Properties $telemetryProperties -Metrics $telemetryMetrics
     }
     catch [System.Management.Automation.RuntimeException]
     {
         # This type of exception occurs when NOT using -NoStatus
 
         $output = @()
-        $output += "$($_.Exception.Message)"
+        $output += Out-String -InputObject $_
         if ($_.ErrorDetails.Message)
         {
             $message = ($_.ErrorDetails.Message | ConvertFrom-Json)
@@ -885,7 +885,7 @@ function Set-SubmissionPackage
             }
         }
 
-        Set-TelemetryException -Exception $_.Exception -ErrorBucket Set-SubmissionPackage -Properties $telemetryProperties 
+        Set-TelemetryException -Exception $_.Exception -ErrorBucket Set-SubmissionPackage -Properties $telemetryProperties
         $newLineOutput = ($output -join [Environment]::NewLine)
         Write-Log $newLineOutput -Level Error
         throw $newLineOutput
@@ -900,8 +900,8 @@ function Set-SubmissionPackage
         $output += "StatusCode: $($_.Exception.Response.StatusCode.value__)"
         $output += "StatusDescription: $($_.Exception.Response.StatusDescription)"
         $output += "$($_.ErrorDetails)"
-        
-        Set-TelemetryException -Exception $_.Exception -ErrorBucket Set-SubmissionPackage -Properties $telemetryProperties 
+
+        Set-TelemetryException -Exception $_.Exception -ErrorBucket Set-SubmissionPackage -Properties $telemetryProperties
         $newLineOutput = ($output -join [Environment]::NewLine)
         Write-Log $newLineOutput -Level Error
         throw $newLineOutput
@@ -912,7 +912,7 @@ function Set-SubmissionPackage
         [System.Net.ServicePointManager]::Expect100Continue = $origExpect100Continue
     }
 
-    Write-Log "Successfully uploaded the application package." -Level Verbose 
+    Write-Log "Successfully uploaded the application package." -Level Verbose
 }
 
 function Get-SubmissionPackage
@@ -963,7 +963,7 @@ function Get-SubmissionPackage
             Mandatory,
             ValueFromPipeline=$True)]
         [string] $UploadUrl,
-        
+
         [Parameter(Mandatory)]
         [ValidateScript({if (Test-Path -Path $_ -PathType Leaf) { throw "$_ already exists. Choose a different destination name." } else { $true }})]
         [string] $PackagePath,
@@ -978,11 +978,11 @@ function Get-SubmissionPackage
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::PackagePath = (Get-PiiSafeString -PlainText $PackagePath) }
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose 
+    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
 
-    Write-Log "Attempting to download the contents of $UploadUrl to $PackagePath..." -Level Verbose 
+    Write-Log "Attempting to download the contents of $UploadUrl to $PackagePath..." -Level Verbose
 
-    $azureStorageDll = Get-AzureStorageDllPath -NoStatus:$NoStatus 
+    $azureStorageDll = Get-AzureStorageDllPath -NoStatus:$NoStatus
     $azureStorageDataMovementDll = Get-AzureStorageDataMovementDllPath -NoStatus:$NoStatus
 
     # We're going to be changing these, so we want to capture the current values so that we
@@ -1022,7 +1022,7 @@ function Get-SubmissionPackage
             {
                 [scriptblock]$scriptBlock = {
                     param($UploadUrl, $PackagePath, $AzureStorageDll, $AzureStorageDataMovementDll)
-                    
+
                     # Recommendations per https://github.com/Azure/azure-storage-net-data-movement#best-practice
                     [System.Net.ServicePointManager]::DefaultConnectionLimit = [Environment]::ProcessorCount * 8
                     [System.Net.ServicePointManager]::Expect100Continue = $false
@@ -1063,14 +1063,14 @@ function Get-SubmissionPackage
         # Record the telemetry for this event.
         $stopwatch.Stop()
         $telemetryMetrics = @{ [StoreBrokerTelemetryMetric]::Duration = $stopwatch.Elapsed.TotalSeconds }
-        Set-TelemetryEvent -EventName Get-SubmissionPackage -Properties $telemetryProperties -Metrics $telemetryMetrics 
+        Set-TelemetryEvent -EventName Get-SubmissionPackage -Properties $telemetryProperties -Metrics $telemetryMetrics
     }
     catch [System.Management.Automation.RuntimeException]
     {
         # This type of exception occurs when NOT using -NoStatus
 
         $output = @()
-        $output += "$($_.Exception.Message)"
+        $output += Out-String -InputObject $_
         if ($_.ErrorDetails.Message)
         {
             $message = ($_.ErrorDetails.Message | ConvertFrom-Json)
@@ -1081,7 +1081,7 @@ function Get-SubmissionPackage
             }
         }
 
-        Set-TelemetryException -Exception $_.Exception -ErrorBucket Get-SubmissionPackage -Properties $telemetryProperties 
+        Set-TelemetryException -Exception $_.Exception -ErrorBucket Get-SubmissionPackage -Properties $telemetryProperties
         $newLineOutput = ($output -join [Environment]::NewLine)
         Write-Log $newLineOutput -Level Error
         throw $newLineOutput
@@ -1096,8 +1096,8 @@ function Get-SubmissionPackage
         $output += "StatusCode: $($_.Exception.Response.StatusCode.value__)"
         $output += "StatusDescription: $($_.Exception.Response.StatusDescription)"
         $output += "$($_.ErrorDetails)"
-        
-        Set-TelemetryException -Exception $_.Exception -ErrorBucket Get-SubmissionPackage -Properties $telemetryProperties 
+
+        Set-TelemetryException -Exception $_.Exception -ErrorBucket Get-SubmissionPackage -Properties $telemetryProperties
         $newLineOutput = ($output -join [Environment]::NewLine)
         Write-Log $newLineOutput -Level Error
         throw $newLineOutput
@@ -1108,7 +1108,7 @@ function Get-SubmissionPackage
         [System.Net.ServicePointManager]::Expect100Continue = $origExpect100Continue
     }
 
-    Write-Log "Successfully downloaded the blob contents." -Level Verbose 
+    Write-Log "Successfully downloaded the blob contents." -Level Verbose
 }
 
 function Start-SubmissionMonitor
@@ -1182,7 +1182,7 @@ function Start-SubmissionMonitor
             ParameterSetName="AppOrFlight",
             Position=0)]
         [string] $AppId,
-        
+
         [Parameter(
             Mandatory,
             ParameterSetName="AppOrFlight",
@@ -1215,7 +1215,7 @@ function Start-SubmissionMonitor
         [switch] $PassThru
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose 
+    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
 
     # Telemetry-related
     $telemetryProperties = @{
@@ -1226,24 +1226,24 @@ function Start-SubmissionMonitor
     if (-not [String]::IsNullOrEmpty($FlightId)) { $telemetryProperties[[StoreBrokerTelemetryProperty]::FlightId] = $FlightId }
     if (-not [String]::IsNullOrEmpty($IapId)) { $telemetryProperties[[StoreBrokerTelemetryProperty]::IapId] = $IapId }
     $telemetryMetrics = @{ [StoreBrokerTelemetryMetric]::NumEmailAddresses = $EmailNotifyTo.Count }
-    Set-TelemetryEvent -EventName Start-ApplicationSubmissionMonitor -Properties $telemetryProperties -Metrics $telemetryMetrics 
+    Set-TelemetryEvent -EventName Start-ApplicationSubmissionMonitor -Properties $telemetryProperties -Metrics $telemetryMetrics
 
     $shouldMonitor = $true
     $indentLength = 5
     $lastTokenRefreshTime = Get-Date
-    $accessToken = Get-AccessToken -NoStatus:$NoStatus 
+    $accessToken = Get-AccessToken -NoStatus:$NoStatus
 
     # Get the info so we have it's name when we give the user updates.
     $isIapSubmission = -not [String]::IsNullOrEmpty($IapId)
     if ($isIapSubmission)
     {
-        $iap = Get-InAppProduct -IapId $IapId -AccessToken $AccessToken -NoStatus:$NoStatus 
+        $iap = Get-InAppProduct -IapId $IapId -AccessToken $AccessToken -NoStatus:$NoStatus
         $appName = $iap.productId
         $fullName = $appName
     }
     else
     {
-        $app = Get-Application -AppId $AppId -AccessToken $AccessToken -NoStatus:$NoStatus 
+        $app = Get-Application -AppId $AppId -AccessToken $AccessToken -NoStatus:$NoStatus
         $appName = $app.primaryName
         $fullName = $appName
 
@@ -1252,7 +1252,7 @@ function Start-SubmissionMonitor
         $isFlightingSubmission = (-not [String]::IsNullOrEmpty($FlightId))
         if ($isFlightingSubmission)
         {
-            $flight = Get-ApplicationFlight -AppId $AppId -FlightId $FlightId -AccessToken $AccessToken -NoStatus:$NoStatus 
+            $flight = Get-ApplicationFlight -AppId $AppId -FlightId $FlightId -AccessToken $AccessToken -NoStatus:$NoStatus
             $flightName = $flight.friendlyName
             $fullName = "$appName | $flightName"
         }
@@ -1273,22 +1273,22 @@ function Start-SubmissionMonitor
         if ((New-TimeSpan $lastTokenRefreshTime $(Get-Date)).Minutes -gt $accessTokenTimeoutMinutes)
         {
             $lastTokenRefreshTime = Get-Date
-            $accessToken = Get-AccessToken -NoStatus:$NoStatus 
+            $accessToken = Get-AccessToken -NoStatus:$NoStatus
         }
 
         try
         {
             if ($isIapSubmission)
             {
-                $submission = Get-InAppProductSubmission -IapId $IapId -SubmissionId $SubmissionId -AccessToken $AccessToken -NoStatus:$NoStatus 
+                $submission = Get-InAppProductSubmission -IapId $IapId -SubmissionId $SubmissionId -AccessToken $AccessToken -NoStatus:$NoStatus
             }
             elseif ($isFlightingSubmission)
             {
-                $submission = Get-ApplicationFlightSubmission -AppId $AppId -FlightId $FlightId -SubmissionId $SubmissionId -AccessToken $AccessToken -NoStatus:$NoStatus 
+                $submission = Get-ApplicationFlightSubmission -AppId $AppId -FlightId $FlightId -SubmissionId $SubmissionId -AccessToken $AccessToken -NoStatus:$NoStatus
             }
             else
             {
-                $submission = Get-ApplicationSubmission -AppId $AppId -SubmissionId $SubmissionId -AccessToken $AccessToken -NoStatus:$NoStatus 
+                $submission = Get-ApplicationSubmission -AppId $AppId -SubmissionId $SubmissionId -AccessToken $AccessToken -NoStatus:$NoStatus
             }
 
             if ($submission.status -ne $lastStatus)
@@ -1377,7 +1377,7 @@ function Start-SubmissionMonitor
                     $shouldMonitor = $false
                 }
 
-                Write-Log $($body -join [Environment]::NewLine) 
+                Write-Log $($body -join [Environment]::NewLine)
 
                 if ($EmailNotifyTo.Count -gt 0)
                 {
@@ -1392,7 +1392,7 @@ function Start-SubmissionMonitor
             # "The operation has timed out.", but this wording could clearly change over time.
             if ($_.Exception.Message -ilike "*timed*")
             {
-                Write-Log "Got exception while trying to check on submission: $($_.Exception.Message). Will try again." -Level Warning 
+                Write-Log "Got exception while trying to check on submission and will try again. The exception was:" -Exception $_ -Level Warning
             }
             else
             {
@@ -1403,7 +1403,7 @@ function Start-SubmissionMonitor
         if ($shouldMonitor)
         {
             $secondsBetweenChecks = 60
-            Write-Log "Status is [$lastStatus]. Waiting $secondsBetweenChecks seconds before checking again..." 
+            Write-Log "Status is [$lastStatus]. Waiting $secondsBetweenChecks seconds before checking again..."
             Start-Sleep -Seconds $secondsBetweenChecks
         }
     }
@@ -1484,10 +1484,10 @@ function Open-DevPortal
         [StoreBrokerTelemetryProperty]::ShowFlight = $ShowFlight
     }
 
-    Set-TelemetryEvent -EventName Open-DevPortal -Properties $telemetryProperties 
+    Set-TelemetryEvent -EventName Open-DevPortal -Properties $telemetryProperties
 
-    Write-Log "Opening Dev Portal in default web browser." 
-    
+    Write-Log "Opening Dev Portal in default web browser."
+
     $appUrl        = "https://developer.microsoft.com/en-us/dashboard/apps/$AppId"
     $submissionUrl = "https://developer.microsoft.com/en-us/dashboard/apps/$AppId/submissions/$SubmissionId/"
     $flightUrl     = "https://developer.microsoft.com/en-us/dashboard/Application/GetFlight?appId=$AppId&submissionId=$SubmissionId"
@@ -1595,7 +1595,7 @@ function Get-ProperEnumCasing
 
     .OUTPUTS
         System.String
-    
+
     .NOTES
         Internal-only helper method.
 
@@ -1741,7 +1741,7 @@ function Invoke-SBRestMethod
     {
         $errorBucket = $TelemetryEventName
     }
-    
+
     do
     {
         if ([System.String]::IsNullOrEmpty($AccessToken))
@@ -1759,7 +1759,7 @@ function Invoke-SBRestMethod
         # Since we have retry logic, we won't create a new stopwatch every time,
         # we'll just always continue the existing one...
         $stopwatch.Start()
-        
+
         $serviceEndpoint = Get-ServiceEndpoint
         $url = "$serviceEndpoint/v$serviceEndpointVersion/my/$UriFragment"
 
@@ -1776,7 +1776,7 @@ function Invoke-SBRestMethod
             {
                 $headers.Add("UseINT", "true")
             }
-        
+
             if (-not [String]::IsNullOrWhiteSpace($script:authTenantId))
             {
                 $headers.Add("TenantId", $script:authTenantId)
@@ -1804,7 +1804,7 @@ function Invoke-SBRestMethod
                     $params.Add("UseDefaultCredentials", $true)
                     $params.Add("UseBasicParsing", $true)
                     $params.Add("TimeoutSec", $global:SBWebRequestTimeoutSec)
-                
+
                     if ($Method -in ('post', 'put') -and (-not [String]::IsNullOrEmpty($Body)))
                     {
                         $bodyAsBytes = [System.Text.Encoding]::UTF8.GetBytes($Body)
@@ -1843,7 +1843,7 @@ function Invoke-SBRestMethod
                         $params.Add("UseDefaultCredentials", $true)
                         $params.Add("UseBasicParsing", $true)
                         $params.Add("TimeoutSec", $TimeoutSec)
-                
+
                         if ($Method -in ('post', 'put') -and (-not [String]::IsNullOrEmpty($Body)))
                         {
                             $bodyAsBytes = [System.Text.Encoding]::UTF8.GetBytes($Body)
@@ -1863,7 +1863,7 @@ function Invoke-SBRestMethod
                             # that is just a JSON object with the data that we'll later extract for processing in
                             # the main catch.
                             $ex = @{}
-                            $ex.Message = $_.Exception.Message
+                            $ex.Message = Out-String -InputObject $_
                             $ex.StatusCode = $_.Exception.Response.StatusCode
                             $ex.StatusDescription = $_.Exception.Response.StatusDescription
                             $ex.InnerMessage = $_.ErrorDetails.Message
@@ -1873,9 +1873,9 @@ function Invoke-SBRestMethod
                             }
                             catch
                             {
-                                Write-Log "Unable to retrieve the raw HTTP Web Response: $($_.Exception.Message)" -Level Warning
+                                Write-Log "Unable to retrieve the raw HTTP Web Response:" -Exception $_ -Level Warning
                             }
-                        
+
                             if ($_.Exception.Response.Headers.Count -gt 0)
                             {
                                 $ex.CorrelationId = $_.Exception.Response.Headers[$script:headerMSCorrelationId]
@@ -1952,19 +1952,19 @@ function Invoke-SBRestMethod
             if ($_.Exception -is [System.Net.WebException])
             {
                 $ex = $_.Exception
-                $message = $ex.Message
+                $message = Out-String -InputObject $_
                 $statusCode = $ex.Response.StatusCode.value__ # Note that value__ is not a typo.
                 $statusDescription = $ex.Response.StatusDescription
                 $innerMessage = $_.ErrorDetails.Message
                 try
                 {
-                    $rawContent = Get-HttpWebResponseContent -WebResponse $ex.Response                
+                    $rawContent = Get-HttpWebResponseContent -WebResponse $ex.Response
                 }
                 catch
                 {
-                    Write-Log "Unable to retrieve the raw HTTP Web Response: $($_.Exception.Message)" -Level Warning
+                    Write-Log "Unable to retrieve the raw HTTP Web Response:" -Exception $_ -Level Warning
                 }
-            
+
                 if ($ex.Response.Headers.Count -gt 0)
                 {
                     $correlationId = $ex.Response.Headers[$script:headerMSCorrelationId]
@@ -1988,14 +1988,14 @@ function Invoke-SBRestMethod
                 catch [System.ArgumentException]
                 {
                     # Will be thrown if $ex.Message isn't JSON content
-                    Write-Log $ex.Message -Level Error
+                    Write-Log -Exception $_ -Level Error
                     Set-TelemetryException -Exception $ex -ErrorBucket $errorBucket -Properties $localTelemetryProperties
                     throw
                 }
             }
             else
             {
-                Write-Log $_.Exception.Message -Level Error
+                Write-Log -Exception $_ -Level Error
                 Set-TelemetryException -Exception $_.Exception -ErrorBucket $errorBucket -Properties $localTelemetryProperties
                 throw
             }
@@ -2035,7 +2035,7 @@ function Invoke-SBRestMethod
 
             # It's possible that the API returned JSON content in its error response.
             # If it did, we want to extract the "activityId" property from it for
-            # logging purposes in order to assist the Submission API team with 
+            # logging purposes in order to assist the Submission API team with
             # post-mortem debugging.
             if (-not [String]::IsNullOrWhiteSpace($rawContent))
             {
@@ -2052,7 +2052,7 @@ function Invoke-SBRestMethod
                         # The property we wanted wasn't there, but we'll capture the full
                         # content for logging purposes anyway since it's rare for an API
                         # error to return additional content -- seeing it might be helpful.
-                        $output += $rawContent    
+                        $output += $rawContent
                     }
                 }
                 catch [ArgumentException]
@@ -2066,7 +2066,7 @@ function Invoke-SBRestMethod
 
             if (-not [String]::IsNullOrEmpty($correlationId))
             {
-                $output += $script:headerMSCorrelationId + ': ' + $correlationId 
+                $output += $script:headerMSCorrelationId + ': ' + $correlationId
                 Write-Log "$($script:headerMSCorrelationId): $correlationId" -Level Verbose
             }
 
@@ -2264,18 +2264,18 @@ function Remove-UnofficialSubmissionProperties
 <#
     .SYNOPSIS
         Removes additional properties from the submission object that aren't part of the submission API.
-        
+
     .DESCRIPTION
         Removes additional properties from the submission object that aren't part of the submission API.
-        
+
         The properties don't actually need to exist on the submission object before calling this function.
-        
+
     .PARAMETER Submission
         A PSCustomObject representing the submission.
-        
+
     .EXAMPLE
         Remove-UnofficialSubmissionProperties -Submission (Get-ApplicationSubmission -AppId $appId -SubmissionId $submissionId)
-        
+
     .NOTES
         Valid properties for applicationPackages are taken from https://docs.microsoft.com/en-us/windows/uwp/monetize/manage-app-submissions#application-package-object
 #>
@@ -2286,12 +2286,12 @@ function Remove-UnofficialSubmissionProperties
         [Parameter(Mandatory)]
         [PSCustomObject] $Submission
     )
-    
+
     # These properties aren't really valid in submission content.
     # We can safely call this method without validating that the property actually exists.
     $Submission.PSObject.Properties.Remove("appId")
     $Submission.PSObject.Properties.Remove("iapId")
-    
+
     foreach ($package in $Submission.applicationPackages)
     {
         @(

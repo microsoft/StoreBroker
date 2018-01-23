@@ -100,7 +100,7 @@ function Add-ToElement
         PS C:\>Add-ToElement -Element $root -Comment "Comment1", "Comment2" -Attribute @{ "Attrib1"="Val1"; "Attrib2"="Val2" }
 
         Adds two comments and two attributes to the root element of the XML document.
-        
+
 #>
     param(
         [Parameter(Mandatory)]
@@ -229,7 +229,7 @@ function Add-ToChildren
             }
 
             Add-ToElement @params
-            $CountFrom++ 
+            $CountFrom++
         }
 }
 
@@ -502,7 +502,7 @@ function Add-ScreenshotCaptions
                 # https://github.com/PowerShell/PSScriptAnalyzer/issues/699
                 $captionImageMap[$description] = @{}
             }
-                        
+
             ($captionImageMap[$description])[$imageType] = $fileName
         }
 
@@ -903,7 +903,7 @@ function ConvertFrom-Listing
         xml:lang="{0}"
         Release="{1}"/>', $Lang, $Release))
 
-    Add-AppStoreName -Xml $Xml -Listing $Listing    
+    Add-AppStoreName -Xml $Xml -Listing $Listing
     Add-Keywords -Xml $Xml -Listing $Listing
     Add-Description -Xml $Xml -Listing $Listing
     Add-ReleaseNotes -Xml $Xml -Listing $Listing
@@ -1057,7 +1057,7 @@ function Show-ImageFileNames
         {
             $output += " * [$langCode]: " + ($LangImageNames.$langCode -join ", ")
         }
-    
+
         Write-Log $($output -join [Environment]::NewLine)
     }
     else
@@ -1105,7 +1105,7 @@ function Main
             }
             catch
             {
-                Write-Log "Error creating [$lang] PDP: $($Error[0].Exception.Message )" -Level Error
+                Write-Log "Error creating [$lang] PDP:" -Exception $_ -Level Error
                 throw
             }
         }

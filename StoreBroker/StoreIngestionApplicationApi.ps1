@@ -221,7 +221,7 @@ function Get-Application
     param(
         [Parameter(Mandatory=$true)]
         [string] $AppId,
-        
+
         [string] $AccessToken = "",
 
         [switch] $NoStatus
@@ -357,10 +357,10 @@ function Get-ApplicationSubmission
     param(
         [Parameter(Mandatory)]
         [string] $AppId,
-        
+
         [Parameter(Mandatory)]
         [string] $SubmissionId,
-        
+
         [string] $AccessToken = "",
 
         [switch] $NoStatus
@@ -579,10 +579,10 @@ function Get-ApplicationSubmissionStatus
     param(
         [Parameter(Mandatory)]
         [string] $AppId,
-        
+
         [Parameter(Mandatory)]
         [string] $SubmissionId,
-        
+
         [string] $AccessToken = "",
 
         [switch] $NoStatus
@@ -653,7 +653,7 @@ function Remove-ApplicationSubmission
     param(
         [Parameter(Mandatory)]
         [string] $AppId,
-        
+
         [Parameter(Mandatory)]
         [string] $SubmissionId,
 
@@ -668,7 +668,7 @@ function Remove-ApplicationSubmission
         [StoreBrokerTelemetryProperty]::AppId = $AppId
         [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
     }
-    
+
     $params = @{
         "UriFragment" = "applications/$AppId/submissions/$SubmissionId"
         "Method" = "Delete"
@@ -750,7 +750,7 @@ function New-ApplicationSubmission
     param(
         [Parameter(Mandatory)]
         [string] $AppId,
-        
+
         [ValidateSet('NoAction', 'Finalize', 'Halt')]
         [string] $ExistingPackageRolloutAction = $script:keywordNoAction,
 
@@ -1010,7 +1010,7 @@ function Update-ApplicationSubmission
     param(
         [Parameter(Mandatory)]
         [string] $AppId,
-        
+
         [Parameter(Mandatory)]
         [ValidateScript({if (Test-Path -Path $_ -PathType Leaf) { $true } else { throw "$_ cannot be found." }})]
         [string] $SubmissionDataPath,
@@ -1019,7 +1019,7 @@ function Update-ApplicationSubmission
         [string] $PackagePath = $null,
 
         [switch] $AutoCommit,
-        
+
         [string] $SubmissionId = "",
 
         [ValidateSet('Default', 'Immediate', 'Manual', 'SpecificDate')]
@@ -1096,7 +1096,7 @@ function Update-ApplicationSubmission
             $output = @()
             $output += "The AppId [$($submission.appId)] in the submission content [$SubmissionDataPath] does not match the intended AppId [$AppId]."
             $output += "You either entered the wrong AppId at the commandline, or you're referencing the wrong submission content to upload."
-            
+
             $newLineOutput = ($output -join [Environment]::NewLine)
             Write-Log $newLineOutput -Level Error
             throw $newLineOutput
@@ -1142,7 +1142,7 @@ function Update-ApplicationSubmission
                 $output = @()
                 $output += "We can only modify a submission that is in the '$script:keywordPendingCommit' state."
                 $output += "The submission that you requested to modify ($SubmissionId) is in '$($submissionToUpdate.status)' state."
-                
+
                 $newLineOutput = ($output -join [Environment]::NewLine)
                 Write-Log $newLineOutput -Level Error
                 throw $newLineOutput
@@ -1257,7 +1257,7 @@ function Update-ApplicationSubmission
     }
     catch
     {
-        Write-Log $_ -Level Error 
+        Write-Log -Exception $_ -Level Error
         throw
     }
 }
@@ -1379,7 +1379,7 @@ function Patch-ApplicationSubmission
     param(
         [Parameter(Mandatory)]
         [PSCustomObject] $ClonedSubmission,
-        
+
         [Parameter(Mandatory)]
         [PSCustomObject] $NewSubmission,
 
@@ -1414,8 +1414,8 @@ function Patch-ApplicationSubmission
 
         [switch] $UpdateNotesForCertification
     )
-    
-    Write-Log "Patching the content of the submission." -Level Verbose 
+
+    Write-Log "Patching the content of the submission." -Level Verbose
 
     # Our method should have zero side-effects -- we don't want to modify any parameter
     # that was passed-in to us.  To that end, we'll create a deep copy of the ClonedSubmisison,
@@ -1456,13 +1456,13 @@ function Patch-ApplicationSubmission
     if (($AddPackages -or $ReplacePackages) -and ($NewSubmission.applicationPackages.Count -eq 0))
     {
         $output = @()
-        $output += "Your submission doesn't contain any packages, so you cannot Add or Replace packages." 
+        $output += "Your submission doesn't contain any packages, so you cannot Add or Replace packages."
         $output += "Please check your input settings to New-SubmissionPackage and ensure you're providing a value for AppxPath."
         $output = $output -join [Environment]::NewLine
         Write-Log $output -Level Error
         throw $output
     }
-    
+
     # When updating packages, we'll simply add the new packages to the list of existing packages.
     # At some point when the API provides more signals to us with regard to what platform/OS
     # an existing package is for, we may want to mark "older" packages for the same platform
@@ -1497,7 +1497,7 @@ function Patch-ApplicationSubmission
         $PatchedSubmission.listings = DeepCopy-Object $NewSubmission.listings
 
         # Now we'll update the screenshots in the existing listings
-        # to indicate that they should all be deleted. We'll also add 
+        # to indicate that they should all be deleted. We'll also add
         # all of these deleted images to the corresponding listing
         # in the patched submission.
         #
@@ -1576,7 +1576,7 @@ function Patch-ApplicationSubmission
         $PatchedSubmission.targetPublishDate = $NewSubmission.targetPublishDate
         $PatchedSubmission.visibility = Get-ProperEnumCasing -EnumValue ($NewSubmission.visibility)
     }
-    
+
     # If users pass in a different value for any of the publish/visibility values at the commandline,
     # they override those coming from the config.
     if ($TargetPublishMode -ne $script:keywordDefault)
@@ -1584,7 +1584,7 @@ function Patch-ApplicationSubmission
         if (($TargetPublishMode -eq $script:keywordSpecificDate) -and ($null -eq $TargetPublishDate))
         {
             $output = "TargetPublishMode was set to '$script:keywordSpecificDate' but TargetPublishDate was not specified."
-            Write-Log $output -Level Error 
+            Write-Log $output -Level Error
             throw $output
         }
 
@@ -1596,7 +1596,7 @@ function Patch-ApplicationSubmission
         if ($TargetPublishMode -ne $script:keywordSpecificDate)
         {
             $output = "A TargetPublishDate was specified, but the TargetPublishMode was [$TargetPublishMode],  not '$script:keywordSpecificDate'."
-            Write-Log $output -Level Error 
+            Write-Log $output -Level Error
             throw $output
         }
 
@@ -1635,11 +1635,11 @@ function Patch-ApplicationSubmission
     # To better assist with debugging, we'll store exactly the original and modified JSON submission bodies.
     $tempFile = [System.IO.Path]::GetTempFileName() # New-TemporaryFile requires PS 5.0
     ($ClonedSubmission | ConvertTo-Json -Depth $script:jsonConversionDepth) | Set-Content -Path $tempFile -Encoding UTF8
-    Write-Log "The original cloned JSON content can be found here: [$tempFile]" -Level Verbose 
+    Write-Log "The original cloned JSON content can be found here: [$tempFile]" -Level Verbose
 
     $tempFile = [System.IO.Path]::GetTempFileName() # New-TemporaryFile requires PS 5.0
     ($PatchedSubmission | ConvertTo-Json -Depth $script:jsonConversionDepth) | Set-Content -Path $tempFile -Encoding UTF8
-    Write-Log "The patched JSON content can be found here: [$tempFile]" -Level Verbose 
+    Write-Log "The patched JSON content can be found here: [$tempFile]" -Level Verbose
 
     return $PatchedSubmission
 }
@@ -1706,7 +1706,7 @@ function Set-ApplicationSubmission
     param(
         [Parameter(Mandatory)]
         [string] $AppId,
-        
+
         [Parameter(Mandatory)]
         [PSCustomObject] $UpdatedSubmission,
 
@@ -1715,7 +1715,7 @@ function Set-ApplicationSubmission
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose 
+    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
 
     $submissionId = $UpdatedSubmission.id
     $body = [string]($UpdatedSubmission | ConvertTo-Json -Depth $script:jsonConversionDepth)
@@ -1787,16 +1787,16 @@ function Complete-ApplicationSubmission
     param(
         [Parameter(Mandatory)]
         [string] $AppId,
-        
+
         [Parameter(Mandatory)]
         [string] $SubmissionId,
-        
+
         [string] $AccessToken = "",
 
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose 
+    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
 
     try
     {
@@ -1815,7 +1815,7 @@ function Complete-ApplicationSubmission
             "NoStatus" = $NoStatus
         }
 
-        $null = Invoke-SBRestMethod @params 
+        $null = Invoke-SBRestMethod @params
 
         $output = @()
         $output += "The submission has been successfully committed."
@@ -1829,7 +1829,7 @@ function Complete-ApplicationSubmission
         $output += "    Start-ApplicationSubmissionMonitor -AppId $AppId -SubmissionId $submissionId -EmailNotifyTo $env:username"
         $output += ""
         $output += $script:manualPublishWarning -f 'Update-ApplicationSubmission'
-        Write-Log $($output -join [Environment]::NewLine) 
+        Write-Log $($output -join [Environment]::NewLine)
     }
     catch [System.InvalidOperationException]
     {
@@ -1885,7 +1885,7 @@ function Get-ApplicationSubmissionPackageRollout
     param(
         [Parameter(Mandatory)]
         [string] $AppId,
-        
+
         [Parameter(Mandatory)]
         [string] $SubmissionId,
 
@@ -1894,7 +1894,7 @@ function Get-ApplicationSubmissionPackageRollout
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose 
+    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
 
     try
     {
@@ -1972,7 +1972,7 @@ function Update-ApplicationSubmissionPackageRollout
     param(
         [Parameter(Mandatory)]
         [string] $AppId,
-        
+
         [Parameter(Mandatory)]
         [string] $SubmissionId,
 
@@ -1985,7 +1985,7 @@ function Update-ApplicationSubmissionPackageRollout
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose 
+    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
 
     try
     {
@@ -2075,16 +2075,16 @@ function Stop-ApplicationSubmissionPackageRollout
     param(
         [Parameter(Mandatory)]
         [string] $AppId,
-        
+
         [Parameter(Mandatory)]
         [string] $SubmissionId,
-        
+
         [string] $AccessToken = "",
 
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose 
+    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
 
     try
     {
@@ -2173,16 +2173,16 @@ function Complete-ApplicationSubmissionPackageRollout
     param(
         [Parameter(Mandatory)]
         [string] $AppId,
-        
+
         [Parameter(Mandatory)]
         [string] $SubmissionId,
-        
+
         [string] $AccessToken = "",
 
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose 
+    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
 
     try
     {

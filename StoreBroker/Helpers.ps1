@@ -15,7 +15,7 @@ function Initialize-HelpersGlobalVariables
 
     .NOTES
         Internal-only helper method.
-    
+
         The only reason this exists is so that we can leverage CodeAnalysis.SuppressMessageAttribute,
         which can only be applied to functions.  Otherwise, we would have just had the relevant
         initialization code directly above the function that references the variable.
@@ -183,7 +183,7 @@ function Format-SimpleTableString
     .PARAMETER IndentationLevel
         The number of spaces that this should be indented.
         Defaults to 0.
-        
+
     .EXAMPLE
         Format-SimpleTableString @{"Name" = "Foo"; "Value" = "Bar"}
         Formats to a table with no indentation, and no leading or trailing empty lines.
@@ -269,7 +269,7 @@ function DeepCopy-Object
 #>
 {
     [CmdletBinding()]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseApprovedVerbs", "", Justification="Intentional.  This isn't exported, and needed to be explicit relative to Copy-Object.")] 
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseApprovedVerbs", "", Justification="Intentional.  This isn't exported, and needed to be explicit relative to Copy-Object.")]
     param(
         [Parameter(Mandatory)]
         [PSCustomObject] $Object
@@ -403,17 +403,17 @@ function ConvertTo-Array
 
     Begin
     {
-        $output = @(); 
+        $output = @();
     }
 
     Process
     {
-        $output += $_; 
+        $output += $_;
     }
 
     End
     {
-        return ,$output; 
+        return ,$output;
     }
 }
 
@@ -433,14 +433,14 @@ function Write-Log
 
     .PARAMETER Level
         The type of message to be logged.
-        
+
     .PARAMETER Indent
         The number of spaces to indent the line in the log file.
 
     .PARAMETER Path
         The log file path.
         Defaults to $env:USERPROFILE\Documents\StoreBroker.log
-        
+
     .EXAMPLE
         Write-Log -Message "Everything worked." -Path C:\Debug.log
 
@@ -462,16 +462,28 @@ function Write-Log
         $global:SBLoggingEnabled determines if log entries will be made to the log file.
            If $false, log entries will ONLY go to the relevant output pipeline.
 #>
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(
+        SupportsShouldProcess,
+        DefaultParameterSetName="LogString")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars", "", Justification="We use global variables sparingly and intentionally for module configuration, and employ a consistent naming convention.")]
     param(
         [Parameter(
+            ParameterSetName="LogString",
             Mandatory,
+            Position=0,
             ValueFromPipeline)]
         [AllowEmptyString()]
         [AllowNull()]
         [string] $Message,
+
+        [Parameter(
+            ParameterSetName="LogException",
+            Mandatory,
+            Position=0,
+            ValueFromPipeline)]
+        [AllowNull()]
+        [System.Management.Automation.ErrorRecord] $Exception,
 
         [ValidateSet('Error', 'Warning', 'Info', 'Verbose', 'Debug')]
         [string] $Level = 'Info',
@@ -484,6 +496,13 @@ function Write-Log
 
     Process
     {
+        if ($PSCmdlet.ParameterSetName -eq "LogException")
+        {
+            # Convert the exception to a string for logging.
+            # If $Exception happens to be $null, $Message will be empty string.
+            $Message = Out-String -InputObject $Exception
+        }
+
         $date = Get-Date
         $dateString = $date.ToString("yyyy-MM-dd HH:mm:ss")
         if ($global:SBUseUTC)
@@ -550,7 +569,8 @@ function Write-Log
         catch
         {
             $output = @()
-            $output += "Failed to add log entry to [$Path]. The error was: '$_'."
+            $output += "Failed to add log entry to [$Path]. The error was:"
+            $output += Out-String -InputObject $_
 
             if (Test-Path -Path $Path -PathType Leaf)
             {
@@ -573,7 +593,7 @@ function Write-Log
     }
 }
 
-function New-TemporaryDirectory 
+function New-TemporaryDirectory
 {
 <#
     .SYNOPSIS
@@ -627,7 +647,7 @@ function Send-SBMailMessage
         $global:SBNotifySmtpServer    - The SMTP Server to be used
                                         [defaults to $null]
         $global:SBNotifyCredential    - The credentials needed to send mail through that SMTP Server
-                                        [defaults to $null]        
+                                        [defaults to $null]
 
         The Git repo for this module can be found here: http://aka.ms/StoreBroker
 
@@ -667,7 +687,7 @@ function Send-SBMailMessage
             $fixedTo += "$_@$global:SBNotifyDefaultDomain"
         }
     }
-    
+
     # Do the same for the "From" email address
     $fixedFrom = $global:SBNotifyDefaultFrom
     if ($fixedFrom -notlike "*@*")
@@ -819,7 +839,7 @@ function Resolve-UnverifiedPath
         file doesn't exist.
 
     .OUTPUTS
-        [string] - The fully resolved path 
+        [string] - The fully resolved path
 
 #>
     [CmdletBinding()]
@@ -880,7 +900,7 @@ function Ensure-Directory
     {
         Write-Log "Could not ensure directory: [$Path]" -Level Error
 
-        throw 
+        throw
     }
 }
 

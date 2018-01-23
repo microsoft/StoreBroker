@@ -94,7 +94,7 @@ function Add-ToElement
         PS C:\>Add-ToElement -Element $root -Comment "Comment1", "Comment2" -Attribute @{ "Attrib1"="Val1"; "Attrib2"="Val2" }
 
         Adds two comments and two attributes to the root element of the XML document.
-        
+
 #>
     param(
         [Parameter(Mandatory)]
@@ -268,7 +268,7 @@ function Add-Icon
         be included with a non-empty value.  This is fine if the Listing has an icon defined,
         but if it doesn't, then we want to include the element, but commented out so that users
         know later what they need to add if they wish to include an icon at some future time.
-        We will create/add the icon node the way we do in all other cases so that we have its XML, 
+        We will create/add the icon node the way we do in all other cases so that we have its XML,
         but if we then determine that there is no icon for that listing, we'll convert the element
         to its XML string representation that we can add as a comment, and then remove the actual
         node.
@@ -368,7 +368,7 @@ function ConvertFrom-Listing
         xml:lang="{0}"
         Release="{1}"/>', $Lang, $Release))
 
-    Add-Title -Xml $Xml -Listing $Listing    
+    Add-Title -Xml $Xml -Listing $Listing
     Add-Description -Xml $Xml -Listing $Listing
     $icon = Add-Icon -Xml $Xml -Listing $Listing
 
@@ -527,7 +527,7 @@ function Show-ImageFileNames
         {
             $output += " * [$langCode]: " + ($LangImageNames.$langCode -join ", ")
         }
-    
+
         Write-Log $($output -join [Environment]::NewLine)
     }
     else
@@ -580,7 +580,7 @@ function Main
             }
             catch
             {
-                Write-Log "Error creating [$lang] PDP: $($Error[0].Exception.Message )" -Level Error
+                Write-Log "Error creating [$lang] PDP:" -Exception $_ -Level Error
                 throw
             }
         }

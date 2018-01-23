@@ -74,7 +74,7 @@ function Get-ApplicationFlights
     param(
         [Parameter(Mandatory)]
         [string] $AppId,
-        
+
         [ValidateScript({if ($_ -gt 0) { $true } else { throw "Must be greater than 0." }})]
         [int] $MaxResults = 100,
 
@@ -226,7 +226,7 @@ function Get-ApplicationFlight
     param(
         [Parameter(Mandatory)]
         [string] $AppId,
-        
+
         [Parameter(Mandatory)]
         [string] $FlightId,
 
@@ -379,7 +379,7 @@ function New-ApplicationFlight
 
     .PARAMETER GroupIds
         The list of Flight Group Ids that should be part of this new Flight.
- 
+
     .PARAMETER RankHigherThan
         The friendlyName of the Flight that this should be ranked higher than.
         If not provided, this will be ranked highest of all current flights.
@@ -414,7 +414,7 @@ function New-ApplicationFlight
     param(
         [Parameter(Mandatory)]
         [string] $AppId,
-        
+
         [Parameter(Mandatory)]
         [string] $FriendlyName,
 
@@ -438,7 +438,7 @@ function New-ApplicationFlight
     {
         $hashBody["rankHigherThan"] = $RankHigherThan
     }
-    
+
     $body = $hashBody | ConvertTo-Json
 
     $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::AppId = $AppId }
@@ -518,7 +518,7 @@ function Remove-ApplicationFlight
     param(
         [Parameter(Mandatory)]
         [string] $AppId,
-        
+
         [Parameter(Mandatory)]
         [string] $FlightId,
 
@@ -533,7 +533,7 @@ function Remove-ApplicationFlight
         [StoreBrokerTelemetryProperty]::AppId = $AppId
         [StoreBrokerTelemetryProperty]::FlightId = $FlightId
     }
-    
+
     $params = @{
         "UriFragment" = "applications/$AppId/flights/$FlightId"
         "Method" = "Delete"
@@ -608,13 +608,13 @@ function Get-ApplicationFlightSubmission
     param(
         [Parameter(Mandatory)]
         [string] $AppId,
-        
+
         [Parameter(Mandatory)]
         [string] $FlightId,
 
         [Parameter(Mandatory)]
         [string] $SubmissionId,
-        
+
         [string] $AccessToken = "",
 
         [switch] $NoStatus
@@ -793,13 +793,13 @@ function Get-ApplicationFlightSubmissionStatus
     param(
         [Parameter(Mandatory)]
         [string] $AppId,
-        
+
         [Parameter(Mandatory)]
         [string] $FlightId,
 
         [Parameter(Mandatory)]
         [string] $SubmissionId,
-        
+
         [string] $AccessToken = "",
 
         [switch] $NoStatus
@@ -876,7 +876,7 @@ function Remove-ApplicationFlightSubmission
     param(
         [Parameter(Mandatory)]
         [string] $AppId,
-        
+
         [Parameter(Mandatory)]
         [string] $FlightId,
 
@@ -978,7 +978,7 @@ function New-ApplicationFlightSubmission
     param(
         [Parameter(Mandatory)]
         [string] $AppId,
-        
+
         [Parameter(Mandatory)]
         [string] $FlightId,
 
@@ -1216,7 +1216,7 @@ function Update-ApplicationFlightSubmission
             Mandatory,
             Position=0)]
         [string] $AppId,
-        
+
         [Parameter(
             Mandatory,
             Position=1)]
@@ -1248,7 +1248,7 @@ function Update-ApplicationFlightSubmission
         [DateTime] $MandatoryUpdateEffectiveDate,
 
         [switch] $AutoCommit,
-        
+
         [string] $SubmissionId = "",
 
         [ValidateScript({if ([System.String]::IsNullOrEmpty($SubmissionId) -or !$_) { $true } else { throw "Can't use -Force and supply a SubmissionId." }})]
@@ -1302,7 +1302,7 @@ function Update-ApplicationFlightSubmission
             $output = @()
             $output += "The AppId [$($submission.appId)] in the submission content [$SubmissionDataPath] does not match the intended AppId [$AppId]."
             $output += "You either entered the wrong AppId at the commandline, or you're referencing the wrong submission content to upload."
-            
+
             $newLineOutput = ($output -join [Environment]::NewLine)
             Write-Log $newLineOutput -Level Error
             throw $newLineOutput
@@ -1345,7 +1345,7 @@ function Update-ApplicationFlightSubmission
                 $output = @()
                 $output += "We can only modify a submission that is in the '$script:keywordPendingCommit' state."
                 $output += "The submission that you requested to modify ($SubmissionId) is in '$($submissionToUpdate.status)' state."
-                
+
                 $newLineOutput = ($output -join [Environment]::NewLine)
                 Write-Log $newLineOutput -Level Error
                 throw $newLineOutput
@@ -1455,7 +1455,7 @@ function Update-ApplicationFlightSubmission
     }
     catch
     {
-        Write-Log $_ -Level Error
+        Write-Log -Exception $_ -Level Error
         throw
     }
 }
@@ -1556,7 +1556,7 @@ function Patch-ApplicationFlightSubmission
     param(
         [Parameter(Mandatory)]
         [PSCustomObject] $ClonedSubmission,
-        
+
         [Parameter(Mandatory)]
         [PSCustomObject] $NewSubmission,
 
@@ -1588,7 +1588,7 @@ function Patch-ApplicationFlightSubmission
 
         [switch] $UpdateNotesForCertification
     )
-    
+
     Write-Log "Patching the content of the submission." -Level Verbose
 
     # Our method should have zero side-effects -- we don't want to modify any parameter
@@ -1630,7 +1630,7 @@ function Patch-ApplicationFlightSubmission
     if (($AddPackages -or $ReplacePackages) -and ($NewSubmission.applicationPackages.Count -eq 0))
     {
         $output = @()
-        $output += "Your submission doesn't contain any packages, so you cannot Add or Replace packages." 
+        $output += "Your submission doesn't contain any packages, so you cannot Add or Replace packages."
         $output += "Please check your input settings to New-SubmissionPackage and ensure you're providing a value for AppxPath."
         $output = $output -join [Environment]::NewLine
         Write-Log $output -Level Error
@@ -1713,7 +1713,7 @@ function Set-ApplicationFlightSubmission
     .DESCRIPTION
         Replaces the content of an existing application flight submission with the supplied
         submission content.
-    
+
         This should be called after having cloned an application flight submission via
         New-ApplicationFlightSubmission.
 
@@ -1763,7 +1763,7 @@ function Set-ApplicationFlightSubmission
     param(
         [Parameter(Mandatory)]
         [string] $AppId,
-        
+
         [Parameter(Mandatory)]
         [PSCustomObject] $UpdatedSubmission,
 
@@ -1854,13 +1854,13 @@ function Complete-ApplicationFlightSubmission
     param(
         [Parameter(Mandatory)]
         [string] $AppId,
-        
+
         [Parameter(Mandatory)]
         [string] $FlightId,
 
         [Parameter(Mandatory)]
         [string] $SubmissionId,
-        
+
         [string] $AccessToken = "",
 
         [switch] $NoStatus
@@ -1980,7 +1980,7 @@ function Start-ApplicationFlightSubmissionMonitor
 
         [Parameter(Mandatory)]
         [string] $FlightId,
-        
+
         [Parameter(Mandatory)]
         [string] $SubmissionId,
 
@@ -2046,10 +2046,10 @@ function Get-ApplicationFlightSubmissionPackageRollout
     param(
         [Parameter(Mandatory)]
         [string] $AppId,
-        
+
         [Parameter(Mandatory)]
         [string] $FlightId,
-        
+
         [Parameter(Mandatory)]
         [string] $SubmissionId,
 
@@ -2058,7 +2058,7 @@ function Get-ApplicationFlightSubmissionPackageRollout
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose 
+    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
 
     try
     {
@@ -2141,10 +2141,10 @@ function Update-ApplicationFlightSubmissionPackageRollout
     param(
         [Parameter(Mandatory)]
         [string] $AppId,
-        
+
         [Parameter(Mandatory)]
         [string] $FlightId,
-        
+
         [Parameter(Mandatory)]
         [string] $SubmissionId,
 
@@ -2157,7 +2157,7 @@ function Update-ApplicationFlightSubmissionPackageRollout
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose 
+    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
 
     try
     {
@@ -2253,19 +2253,19 @@ function Stop-ApplicationFlightSubmissionPackageRollout
     param(
         [Parameter(Mandatory)]
         [string] $AppId,
-        
+
         [Parameter(Mandatory)]
         [string] $FlightId,
-        
+
         [Parameter(Mandatory)]
         [string] $SubmissionId,
-        
+
         [string] $AccessToken = "",
 
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose 
+    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
 
     try
     {
@@ -2290,7 +2290,7 @@ function Stop-ApplicationFlightSubmissionPackageRollout
         $output = @()
         $output += "Package rollout for this submission has been halted."
         $output += "All users in this flight will now receive the packages from SubmissionId: $($result.fallbackSubmissionId)"
-        Write-Log $($output -join [Environment]::NewLine) 
+        Write-Log $($output -join [Environment]::NewLine)
 
         $output = @()
         $output += "Any customers who already have the newer packages will keep those packages; they won't be rolled back to the previous version."
@@ -2359,19 +2359,19 @@ function Complete-ApplicationFlightSubmissionPackageRollout
     param(
         [Parameter(Mandatory)]
         [string] $AppId,
-        
+
         [Parameter(Mandatory)]
         [string] $FlightId,
-        
+
         [Parameter(Mandatory)]
         [string] $SubmissionId,
-        
+
         [string] $AccessToken = "",
 
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose 
+    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
 
     try
     {

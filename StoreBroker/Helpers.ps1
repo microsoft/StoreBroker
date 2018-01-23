@@ -623,9 +623,7 @@ function Write-Log
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars", "", Justification="We use global variables sparingly and intentionally for module configuration, and employ a consistent naming convention.")]
     param(
-        [Parameter(
-            Mandatory,
-            ValueFromPipeline)]
+        [Parameter(ValueFromPipeline)]
         [AllowEmptyCollection()]
         [AllowEmptyString()]
         [AllowNull()]
@@ -658,10 +656,15 @@ function Write-Log
 
     End
     {
-        # If we have an exception, add it after the accumulated messages.
         if ($null -ne $Exception)
         {
+            # If we have an exception, add it after the accumulated messages.
             $messages += Out-String -InputObject $Exception
+        }
+        elseif ($messages.Count -eq 0)
+        {
+            # If no exception and no messages, we should early return.
+            return
         }
 
         # Finalize the string to log.
@@ -856,12 +859,12 @@ function Send-SBMailMessage
             {
                 if ($remainingAttempts -gt 0)
                 {
-                    Write-Log "Exception trying to send mail: $($_.Exception.Message). Will try again in $retryBackoffSeconds seconds." -Level Warning
+                    Write-Log "Exception trying to send mail. Will try again in $retryBackoffSeconds seconds." -Exception $_ -Level Warning
                     Start-Sleep -Seconds $retryBackoffSeconds
                 }
                 else
                 {
-                    Write-Log "Exception trying to send mail: $($_.Exception.Message). Retry attempts exhausted.  Unable to send email." -Level Error
+                    Write-Log "Exception trying to send mail. Retry attempts exhausted. Unable to send email." -Exception $_ -Level Error
                 }
             }
         }

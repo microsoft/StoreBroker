@@ -68,7 +68,7 @@ function Initialize-TelemetryGlobalVariables
 
     .NOTES
         Internal-only helper method.
-    
+
         The only reason this exists is so that we can leverage CodeAnalysis.SuppressMessageAttribute,
         which can only be applied to functions.  Otherwise, we would have just had the relevant
         initialization code directly above the function that references the variable.
@@ -167,14 +167,14 @@ function Get-ApplicationInsightsDllPath
         on the machine, and returns the path to it.
 
         This will first look for the assembly in the module's script directory.
-        
+
         Next it will look for the assembly in the location defined by
         $SBAlternateAssemblyDir.  This value would have to be defined by the user
         prior to execution of this cmdlet.
-        
+
         If not found there, it will look in a temp folder established during this
         PowerShell session.
-        
+
         If still not found, it will download the nuget package
         for it to a temp folder accessible during this PowerShell session.
 
@@ -228,14 +228,14 @@ function Get-DiagnosticsTracingDllPath
         on the machine, and returns the path to it.
 
         This will first look for the assembly in the module's script directory.
-        
+
         Next it will look for the assembly in the location defined by
         $SBAlternateAssemblyDir.  This value would have to be defined by the user
         prior to execution of this cmdlet.
-        
+
         If not found there, it will look in a temp folder established during this
         PowerShell session.
-        
+
         If still not found, it will download the nuget package
         for it to a temp folder accessible during this PowerShell session.
 
@@ -289,14 +289,14 @@ function Get-ThreadingTasksDllPath
         on the machine, and returns the path to it.
 
         This will first look for the assembly in the module's script directory.
-        
+
         Next it will look for the assembly in the location defined by
         $SBAlternateAssemblyDir.  This value would have to be defined by the user
         prior to execution of this cmdlet.
-        
+
         If not found there, it will look in a temp folder established during this
         PowerShell session.
-        
+
         If still not found, it will download the nuget package
         for it to a temp folder accessible during this PowerShell session.
 
@@ -351,16 +351,16 @@ function Get-TelemetryClient
 
         If the singleton hasn't been initialized yet, this will ensure all dependenty assemblies
         are available on the machine, create the client and initialize its properties.
-        
+
         This will first look for the dependent assemblies in the module's script directory.
-        
+
         Next it will look for the assemblies in the location defined by
         $SBAlternateAssemblyDir.  This value would have to be defined by the user
         prior to execution of this cmdlet.
-        
+
         If not found there, it will look in a temp folder established during this
         PowerShell session.
-        
+
         If still not found, it will download the nuget package
         for it to a temp folder accessible during this PowerShell session.
 
@@ -520,7 +520,7 @@ function Set-TelemetryEvent
     {
         # Telemetry should be best-effort.  Failures while trying to handle telemetry should not
         # cause exceptions in the app itself.
-        Write-Log "Set-TelemetryEvent failed: $($_.Exception.Message)" -Level Error
+        Write-Log "Set-TelemetryEvent failed:" -Exception $_ -Level Error
     }
 }
 
@@ -629,7 +629,7 @@ function Set-TelemetryException
     {
         # Telemetry should be best-effort.  Failures while trying to handle telemetry should not
         # cause exceptions in the app itself.
-        Write-Log "Set-TelemetryException failed: $($_.Exception.Message)" -Level Error
+        Write-Log "Set-TelemetryException failed:" -Exception $_ -Level Error
     }
 }
 
@@ -689,7 +689,7 @@ function Flush-TelemetryClient
     }
     catch [System.Net.WebException]
     {
-        Write-Log "Encountered exception while trying to flush telemetry events. [$($_.Exception.Message)]" -Level Warning
+        Write-Log "Encountered exception while trying to flush telemetry events:" -Exception $_ -Level Warning
 
         Set-TelemetryException -Exception ($_.Exception) -ErrorBucket "TelemetryFlush" -NoFlush -NoStatus:$NoStatus
     }
@@ -698,7 +698,7 @@ function Flush-TelemetryClient
         # Any other scenario is one that we want to identify and fix so that we don't miss telemetry
         $output = @()
         $output += "Encountered a problem while trying to record telemetry events."
-        $output += $_.Exception.Message
+        $output += Out-String -InputObject $_
         $output += "This is non-fatal, but it would be helpful if you could report this problem"
         $output += "to the StoreBroker team for further investigation."
         Write-Log $($output -join [Environment]::NewLine) -Level Warning

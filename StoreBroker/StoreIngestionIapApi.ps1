@@ -212,7 +212,7 @@ function Get-InAppProduct
     param(
         [Parameter(Mandatory)]
         [string] $IapId,
-        
+
         [string] $AccessToken = "",
 
         [switch] $NoStatus
@@ -374,7 +374,7 @@ function Get-ApplicationInAppProducts
     param(
         [Parameter(Mandatory)]
         [string] $AppId,
-        
+
         [ValidateScript({if ($_ -gt 0) { $true } else { throw "Must be greater than 0." }})]
         [int] $MaxResults = 100,
 
@@ -483,7 +483,7 @@ function New-InAppProduct
     .PARAMETER ProductType
         Indicates what kind of IAP this is.
         One of: NotSet, Consumable, Durable, Subscription
- 
+
     .PARAMETER ApplicationIds
         The list of Application ID's that this IAP should be associated with.
 
@@ -536,14 +536,14 @@ function New-InAppProduct
     $hashBody["productId"] = $ProductId
     $hashBody["productType"] = $ProductType
     $hashBody["applicationIds"] = $ApplicationIds
-    
+
     $body = $hashBody | ConvertTo-Json
 
     $telemetryProperties = @{
         [StoreBrokerTelemetryProperty]::ProductId = $ProductId
         [StoreBrokerTelemetryProperty]::ProductType = $ProductType
     }
-    
+
     $params = @{
         "UriFragment" = "inappproducts/"
         "Method" = "Post"
@@ -599,7 +599,7 @@ function Remove-InAppProduct
     param(
         [Parameter(Mandatory)]
         [string] $IapId,
-        
+
         [string] $AccessToken = "",
 
         [switch] $NoStatus
@@ -680,10 +680,10 @@ function Get-InAppProductSubmission
     param(
         [Parameter(Mandatory)]
         [string] $IapId,
-        
+
         [Parameter(Mandatory)]
         [string] $SubmissionId,
-        
+
         [string] $AccessToken = "",
 
         [switch] $NoStatus
@@ -695,7 +695,7 @@ function Get-InAppProductSubmission
         [StoreBrokerTelemetryProperty]::IapId = $IapId
         [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
     }
-    
+
     $params = @{
         "UriFragment" = "inappproducts/$IapId/submissions/$SubmissionId"
         "Method" = "Get"
@@ -909,10 +909,10 @@ function Get-InAppProductSubmissionStatus
     param(
         [Parameter(Mandatory)]
         [string] $IapId,
-        
+
         [Parameter(Mandatory)]
         [string] $SubmissionId,
-        
+
         [string] $AccessToken = "",
 
         [switch] $NoStatus
@@ -924,7 +924,7 @@ function Get-InAppProductSubmissionStatus
         [StoreBrokerTelemetryProperty]::IapId = $IapId
         [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
     }
-    
+
     $params = @{
         "UriFragment" = "inappproducts/$IapId/submissions/$SubmissionId/status"
         "Method" = "Get"
@@ -986,7 +986,7 @@ function Remove-InAppProductSubmission
     param(
         [Parameter(Mandatory)]
         [string] $IapId,
-        
+
         [Parameter(Mandatory)]
         [string] $SubmissionId,
 
@@ -1001,7 +1001,7 @@ function Remove-InAppProductSubmission
         [StoreBrokerTelemetryProperty]::IapId = $IapId
         [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
     }
-    
+
     $params = @{
         "UriFragment" = "inappproducts/$IapId/submissions/$SubmissionId"
         "Method" = "Delete"
@@ -1075,7 +1075,7 @@ function New-InAppProductSubmission
     param(
         [Parameter(Mandatory)]
         [string] $IapId,
-        
+
         [switch] $Force,
 
         [string] $AccessToken = "",
@@ -1261,7 +1261,7 @@ function Update-InAppProductSubmission
     param(
         [Parameter(Mandatory)]
         [string] $IapId,
-        
+
         [Parameter(Mandatory)]
         [ValidateScript({if (Test-Path -Path $_ -PathType Leaf) { $true } else { throw "$_ cannot be found." }})]
         [string] $SubmissionDataPath,
@@ -1278,7 +1278,7 @@ function Update-InAppProductSubmission
         [string] $Visibility = $script:keywordDefault,
 
         [switch] $AutoCommit,
-        
+
         [string] $SubmissionId = "",
 
         [ValidateScript({if ([System.String]::IsNullOrEmpty($SubmissionId) -or !$_) { $true } else { throw "Can't use -Force and supply a SubmissionId." }})]
@@ -1311,7 +1311,7 @@ function Update-InAppProductSubmission
     if ([String]::IsNullOrWhiteSpace($submission.iapId))
     {
         $configPath = Join-Path -Path ([System.Environment]::GetFolderPath('Desktop')) -ChildPath 'newconfig.json'
-        
+
         $output = @()
         $output += "The config file used to generate this submission did not have an IapId defined in it."
         $output += "The IapId entry in the config helps ensure that payloads are not submitted to the wrong In-App Product."
@@ -1329,7 +1329,7 @@ function Update-InAppProductSubmission
             $output = @()
             $output += "The IapId [$($submission.iapId)] in the submission content [$SubmissionDataPath] does not match the intended IapId [$IapId]."
             $output += "You either entered the wrong IapId at the commandline, or you're referencing the wrong submission content to upload."
-            
+
             $newLineOutput = ($output -join [Environment]::NewLine)
             Write-Log $newLineOutput -Level Error
             throw $newLineOutput
@@ -1372,7 +1372,7 @@ function Update-InAppProductSubmission
                 $output = @()
                 $output += "We can only modify a submission that is in the '$script:keywordPendingCommit' state."
                 $output += "The submission that you requested to modify ($SubmissionId) is in '$($submissionToUpdate.status)' state."
-                
+
                 $newLineOutput = ($output -join [Environment]::NewLine)
                 Write-Log $newLineOutput -Level Error
                 throw $newLineOutput
@@ -1474,7 +1474,7 @@ function Update-InAppProductSubmission
     }
     catch
     {
-        Write-Log $_ -Level Error
+        Write-Log -Exception $_ -Level Error
         throw
     }
 }
@@ -1570,7 +1570,7 @@ function Patch-InAppProductSubmission
     param(
         [Parameter(Mandatory)]
         [PSCustomObject] $ClonedSubmission,
-        
+
         [Parameter(Mandatory)]
         [PSCustomObject] $NewSubmission,
 
@@ -1590,7 +1590,7 @@ function Patch-InAppProductSubmission
 
         [switch] $UpdateProperties
     )
-    
+
     Write-Log "Patching the content of the submission." -Level Verbose
 
     # Our method should have zero side-effects -- we don't want to modify any parameter
@@ -1635,7 +1635,7 @@ function Patch-InAppProductSubmission
                     }
                 }
     }
-    
+
     # For the remaining switches, simply copy the field if it is a scalar, or
     # DeepCopy-Object if it is an object.
     if ($UpdatePublishModeAndVisibility)
@@ -1711,7 +1711,7 @@ function Set-InAppProductSubmission
     .DESCRIPTION
         Replaces the content of an existing In-App Product submission with the supplied
         submission content.
-    
+
         This should be called after having cloned an In-App Product submission via
         New-InAppProductSubmission.
 
@@ -1761,7 +1761,7 @@ function Set-InAppProductSubmission
     param(
         [Parameter(Mandatory)]
         [string] $IapId,
-        
+
         [Parameter(Mandatory)]
         [PSCustomObject] $UpdatedSubmission,
 
@@ -1847,10 +1847,10 @@ function Complete-InAppProductSubmission
     param(
         [Parameter(Mandatory)]
         [string] $IapId,
-        
+
         [Parameter(Mandatory)]
         [string] $SubmissionId,
-        
+
         [string] $AccessToken = "",
 
         [switch] $NoStatus

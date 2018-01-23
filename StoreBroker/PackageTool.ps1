@@ -74,7 +74,7 @@ function Get-StoreBrokerConfigFileContentForIapId
         Assuming that $template has the content of the template file read in from disk and
         merged into a single string, this then gets the most recent IAP submission for
         IapId 0ABCDEF12345 and replaces the default values in the template with those from
-        that submission. 
+        that submission.
 
     .OUTPUTS
         System.String - The template content modified with the values from the
@@ -141,7 +141,7 @@ function Get-StoreBrokerConfigFileContentForIapId
     }
     catch
     {
-        Write-Log "Encountered problems getting current In-App Product submission values: $($_.Exception.Message)" -Level Error
+        Write-Log "Encountered problems getting current In-App Product submission values:" -Exception $_ -Level Error
         throw
     }
 }
@@ -248,7 +248,7 @@ function Get-StoreBrokerConfigFileContentForAppId
         Assuming that $template has the content of the template file read in from disk and
         merged into a single string, this then gets the most recent app submission for
         AppId 0ABCDEF12345 and replaces the default values in the template with those from
-        that submission. 
+        that submission.
 
     .OUTPUTS
         System.String - The template content modified with the values from the
@@ -336,7 +336,7 @@ function Get-StoreBrokerConfigFileContentForAppId
     }
     catch
     {
-        Write-Log "Encountered problems getting current application submission values: $($_.Exception.Message)" -Level Error
+        Write-Log "Encountered problems getting current application submission values:" -Exception $_ -Level Error
         throw
     }
 }
@@ -610,7 +610,7 @@ function Test-Xml
     }
 
     $reader = New-Object System.Xml.XmlTextReader $XsdFile
-    
+
     try
     {
         $schema = [System.Xml.Schema.XmlSchema]::Read($reader, $handler)
@@ -645,7 +645,7 @@ function Convert-ListingToObject
 <#
     .SYNOPSIS
         Consumes a single localized .xml file into a listing object.
-        
+
     .DESCRIPTION
         Consumes a single localized .xml file into a listing object.
         If a node has only content, then that content is assigned.
@@ -669,7 +669,7 @@ function Convert-ListingToObject
 
     .PARAMETER XmlFilePath
         A full path to the localized .xml file to be parsed.
-        
+
     .PARAMETER MediaFallbackLanguage
         Some apps may not localize all of their metadata media (images, trailers, etc..)
         across all languages.  By default, StoreBroker will look in the PDP langcode's subfolder
@@ -754,14 +754,14 @@ function Convert-ListingToObject
                     # Must be done in two steps because $baseListings can't be modified
                     # while enumerating its keys.
                     $trimKeys = $baseListing.Keys |
-                        Where-Object { ($null -ne $baseListing[$_].InnerText) -or ($baseListing[$_] -is [String]) } 
+                        Where-Object { ($null -ne $baseListing[$_].InnerText) -or ($baseListing[$_] -is [String]) }
 
-                    $trimKeys | ForEach-Object { 
+                    $trimKeys | ForEach-Object {
                         if ($null -ne $baseListing[$_].InnerText)
                         {
                             $baseListing[$_] = $baseListing[$_].InnerText
                         }
-                        
+
                         $baseListing[$_] = $baseListing[$_].Trim()
                     }
 
@@ -771,7 +771,7 @@ function Convert-ListingToObject
                     {
                         $baseListing['title'] = $null
                     }
-        
+
                     # Nodes with children need to have each value extracted into an array.
                     # When using -Confirm, PS will ask user to confirm selecting 'InnerText'.
                     # Explicitly set -Confirm:$false to prevent this dialog from reaching the user.
@@ -780,12 +780,12 @@ function Convert-ListingToObject
                         "keywords"            = $ProductDescriptionNode.Keywords;
                         "recommendedHardware" = $ProductDescriptionNode.RecommendedHardware;
                     }.GetEnumerator() | ForEach-Object {
-                        $baseListing[$_.Name] = @($_.Value.ChildNodes | 
+                        $baseListing[$_.Name] = @($_.Value.ChildNodes |
                                                     Where-Object NodeType -eq Element |
                                                     ForEach-Object -WhatIf:$false -Confirm:$false InnerText |
                                                     Where-Object { $_ -ne $null } |
                                                     ForEach-Object { $_.Trim() })
-                    }           
+                    }
 
                     # Handle screenshots and their captions.
                     $imageListings = @()
@@ -806,7 +806,7 @@ function Convert-ListingToObject
                         {
                             $imageFileName = $caption.$member
                             if (-not [System.String]::IsNullOrWhiteSpace($imageFileName))
-                            { 
+                            {
                                 # We start with the fallback language specified on an individual caption.
                                 # If one is not specified, then we'll look to see if there is one specified
                                 # for all captions on the ScreenshotCaptions element.  If one is not specified
@@ -964,7 +964,7 @@ function Get-LocalizedMediaFile
         $image = Get-ChildItem -Recurse -File -Path $mediaFallbackLanguageSourcePath -Include $Filename
         $fileRelativePackagePath = [System.IO.Path]::Combine($script:packageImageFolderName, $MediaFallbackLanguage, $Filename)
     }
-            
+
     if ($null -eq $image)
     {
         $output = "Could not find image [$Filename] in any subdirectory of [$mediaLanguageSourcePath]."
@@ -992,7 +992,7 @@ function Get-LocalizedMediaFile
         {
             New-Item -ItemType directory -Path $packageMediaFullPath | Out-Null
         }
-        
+
         Copy-Item -Path $image.FullName -Destination $fileFullPackagePath
     }
 
@@ -1050,7 +1050,7 @@ function Convert-ListingsMetadata
     param(
         [Parameter(Mandatory)]
         [ValidateScript({
-            if (Test-Path -PathType Container -Path $_) { $true } 
+            if (Test-Path -PathType Container -Path $_) { $true }
             else { throw "'$_' is not a directory or cannot be found." } })]
         [string] $PDPRootPath,
 
@@ -1070,7 +1070,7 @@ function Convert-ListingsMetadata
         [string[]] $LanguageExclude,
 
         [Parameter(Mandatory)]
-        [ValidateScript( { 
+        [ValidateScript( {
             if (Test-Path -PathType Container -Path $_) { $true }
             else { throw "'$_' is not a directory or cannot be found." } })]
         [Alias('MediaRootPath')]
@@ -1097,7 +1097,7 @@ function Convert-InAppProductListingToObject
 <#
     .SYNOPSIS
         Consumes a single localized .xml file into an In-App Product listing object.
-        
+
     .DESCRIPTION
         Consumes a single localized .xml file into an In-App Product listing object.
         If a node has only content, then that content is assigned.
@@ -1197,14 +1197,14 @@ function Convert-InAppProductListingToObject
                     # Must be done in two steps because $listings can't be modified
                     # while enumerating its keys.
                     $trimKeys = $listing.Keys |
-                        Where-Object { ($null -ne $listing[$_].InnerText) -or ($listing[$_] -is [String]) } 
+                        Where-Object { ($null -ne $listing[$_].InnerText) -or ($listing[$_] -is [String]) }
 
-                    $trimKeys | ForEach-Object { 
+                    $trimKeys | ForEach-Object {
                         if ($null -ne $listing[$_].InnerText)
                         {
                             $listing[$_] = $listing[$_].InnerText
                         }
-                        
+
                         $listing[$_] = $listing[$_].Trim()
                     }
 
@@ -1214,11 +1214,11 @@ function Convert-InAppProductListingToObject
                     {
                         $listing['title'] = $null
                     }
-        
+
                     # Handle the icon for the IAP.
                     $imageFileName = $InAppProductDescriptionNode.icon.fileName
                     if (-not [System.String]::IsNullOrWhiteSpace($imageFileName))
-                    { 
+                    {
                         $requestedFallbackLanguage = $InAppProductDescriptionNode.icon.FallbackLanguage
                         if ([String]::IsNullOrWhiteSpace($requestedFallbackLanguage))
                         {
@@ -1307,7 +1307,7 @@ function Convert-InAppProductListingsMetadata
     param(
         [Parameter(Mandatory)]
         [ValidateScript({
-            if (Test-Path -PathType Container -Path $_) { $true } 
+            if (Test-Path -PathType Container -Path $_) { $true }
             else { throw "'$_' is not a directory or cannot be found." } })]
         [string] $PDPRootPath,
 
@@ -1327,7 +1327,7 @@ function Convert-InAppProductListingsMetadata
         [string[]] $LanguageExclude,
 
         [Parameter(Mandatory)]
-        [ValidateScript({ 
+        [ValidateScript({
             if (Test-Path -PathType Container -Path $_) { $true }
             else { throw "'$_' is not a directory or cannot be found." } })]
         [Alias('MediaRootPath')]
@@ -1343,7 +1343,7 @@ function Convert-InAppProductListingsMetadata
     (Get-ChildItem -File $PDPRootPath -Recurse -Include $PDPInclude -Exclude $PDPExclude).FullName |
         Convert-InAppProductListingToObject -PDPRootPath $PDPRootPath -LanguageExclude $LanguageExclude -ImagesRootPath $ImagesRootPath -MediaFallbackLanguage $MediaFallbackLanguage |
         ForEach-Object { $listings[$_."lang"] = $_."listing" }
-        
+
     Write-Log "Conversion complete." -Level Verbose
 
     return $listings
@@ -1458,7 +1458,7 @@ function New-ApplicationMetadataTable
 <#
     .SYNOPSIS
         A simple utility function for creating a consistent metadata hastable.
-        
+
     .DESCRIPTION
         A simple utility function for creating a consistent metadata hastable.
 
@@ -1488,7 +1488,7 @@ function Get-TargetPlatform
 <#
     .SYNOPSIS
         Determines the target platform for a given AppxManifest.xml.
-        
+
     .DESCRIPTION
         Determines the target platform for a given AppxManifest.xml.
 
@@ -1550,7 +1550,7 @@ function Read-AppxMetadata
 <#
     .SYNOPSIS
         Reads various metadata properties about the input .appx file.
-    
+
     .DESCRIPTION
         Reads various metadata properties about the input .appx file.
 
@@ -1615,7 +1615,7 @@ function Read-AppxMetadata
 
         $metadata.targetPlatform = Get-TargetPlatform -AppxManifestPath $appxManifest
         $metadata.name           = $manifest.Package.Identity.Name -creplace '^Microsoft\.', ''
-        
+
         $metadata.languages = @()
         $metadata.languages += $manifest.Package.Resources.Resource.Language |
             Where-Object { $null -ne $_ } |
@@ -1668,7 +1668,7 @@ function Read-AppxUploadMetadata
 <#
     .SYNOPSIS
         Reads various metadata properties about the input .appxupload.
-    
+
     .DESCRIPTION
         Reads various metadata properties about the input .appxupload.
 
@@ -1767,7 +1767,7 @@ function Read-AppxBundleMetadata
 <#
     .SYNOPSIS
         Reads various metadata properties about the input .appxbundle.
-    
+
     .DESCRIPTION
         Reads various metadata properties about the input .appxbundle.
 
@@ -1831,7 +1831,7 @@ function Read-AppxBundleMetadata
         $metadata.architecture = "Neutral"  # always 'Neutral' for .appxbundle
         $metadata.name         = $manifest.Bundle.Identity.Name -creplace '^Microsoft\.', ''
 
-        $languages = ($manifest.Bundle.Packages.Package | Where-Object Type -like "resource").Resources.Resource.Language | 
+        $languages = ($manifest.Bundle.Packages.Package | Where-Object Type -like "resource").Resources.Resource.Language |
             Where-Object { $null -ne $_ } |
             ForEach-Object { $_.ToLower() } |
             Sort-Object -Unique
@@ -1972,7 +1972,7 @@ function Read-ApplicationMetadata
 <#
     .SYNOPSIS
         Reads metadata used for submission of an .appx, .appxbundle, or appxupload.
-        
+
     .DESCRIPTION
         Reads metadata used for submission of an .appx, .appxbundle, or appxupload.
 
@@ -2077,13 +2077,13 @@ function Add-AppPackagesMetadata
     [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter(Mandatory)]
-        [ValidateScript({ 
+        [ValidateScript({
             foreach ($path in $_)
             {
                 if (-not (Test-Path -PathType Leaf -Include ($script:supportedExtensions | ForEach-Object { "*" + $_ }) -Path $path))
                 {
                     throw "$_ is not a file or cannot be found."
-                } 
+                }
             }
 
             return $true
@@ -2179,7 +2179,7 @@ function Remove-DeprecatedProperties
 
     # No side-effects.  We'll work off of a copy of the passed-in object
     $requestBody = DeepCopy-Object $SubmissionRequestBody
-    
+
     # hardwareRequirements was deprecated on 5/13/2016
     # Deprecated due to business reasons.  This field is not exposed from the UI.
     $requestBody.PSObject.Properties.Remove('hardwareRequirements')
@@ -2271,7 +2271,7 @@ function Get-SubmissionRequestBody
         [PSCustomObject] $ConfigObject,
 
         [string] $PDPRootPath,
-        
+
         [string] $Release,
 
         [string[]] $PDPInclude,
@@ -2279,7 +2279,7 @@ function Get-SubmissionRequestBody
         [string[]] $PDPExclude,
 
         [string[]] $LanguageExclude,
-        
+
         [Alias('MediaRootPath')]
         [string] $ImagesRootPath,
 
@@ -2320,7 +2320,7 @@ function Get-SubmissionRequestBody
                 $out = @()
                 $out += "'$pathWithRelease' is not a valid directory or cannot be found."
                 $out += "Check the values of '$script:s_PDPRootPath' and '$script:s_Release' and try again."
-                
+
                 $newLineOutput = ($out -join [Environment]::NewLine)
                 Write-Log $newLineOutput -Level Error
                 throw $newLineOutput
@@ -2411,7 +2411,7 @@ function Get-InAppProductSubmissionRequestBody
         [PSCustomObject] $ConfigObject,
 
         [string] $PDPRootPath,
-        
+
         [string] $Release,
 
         [string[]] $PDPInclude,
@@ -2419,7 +2419,7 @@ function Get-InAppProductSubmissionRequestBody
         [string[]] $PDPExclude,
 
         [string[]] $LanguageExclude,
-        
+
         [Alias('MediaRootPath')]
         [string] $ImagesRootPath,
 
@@ -2575,7 +2575,7 @@ function Resolve-PackageParameters
             throw $newLineOutput
         }
     }
-    
+
 
     if ($SkipValidation -inotcontains $script:s_OutPath)
     {
@@ -2585,7 +2585,7 @@ function Resolve-PackageParameters
             $configVal = $ConfigObject.packageParameters.OutPath
             if ([System.String]::IsNullOrWhiteSpace($configVal))
             {
-                $output = ($out -f $script:s_OutPath) 
+                $output = ($out -f $script:s_OutPath)
                 Write-Log $output -Level Error
                 throw $output
             }
@@ -2609,7 +2609,7 @@ function Resolve-PackageParameters
             $configVal = $ConfigObject.packageParameters.OutName
             if ([System.String]::IsNullOrWhiteSpace($configVal))
             {
-                $output = ($out -f $script:s_OutName) 
+                $output = ($out -f $script:s_OutName)
                 Write-Log $output -Level Error
                 throw $output
             }
@@ -2821,7 +2821,7 @@ function Convert-AppConfig
     )
 
     $lines = (Get-Content -Path $ConfigPath -Encoding UTF8 | Remove-Comment) -join ''
-        
+
     return ($lines | ConvertFrom-Json)
 }
 
@@ -2835,7 +2835,7 @@ function Join-SubmissionPackage
         Merges the specified content from an ancillary StoreBroker payload into the master payload.
         This is most useful in the scenario where you have packages that are coming from different
         builds that should all be part of the same Store submission update.
-        
+
         Users will only specify the .json files for the two payloads, with the expectation that
         the .zip will be at the same location and same name as its complementary .json file.
 
@@ -2872,7 +2872,7 @@ function Join-SubmissionPackage
         [Parameter(Mandatory=$true)]
         [ValidateScript({if (Test-Path -Path $_ -PathType Leaf) { $true } else { throw "$_ cannot be found." }})]
         [string] $MasterJsonPath,
- 
+
         [Parameter(Mandatory=$true)]
         [ValidateScript({if (Test-Path -Path $_ -PathType Leaf) { $true } else { throw "$_ cannot be found." }})]
         [string] $AdditionalJsonPath,
@@ -2880,7 +2880,7 @@ function Join-SubmissionPackage
         [Parameter(Mandatory=$true)]
         [ValidateScript({if (Test-Path -Path $_ -PathType Leaf) {  throw "$_ already exists. Choose a different name." } else { $true }})]
         [string] $OutJsonPath,
-        
+
         [switch] $AddPackages
     )
 
@@ -2986,7 +2986,7 @@ function Join-SubmissionPackage
         $outJsonContent |
             ConvertTo-Json -Depth $script:jsonConversionDepth -Compress |
             Out-File -Encoding utf8 -FilePath $OutJsonPath
-        
+
         Write-Log "Write complete." -Level Verbose
     }
 
@@ -3027,12 +3027,12 @@ function New-SubmissionPackage
            2. <PDPRootPath>\<Release>\<lang-code>\...\PDP.xml
        The only difference between these two is that there is a <Release> directory after the
        <PDPRootPath> and before the <lang-code> sub-directories.
-      
+
        The first layout is generally used when your localization system will be downloading
        the localized PDP files during your build.  In that situation, it's always retrieving
        the latest version.  Alternatively, if the latest localized versions of your PDP
        files are always stored in the same location, this layout is also for you.
-      
+
        On the other hand, if you will be archiving the localized PDP's based on each release
        to the Store, then the second layout is the one that you should use.  In this scenario,
        you will specify the value of "<Release>" immediately below, or at the commandline.
@@ -3059,14 +3059,14 @@ function New-SubmissionPackage
     .PARAMETER ImagesRootPath
         Your store screenshots must be placed with this structure:
             <ImagesRootPath>\<Release>\<lang-code>\...\img.png
-        
+
         The 'Release' that will be used is NOT the value specified to StoreBroker,
         it is the 'Release' value found in the corresponding PDP file.
 
     .PARAMETER AppxPath
         Array of full paths to the architecture-neutral .appxbundle, .appxupload, or .appx
         files that will be uploaded as the new submission.
-        
+
     .PARAMETER OutPath
         Full path to a directory where the Packaging Tool can write the .json submission request
         body and .zip package to upload.
@@ -3090,20 +3090,20 @@ function New-SubmissionPackage
 
     .EXAMPLE
         New-SubmissionPackage -ConfigPath 'C:\Config\StoreBrokerConfig.json' -OutPath 'C:\Out\Path\' -OutName 'Upload' -Release MarchRelease -AppxPath 'C:\bin\App.appxbundle'
-        
+
         This example creates the submission request body and .zip file for the architecture-neutral
         '.appxbundle' located at 'C:\bin\App.appxbundle'.  Two files will be placed under 'C:\Out\Path\',
         'Upload.json' and 'Upload.zip'
 
     .EXAMPLE
         New-SubmissionPackage -ConfigPath 'C:\Config\StoreBrokerConfig.json' -OutPath 'C:\Out\Path\' -OutName 'Upload' -Release MarchRelease -AppxPath 'C:\bin\App.appxbundle' -Verbose
-        
+
         This example is the same except it specifies Verbose logging and the function will output a
         detailed report of its actions.
 
     .EXAMPLE
         New-SubmissionPackage -ConfigPath 'C:\Config\StoreBrokerConfig.json' -OutPath 'C:\Out\Path\' -OutName 'Upload' -Release MarchRelease -AppxPath 'C:\bin\x86\App_x86.appxupload', 'C:\Other\Path\Arm\App_arm.appxupload'
-        
+
         This example is the same except it specifies an x86 and Arm build.  Multiple files to
         include can be passed to 'AppxPath' by separating with a comma.
 #>
@@ -3129,13 +3129,13 @@ function New-SubmissionPackage
         [Alias('MediaRootPath')]
         [string] $ImagesRootPath,
 
-        [ValidateScript({ 
+        [ValidateScript({
             foreach ($path in $_)
             {
                 if (-not (Test-Path -PathType Leaf -Include ($script:supportedExtensions | ForEach-Object { "*" + $_ }) -Path $path))
                 {
                     throw "$_ cannot be found or is not a supported extension: $($script:supportedExtensions -join ", ")."
-                } 
+                }
             }
 
             return $true
@@ -3153,7 +3153,7 @@ function New-SubmissionPackage
 
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
-    try 
+    try
     {
         Add-Type -AssemblyName System.IO.Compression.FileSystem
 
@@ -3174,18 +3174,18 @@ function New-SubmissionPackage
 
             # ([string] $null) -ne $null, is true.
             # Explicitly check the type of the value to avoid printing [string] params that are $null.
-            if ((($val -isnot [System.String]) -and ($null -ne $val)) -or 
+            if ((($val -isnot [System.String]) -and ($null -ne $val)) -or
                 (($val -is [System.String]) -and (-not [String]::IsNullOrWhiteSpace($val))))
             {
                 $packageParams[$param] = $val
-                
+
                 # Treat the value as if it is an array.
                 # If it's not, it will still pretty print fine.
                 $quotedVals = $val | ForEach-Object { "`"$_`"" }
                 Write-Log "`t$param = $($quotedVals -join ', ')" -Level Verbose
             }
         }
-        
+
         # Convert the Config.json
         $config = Convert-AppConfig -ConfigPath $ConfigPath
 
@@ -3201,7 +3201,7 @@ function New-SubmissionPackage
         $script:tempFolderPath = New-TemporaryDirectory
 
         # It may not actually exist due to What-If support.
-        $script:tempFolderExists = (-not [System.String]::IsNullOrEmpty($script:tempFolderPath)) -and 
+        $script:tempFolderExists = (-not [System.String]::IsNullOrEmpty($script:tempFolderPath)) -and
                                    (Test-Path -PathType Container $script:tempFolderPath)
 
         # Get the submission request object
@@ -3228,7 +3228,7 @@ function New-SubmissionPackage
         # Record the telemetry for this event.
         $stopwatch.Stop()
         $telemetryMetrics = @{ [StoreBrokerTelemetryMetric]::Duration = $stopwatch.Elapsed.TotalSeconds }
-        
+
         # We may have app info for multiple packages.  Let's normalize it.
         # By the very nature of how the Store works, all the packages have to be for the same app.
         # There can be multiple versions being submitted in a single submission.  For our purposes,
@@ -3254,7 +3254,7 @@ function New-SubmissionPackage
         }
 
         Set-TelemetryException -Exception $_.Exception -ErrorBucket "New-SubmissionPackage" -Properties $telemetryProperties
-        Write-Log $($_.Exception.Message) -Level Error
+        Write-Log -Exception $_ -Level Error
 
         throw
     }
@@ -3297,12 +3297,12 @@ function New-InAppProductSubmissionPackage
            2. <PDPRootPath>\<Release>\<lang-code>\...\PDP.xml
        The only difference between these two is that there is a <Release> directory after the
        <PDPRootPath> and before the <lang-code> sub-directories.
-      
+
        The first layout is generally used when your localization system will be downloading
        the localized PDP files during your build.  In that situation, it's always retrieving
        the latest version.  Alternatively, if the latest localized versions of your PDP
        files are always stored in the same location, this layout is also for you.
-      
+
        On the other hand, if you will be archiving the localized PDP's based on each release
        to the Store, then the second layout is the one that you should use.  In this scenario,
        you will specify the value of "<Release>" immediately below, or at the commandline.
@@ -3329,7 +3329,7 @@ function New-InAppProductSubmissionPackage
     .PARAMETER ImagesRootPath
         Your icons must be placed with this structure:
             <ImagesRootPath>\<Release>\<lang-code>\...\icon.png
-        
+
         The 'Release' that will be used is NOT the value specified to StoreBroker,
         it is the 'Release' value found in the corresponding PDP file.
 
@@ -3351,13 +3351,13 @@ function New-InAppProductSubmissionPackage
 
     .EXAMPLE
         New-InAppProductSubmissionPackage -ConfigPath 'C:\Config\StoreBrokerIAPConfig.json' -OutPath 'C:\Out\Path\' -OutName 'Upload' -Release MarchRelease
-        
+
         This example creates the submission request body and .zip file for the IAP.Two files will
         be placed under 'C:\Out\Path\', 'Upload.json' and 'Upload.zip'
 
     .EXAMPLE
         New-InAppProductSubmissionPackage -ConfigPath 'C:\Config\StoreBrokerIAPConfig.json' -OutPath 'C:\Out\Path\' -OutName 'Upload' -Release MarchRelease -Verbose
-        
+
         This example is the same except it specifies Verbose logging and the function will output a
         detailed report of its actions.
 #>
@@ -3393,7 +3393,7 @@ function New-InAppProductSubmissionPackage
 
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
-    try 
+    try
     {
         Add-Type -AssemblyName System.IO.Compression.FileSystem
 
@@ -3414,18 +3414,18 @@ function New-InAppProductSubmissionPackage
 
             # ([string] $null) -ne $null, is true.
             # Explicitly check the type of the value to avoid printing [string] params that are $null.
-            if ((($val -isnot [System.String]) -and ($null -ne $val)) -or 
+            if ((($val -isnot [System.String]) -and ($null -ne $val)) -or
                 (($val -is [System.String]) -and (-not [String]::IsNullOrWhiteSpace($val))))
             {
                 $packageParams[$param] = $val
-                
+
                 # Treat the value as if it is an array.
                 # If it's not, it will still pretty print fine.
                 $quotedVals = $val | ForEach-Object { "`"$_`"" }
                 Write-Log "`t$param = $($quotedVals -join ', ')" -Level Verbose
             }
         }
-        
+
         # Convert the Config.json
         $config = Convert-AppConfig -ConfigPath $ConfigPath
 
@@ -3441,7 +3441,7 @@ function New-InAppProductSubmissionPackage
         $script:tempFolderPath = New-TemporaryDirectory
 
         # It may not actually exist due to What-If support.
-        $script:tempFolderExists = (-not [System.String]::IsNullOrEmpty($script:tempFolderPath)) -and 
+        $script:tempFolderExists = (-not [System.String]::IsNullOrEmpty($script:tempFolderPath)) -and
                                    (Test-Path -PathType Container $script:tempFolderPath)
 
         # Get the submission request object
@@ -3467,13 +3467,13 @@ function New-InAppProductSubmissionPackage
         # Record the telemetry for this event.
         $stopwatch.Stop()
         $telemetryMetrics = @{ [StoreBrokerTelemetryMetric]::Duration = $stopwatch.Elapsed.TotalSeconds }
-        
+
         Set-TelemetryEvent -EventName New-InAppProductSubmissionPackage -Metrics $telemetryMetrics
     }
     catch
     {
         Set-TelemetryException -Exception $_.Exception -ErrorBucket "New-InAppProductSubmissionPackage"
-        Write-Log $($_.Exception.Message) -Level Error
+        Write-Log -Exception $_ -Level Error
 
         throw
     }

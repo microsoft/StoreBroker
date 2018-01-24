@@ -514,7 +514,7 @@ function Get-AccessToken
         # This type of exception occurs when NOT using -NoStatus
         $output = @()
         $output += "Be sure to check that your client id/secret are valid."
-        $output += Out-String -InputObject $_
+        $output += $_.Exception.Message
         if ($_.ErrorDetails.Message)
         {
             $message = ($_.ErrorDetails.Message | ConvertFrom-Json)
@@ -874,7 +874,7 @@ function Set-SubmissionPackage
         # This type of exception occurs when NOT using -NoStatus
 
         $output = @()
-        $output += Out-String -InputObject $_
+        $output += $_.Exception.Message
         if ($_.ErrorDetails.Message)
         {
             $message = ($_.ErrorDetails.Message | ConvertFrom-Json)
@@ -1070,7 +1070,7 @@ function Get-SubmissionPackage
         # This type of exception occurs when NOT using -NoStatus
 
         $output = @()
-        $output += Out-String -InputObject $_
+        $output += $_.Exception.Message
         if ($_.ErrorDetails.Message)
         {
             $message = ($_.ErrorDetails.Message | ConvertFrom-Json)
@@ -1863,7 +1863,7 @@ function Invoke-SBRestMethod
                             # that is just a JSON object with the data that we'll later extract for processing in
                             # the main catch.
                             $ex = @{}
-                            $ex.Message = Out-String -InputObject $_
+                            $ex.Message = $_.Exception.Message
                             $ex.StatusCode = $_.Exception.Response.StatusCode
                             $ex.StatusDescription = $_.Exception.Response.StatusDescription
                             $ex.InnerMessage = $_.ErrorDetails.Message
@@ -1952,7 +1952,7 @@ function Invoke-SBRestMethod
             if ($_.Exception -is [System.Net.WebException])
             {
                 $ex = $_.Exception
-                $message = Out-String -InputObject $_
+                $message = $_.Exception.Message
                 $statusCode = $ex.Response.StatusCode.value__ # Note that value__ is not a typo.
                 $statusDescription = $ex.Response.StatusDescription
                 $innerMessage = $_.ErrorDetails.Message

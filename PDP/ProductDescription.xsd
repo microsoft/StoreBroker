@@ -1,15 +1,15 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<xs:schema 
-  attributeFormDefault="unqualified" 
-  elementFormDefault="qualified" 
-  targetNamespace="http://schemas.microsoft.com/appx/2012/ProductDescription" 
+<xs:schema
+  attributeFormDefault="unqualified"
+  elementFormDefault="qualified"
+  targetNamespace="http://schemas.microsoft.com/appx/2012/ProductDescription"
   xmlns:xs="http://www.w3.org/2001/XMLSchema"
   xmlns:tns="http://schemas.microsoft.com/appx/2012/ProductDescription">
 
   <xs:attributeGroup name="LocIdAttribute">
     <xs:attribute name="_locID" type="xs:string" use="optional"/>
   </xs:attributeGroup>
-  
+
   <xs:simpleType name="ReleaseString">
     <xs:restriction base="xs:normalizedString">
       <xs:pattern value="\s*(\S(\r|\n|.){0,254}\s*)?"/>
@@ -84,13 +84,13 @@
     </xs:attribute>
     <xs:attribute name="FallbackLanguage" type="tns:LangCodeString" />
   </xs:attributeGroup>
-  
+
   <xs:simpleType name="CaptionStringContent">
     <xs:restriction base="xs:string">
       <xs:pattern value="\s*(\S(\r|\n|.){0,199}\s*)?"/>
     </xs:restriction>
   </xs:simpleType>
-  
+
   <xs:complexType name="CaptionString">
     <xs:simpleContent>
       <xs:extension base="tns:CaptionStringContent">
@@ -98,7 +98,49 @@
       </xs:extension>
     </xs:simpleContent>
   </xs:complexType>
-  
+
+  <xs:simpleType name="AssetPathString">
+    <xs:restriction base="xs:string">
+      <!-- Min 5 since it needs at least a single character filename, the period and a 3 letter extension (mp4/mov/png) -->
+      <xs:minLength value="5" />
+      <xs:maxLength value="255" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="AdditionalAssetType">
+    <xs:attribute name="FileName" type="tns:AssetPathString" use="required"/>
+    <xs:attribute name="FallbackLanguage" type="tns:LangCodeString" />
+  </xs:complexType>
+
+  <xs:simpleType name="TrailerImageDescriptionString">
+    <xs:restriction base="xs:normalizedString">
+      <xs:pattern value="\s*(\S(\r|\n|.){0,199}\s*)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="TrailerImageType">
+    <xs:simpleContent>
+      <xs:extension base="tns:TrailerImageDescriptionString">
+        <xs:attribute name="FileName" type="tns:AssetPathString" use="required"/>
+        <xs:attribute name="FallbackLanguage" type="tns:LangCodeString" />
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+
+  <xs:simpleType name="TrailerTitleString">
+    <xs:restriction base="tns:NonNullNormalizedString">
+      <xs:pattern value="\s*(\S(\r|\n|.){0,199}\s*)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="TrailerTitleType">
+    <xs:simpleContent>
+      <xs:extension base="tns:TrailerTitleString">
+        <xs:attributeGroup ref="tns:LocIdAttribute"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+
   <xs:simpleType name="RecommendationString">
     <xs:restriction base="xs:string">
       <xs:pattern value="\s*(\S(\r|\n|.){0,199}\s*)?"/>
@@ -255,6 +297,66 @@
           </xs:complexType>
         </xs:element>
 
+        <xs:element name="AdditionalAssets" minOccurs="0">
+          <xs:annotation>
+            <xs:documentation>
+              Optional, contains additional assets for the listing that don't have any localizable text.
+              For more info: https://docs.microsoft.com/en-us/windows/uwp/publish/app-screenshots-and-images
+            </xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:all>
+              <xs:element name="StoreLogo9x16" type="tns:AdditionalAssetType" minOccurs="0" />
+              <xs:element name="StoreLogoSquare" type="tns:AdditionalAssetType" minOccurs="0" />
+              <xs:element name="Icon" type="tns:AdditionalAssetType" minOccurs="0" />
+              <xs:element name="PromotionalArt16x9" type="tns:AdditionalAssetType" minOccurs="0" />
+              <xs:element name="PromotionalArtwork2400X1200" type="tns:AdditionalAssetType" minOccurs="0" />
+              <xs:element name="XboxBrandedKeyArt" type="tns:AdditionalAssetType" minOccurs="0" />
+              <xs:element name="XboxTitledHeroArt" type="tns:AdditionalAssetType" minOccurs="0" />
+              <xs:element name="XboxFeaturedPromotionalArt" type="tns:AdditionalAssetType" minOccurs="0" />
+              <xs:element name="SquareIcon358X358" type="tns:AdditionalAssetType" minOccurs="0" />
+              <xs:element name="BackgroundImage1000X800" type="tns:AdditionalAssetType" minOccurs="0" />
+              <xs:element name="PromotionalArtwork414X180" type="tns:AdditionalAssetType" minOccurs="0" />
+            </xs:all>
+            <xs:attribute name="FallbackLanguage" type="tns:LangCodeString" />
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="Trailers" minOccurs="0">
+          <xs:annotation>
+            <xs:documentation>
+              Optional, contains up to 15 elements.
+            </xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Trailer" minOccurs="0" maxOccurs="15">
+                <xs:complexType>
+                  <xs:all>
+                    <xs:element name="Title" type="tns:TrailerTitleType" minOccurs="1" />
+                    <xs:element name="Images" minOccurs="1">
+                      <xs:annotation>
+                        <xs:documentation>
+                          Only one image/screenshot is permitted (and required) per trailer.
+                        </xs:documentation>
+                      </xs:annotation>
+                      <xs:complexType>
+                        <xs:all>
+                          <xs:element name="Image" type="tns:TrailerImageType" minOccurs="1" maxOccurs="1"/>
+                        </xs:all>
+                        <xs:attribute name="FallbackLanguage" type="tns:LangCodeString" />
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:all>
+                  <xs:attribute name="FileName" type="tns:AssetPathString" use="required"/>
+                  <xs:attribute name="FallbackLanguage" type="tns:LangCodeString" />
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+            <xs:attribute name="FallbackLanguage" type="tns:LangCodeString" />
+          </xs:complexType>
+        </xs:element>
+
         <!-- Windows client only section-->
 
         <xs:element name="AppFeatures" minOccurs="0">
@@ -282,8 +384,8 @@
             </xs:sequence>
           </xs:complexType>
         </xs:element>
-        
-   
+
+
         <xs:element name="RecommendedHardware" minOccurs="0">
           <xs:annotation>
             <xs:documentation>
@@ -354,7 +456,7 @@
             </xs:simpleContent>
           </xs:complexType>
         </xs:element>
-        
+
         <xs:element name="SupportContactInfo" minOccurs="1">
           <xs:complexType>
             <xs:annotation>
@@ -389,6 +491,7 @@
       </xs:all>
       <xs:attribute name="language" type="xs:language" use="required" />
       <xs:attribute name="Release" type="tns:ReleaseString" use="required" />
+      <xs:attribute name="FallbackLanguage" type="tns:LangCodeString" />
     </xs:complexType>
   </xs:element>
 </xs:schema>

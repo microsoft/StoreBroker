@@ -19,6 +19,9 @@
         The most recent submission for AppId will be used unless a value for this parameter is
         provided.
 
+    .PARAMETER SubmissionId
+        The submission object that you want to convert, which was previously retrieved.
+
     .PARAMETER Release
         The release to use.  This value will be placed in each new PDP and used in conjunction with '-OutPath'.
         Some examples could be "1601" for a January 2016 release, "March 2016", or even just "1".
@@ -35,13 +38,47 @@
 
     .EXAMPLE
         .\ConvertFrom-ExistingSubmission -AppId 0ABCDEF12345 -Release "March Release" -OutPath "C:\NewPDPs"
+
+        Converts the data from the last published submission for AppId 0ABCDEF12345.  The generated files
+        will use the default name of "PDP.xml" and be located in lang-code specific sub-directories within
+        c:\NewPDPs.
+
+    .EXAMPLE
+        .\ConvertFrom-ExistingSubmission -AppId 0ABCDEF12345 -SubmissionId 1234567890123456789 -Release "March Release" -PdpFileName "ProductDescription.xml" -OutPath "C:\NewPDPs"
+
+        Converts the data from submission 1234567890123456789 for AppId 0ABCDEF12345 (which might be a
+        published or pending submission).  The generated files will be named "ProductDescription.xml" and
+        will be located in lang-code specific sub-directories within c:\NewPDPs.
+
+    .EXAMPLE
+        .\ConvertFrom-ExistingSubmission -Submission $sub -Release "March Release" -OutPath "C:\NewPDPs"
+
+        Converts the data from a submission object that was captured earlier in your PowerShell session.
+        It might have come from Get-ApplicationSubmission, or it might have been generated some other way.
+        This method of running the script was created more for debugging purposes, but others may find it
+        useful. The generated files will use the default name of "PDP.xml" and be located in lang-code
+        specific sub-directories within c:\NewPDPs.
 #>
-[CmdletBinding()]
+[CmdletBinding(
+    SupportsShouldProcess,
+    DefaultParametersetName = "UseApi")]
 param(
-    [Parameter(Mandatory)]
+    [Parameter(
+        Mandatory,
+        ParameterSetName = "UseApi",
+        Position = 0)]
     [string] $AppId,
 
+    [Parameter(
+        ParameterSetName = "UseApi",
+        Position = 1)]
     [string] $SubmissionId = $null,
+
+    [Parameter(
+        Mandatory,
+        ParameterSetName = "ProvideSubmission",
+        Position = 0)]
+    [PSCustomObject] $Submission = $null,
 
     [Parameter(Mandatory)]
     [string] $Release,
@@ -65,6 +102,7 @@ if (-not (Test-Path -Path $helpers -PathType Leaf))
 $script:LocIdAttribute = "_locID"
 $script:LocIdFormat = "App_{0}"
 $script:CommentFormat = " _locComment_text=`"{{MaxLength={0}}} {1}`" "
+$script:CommentLockedFormat = " _locComment_text=`"{{Locked}} {0}`" "
 
 # Used by child nodes, will be formatted, appended with "{0}`"", and then formatted again.
 # Because of formatting twice, need to quadruple normal curly-braces.
@@ -74,6 +112,26 @@ $script:CommentFormatNClose = "{0}`" "
 # Used by parant nodes to describe the type/quantity of children.
 $script:SectionCommentFormat = " Valid length: {0} character limit, up to {1} elements "
 #endregion Comment Constants
+
+$script:ScreenshotAttributeMap = @{
+    "Screenshot"           = "DesktopImage"
+    "MobileScreenshot"     = "MobileImage"
+    "XboxScreenshot"       = "XboxImage"
+    "SurfaceHubScreenshot" = "SurfaceHubImage"
+    "HoloLensScreenshot"   = "HoloLensImage"}
+
+$script:AdditionalAssetNames = @(
+    'StoreLogo9x16',
+    'StoreLogoSquare',
+    'Icon',
+    'PromotionalArt16x9',
+    'PromotionalArtwork2400X1200',
+    'XboxBrandedKeyArt',
+    'XboxTitledHeroArt',
+    'XboxFeaturedPromotionalArt',
+    'SquareIcon358X358',
+    'BackgroundImage1000X800',
+    'PromotionalArtwork414X180')
 
 function Add-ToElement
 {
@@ -207,13 +265,13 @@ function Add-ToChildren
             $comments = @()
             foreach ($text in ($Comment | Where-Object { -not [String]::IsNullOrWhiteSpace($_) }))
             {
-                $comments += $text -f $CountFrom
+                $comments += ($text -f $CountFrom)
             }
 
             $attribs = @{}
             foreach ($keyval in ($Attribute.GetEnumerator() | Where-Object { -not [String]::IsNullOrWhiteSpace($_.Value) }))
             {
-                $attribs[$keyval.Key] = $keyval.Value -f $CountFrom
+                $attribs[$keyval.Key] = ($keyval.Value -f $CountFrom)
             }
 
             $params = @{ "Element" = $elem }
@@ -306,7 +364,7 @@ function Add-AppStoreName
     $maxChars = 200
     $paramSet = @{
         "Element"   = $elementNode;
-        "Attribute" = @{ $script:LocIdAttribute = $script:LocIdFormat -f $elementName };
+        "Attribute" = @{ $script:LocIdAttribute = ($script:LocIdFormat -f $elementName) };
         "Comment"   = ($script:CommentFormat -f $maxChars, "App $elementName");
     }
 
@@ -398,7 +456,7 @@ function Add-Description
     $maxChars = 10000
     $paramSet = @{
         "Element" = $elementNode;
-        "Attribute" = @{ $script:LocIdAttribute = $script:LocIdFormat -f $elementName };
+        "Attribute" = @{ $script:LocIdAttribute = ($script:LocIdFormat -f $elementName) };
         "Comment" = ($script:CommentFormat -f $maxChars, "App $elementName");
     }
 
@@ -434,7 +492,7 @@ function Add-ReleaseNotes
     $maxChars = 1500
     $paramSet = @{
         "Element" = $elementNode;
-        "Attribute" = @{ $script:LocIdAttribute = $script:LocIdFormat -f $elementName };
+        "Attribute" = @{ $script:LocIdAttribute = ($script:LocIdFormat -f $elementName) };
         "Comment" = ($script:CommentFormat -f $maxChars, "App Release Note");
     }
 
@@ -467,14 +525,6 @@ function Add-ScreenshotCaptions
 
     $imageNames = @()
 
-    $imageAttributeMap = @{
-        "Screenshot" = "DesktopImage"
-        "MobileScreenshot" = "MobileImage"
-        "XboxScreenshot" = "XboxImage"
-        "SurfaceHubScreenshot" = "SurfaceHubImage"
-        "HoloLensScreenshot" = "HoloLensImage"
-    }
-
     # Group the images together by captions (so that we only have one caption element for the
     # same caption text)
     $captionImageMap = [ordered]@{}
@@ -484,9 +534,13 @@ function Add-ScreenshotCaptions
             $imageType = $_.imageType
             $fileName = Split-Path -Path ($_.fileName) -Leaf
             $description = $_.description
-            if (-not $imageAttributeMap.Contains($imageType))
+            if (-not $script:ScreenshotAttributeMap.Contains($imageType))
             {
-                Write-Warning "Image [$fileName] of type [$imageType] defined for [$Lang] listing, but is not supported by PDP converter. Skipping adding of the image to PDP."
+                if (-not $script:AdditionalAssetNames.Contains($imageType))
+                {
+                    Write-Warning "Image [$fileName] of type [$imageType] defined for [$Lang] listing, but is not supported by PDP converter. Skipping adding of the image to PDP."
+                }
+
                 return # acts like a "continue" in a ForEach-Object
             }
 
@@ -520,7 +574,7 @@ function Add-ScreenshotCaptions
         foreach ($screenshotType in $captionImageMap.$caption.Keys)
         {
             $imageName = $captionImageMap.$caption[$screenshotType]
-            $child.SetAttribute($imageAttributeMap[$screenshotType], $imageName)
+            $child.SetAttribute($script:ScreenshotAttributeMap[$screenshotType], $imageName)
             $imageNames += $imageName
         }
 
@@ -532,7 +586,7 @@ function Add-ScreenshotCaptions
     {
         $child = $Xml.CreateElement("Caption", $xml.productDescription.NamespaceURI)
         $imageName = $image.Values[0]
-        $child.SetAttribute($imageAttributeMap[$image.Keys[0]], $imageName)
+        $child.SetAttribute($script:ScreenshotAttributeMap[$image.Keys[0]], $imageName)
         $elementNode.AppendChild($child) | Out-Null
         $imageNames += $imageName
     }
@@ -548,7 +602,7 @@ function Add-ScreenshotCaptions
     $maxChildren = 9
     $paramSets += @{
         "Element" = $elementNode;
-        "Comment" = "${script:SectionCommentFormat}per platform "-f $maxChars, $maxChildren;
+        "Comment" = ("${script:SectionCommentFormat}per platform " -f $maxChars, $maxChildren);
     }
 
     foreach ($paramSet in $paramSets)
@@ -567,6 +621,203 @@ function Add-ScreenshotCaptions
     Add-ToChildren @paramSet
 
     return $imageNames
+}
+
+
+function Add-AdditionalAssets
+{
+    <#
+    .SYNOPSIS
+        Creates the additional asset nodes and associates the related images as attributes to those elements.
+
+    .PARAMETER Xml
+        The XmlDocument to modify.
+
+    .PARAMETER Listing
+        The base listing from the submission for a specific Lang.
+
+    .OUTPUTS
+        [String[]] Array of image names that the elements reference
+#>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "This is the existing name of the section within the PDP.")]
+    param(
+        [Parameter(Mandatory)]
+        [System.Xml.XmlDocument] $Xml,
+
+        [Parameter(Mandatory)]
+        [PSCustomObject] $Listing
+    )
+
+    $imageNames = @()
+
+    # Create AdditionalAssets node if it does not exist
+    $elementName = "AdditionalAssets"
+    $elementNode = Ensure-RootChild -Xml $Xml -Element $elementName
+
+    $Listing.images |
+        ForEach-Object {
+            $imageType = $_.imageType
+            $imageName = Split-Path -Path ($_.fileName) -Leaf
+            # We intentionally don't bother capturing the description for these since it's not relevant.
+
+            if (-not $script:AdditionalAssetNames.Contains($imageType))
+            {
+                # No need to spit out a warning here...it would have already happened
+                # during Add-ScreenshotCaptions.
+                return # acts like a "continue" in a ForEach-Object
+            }
+
+            $imageNames += $imageName
+
+            $child = $Xml.CreateElement($imageType, $xml.productDescription.NamespaceURI)
+            $child.SetAttribute('FileName', $imageName)
+            $elementNode.AppendChild($child) | Out-Null
+        }
+
+    # Add comments to parent
+    $paramSets = @()
+    $paramSets += @{
+        "Element" = $elementNode;
+        "Comment" = " Valid elements: StoreLogo9x16, StoreLogoSquare, Icon (use this value for the 1:1 300x300 pixels logo), "
+    }
+
+    $paramSets += @{
+        "Element" = $elementNode;
+        "Comment" = " PromotionalArt16x9, PromotionalArtwork2400X1200, XboxBrandedKeyArt, XboxTitledHeroArt, XboxFeaturedPromotionalArt, "
+    }
+
+    $paramSets += @{
+        "Element" = $elementNode;
+        "Comment" = " SquareIcon358X358, BackgroundImage1000X800, PromotionalArtwork414X180 "
+    }
+
+    $paramSets += @{
+        "Element" = $elementNode;
+        "Comment" = " There is no content for any of these elements, just a single attribute called FileName. "
+    }
+
+    [array]::Reverse($paramSets) # Reverse the array to ensure that they appear in this order
+    foreach ($paramSet in $paramSets)
+    {
+        Add-ToElement @paramSet
+    }
+
+    return $imageNames
+}
+
+function Add-Trailers
+{
+    <#
+    .SYNOPSIS
+        Creates the trailers node and associates the related trailers, titles and screenshots.
+
+    .PARAMETER Xml
+        The XmlDocument to modify.
+
+    .PARAMETER Submission
+        Ths submission object that was used to generate the set of PDP files.
+
+    .PARAMETER Lang
+        The language / region code for the PDP (e.g. "en-us")
+
+    .OUTPUTS
+        [String[]] Array of asset names (trailers and screenshots) that are referenced
+#>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "This is the existing name of the section within the PDP.")]
+    param(
+        [Parameter(Mandatory)]
+        [System.Xml.XmlDocument] $Xml,
+
+        [Parameter(Mandatory)]
+        [PSCustomObject] $Submission,
+
+        [Parameter(Mandatory)]
+        [string] $Lang
+    )
+
+    $assetFileNames = @()
+
+    # Create ScreenshotCaptions node if it does not exist
+    $elementName = "Trailers"
+    $elementNode = Ensure-RootChild -Xml $Xml -Element $elementName
+
+    $maxChildren = 15
+    $paramSet = @{
+        "Element" = $elementNode;
+        "Comment" = (" Maximum number of trailers permitted: {0} " -f $maxChildren);
+    }
+
+    Add-ToElement @paramSet
+
+    $trailerCount = 0
+    $Submission.trailers |
+        ForEach-Object {
+            foreach ($language in ($_.trailerAssets | Get-Member -Type NoteProperty))
+            {
+                $langCode = $language.Name
+                if ($langCode -ne $Lang)
+                {
+                    continue
+                }
+
+                $trailerCount++
+
+                # There's an entry for this trailer, for this language, so add it to the PDP
+                $trailerFileName = Split-Path -Path ($_.videoFileName) -Leaf
+                $assetFileNames += $trailerFileName
+                $title = $_.trailerAssets.$langCode.title
+                $screenshotDescription = $_.trailerAssets.$langCode.imageList[0].description
+                $screenshotFileName = Split-Path -Path ($_.trailerAssets.$langCode.imageList[0].fileName) -Leaf
+                if (-not [String]::IsNullOrWhiteSpace($screenshotFileName))
+                {
+                    # The API doesn't seem to always return the screenshot filename.
+                    # We'll guard against that by only adding the value to our asset array
+                    # if there's a value.
+                    $assetFileNames += $screenshotFileName
+                }
+
+                $trailerElement = $Xml.CreateElement("Trailer", $xml.productDescription.NamespaceURI)
+                $trailerElement.SetAttribute('FileName', $trailerFileName)
+                $elementNode.AppendChild($trailerElement) | Out-Null
+
+                $titleElement = $Xml.CreateElement("Title", $xml.productDescription.NamespaceURI)
+                $titleElement.InnerText = $title
+                $trailerElement.AppendChild($titleElement) | Out-Null
+
+                $maxChars = 200
+                $paramSet = @{
+                    "Element"   = $titleElement;
+                    "Attribute" = @{ $script:LocIdAttribute = ($script:LocIdFormat -f "trailerTitle") + $trailerCount };
+                    "Comment"   = ($script:CommentFormat -f $maxChars, "Trailer title $trailerCount");
+                }
+
+                Add-ToElement @paramSet
+
+                $imagesElement = $Xml.CreateElement("Images", $xml.productDescription.NamespaceURI)
+                $trailerElement.AppendChild($imagesElement) | Out-Null
+
+                $paramSet = @{
+                    "Element"   = $imagesElement;
+                    "Comment"   = ' Current maximum of 1 image per trailer permitted. ';
+                }
+
+                Add-ToElement @paramSet
+
+                $imageElement = $Xml.CreateElement("Image", $xml.productDescription.NamespaceURI)
+                $imageElement.SetAttribute('FileName', $screenshotFileName)
+                $imageElement.InnerText = $screenshotDescription
+                $imagesElement.AppendChild($imageElement) | Out-Null
+
+                $paramSet = @{
+                    "Element"   = $imageElement;
+                    "Comment"   = ($script:CommentLockedFormat -f "Trailer screenshot $trailerCount description");
+                }
+
+                Add-ToElement @paramSet
+            }
+        }
+
+    return $assetFileNames
 }
 
 function Add-AppFeatures
@@ -604,7 +855,7 @@ function Add-AppFeatures
     $maxChildren = 20
     $paramSet = @{
         "Element" = $elementNode;
-        "Comment" = $script:SectionCommentFormat -f $maxChars, $maxChildren;
+        "Comment" = ($script:SectionCommentFormat -f $maxChars, $maxChildren);
     }
 
     Add-ToElement @paramSet
@@ -698,7 +949,7 @@ function Add-CopyrightAndTrademark
     $maxChars = 200
     $paramSet = @{
         "Element" = $elementNode;
-        "Attribute" = @{ $script:LocIdAttribute = $script:LocIdFormat -f "CopyrightandTrademark" };
+        "Attribute" = @{ $script:LocIdAttribute = ($script:LocIdFormat -f "CopyrightandTrademark") };
         "Comment" = ($script:CommentFormat -f $maxChars, "Copyright and Trademark");
     }
 
@@ -734,7 +985,7 @@ function Add-AdditionalLicenseTerms
     $maxChars = 10000
     $paramSet = @{
         "Element" = $elementNode;
-        "Attribute" = @{ $script:LocIdAttribute = $script:LocIdFormat -f $elementName };
+        "Attribute" = @{ $script:LocIdAttribute = ($script:LocIdFormat -f $elementName) };
         "Comment" = ($script:CommentFormat -f $maxChars, "Additional License Terms");
     }
 
@@ -769,7 +1020,7 @@ function Add-WebsiteUrl
     $maxChars = 2048
     $paramSet = @{
         "Element" = $elementNode;
-        "Attribute" = @{ $script:LocIdAttribute = $script:LocIdFormat -f $elementName };
+        "Attribute" = @{ $script:LocIdAttribute = ($script:LocIdFormat -f $elementName) };
         "Comment" = ($script:CommentFormat -f $maxChars, $elementName);
     }
 
@@ -804,7 +1055,7 @@ function Add-SupportContact
     $maxChars = 2048
     $paramSet = @{
         "Element" = $elementNode;
-        "Attribute" = @{ $script:LocIdAttribute = $script:LocIdFormat -f $elementName };
+        "Attribute" = @{ $script:LocIdAttribute = ($script:LocIdFormat -f $elementName) };
         "Comment" = ($script:CommentFormat -f $maxChars, "Support Contact Info");
     }
 
@@ -839,7 +1090,7 @@ function Add-PrivacyPolicy
     $maxChars = 2048
     $paramSet = @{
         "Element" = $elementNode;
-        "Attribute" = @{ $script:LocIdAttribute = $script:LocIdFormat -f "PrivacyURL" };
+        "Attribute" = @{ $script:LocIdAttribute = ($script:LocIdFormat -f "PrivacyURL") };
         "Comment" = ($script:CommentFormat -f $maxChars, "Privacy Policy URL");
     }
 
@@ -852,6 +1103,9 @@ function ConvertFrom-Listing
     .SYNOPSIS
         Converts a base listing for an existing submission into a PDP file that conforms with
         the March 2016 PDP schema.
+
+    .PARAMETER Submission
+        The submission object that was used to generate the set of PDP files.
 
     .PARAMETER Listing
         The base listing from the submission for the indicated Lang.
@@ -870,16 +1124,19 @@ function ConvertFrom-Listing
         The name of the PDP file that will be generated.
 
     .OUTPUTS
-        [String[]] Array of image names that the captions reference
+        [String[]] Array of media asset file names that are referenced
 
     .EXAMPLE
-        ConvertFrom-Listing -Listing ($sub.listings."en-us".baseListing) -Lang "en-us" -Release "1701" -PdpRootPath "C:\PDPs\" -FileName "PDP.xml"
+        ConvertFrom-Listing -Submission $sub -Listing ($sub.listings."en-us".baseListing) -Lang "en-us" -Release "1701" -PdpRootPath "C:\PDPs\" -FileName "PDP.xml"
 
         Converts the given "en-us" base listing to the current PDP schema,
         and saves it to "c:\PDPs\en-us\PDP.xml"
 #>
     [CmdletBinding()]
     param(
+        [Parameter(Mandatory)]
+        [PSCustomObject] $Submission,
+
         [Parameter(Mandatory)]
         [PSCustomObject] $Listing,
 
@@ -907,7 +1164,9 @@ function ConvertFrom-Listing
     Add-Keywords -Xml $Xml -Listing $Listing
     Add-Description -Xml $Xml -Listing $Listing
     Add-ReleaseNotes -Xml $Xml -Listing $Listing
-    $imageNames = Add-ScreenshotCaptions -Xml $xml -Listing $Listing
+    $screenshotFileNames = Add-ScreenshotCaptions -Xml $xml -Listing $Listing
+    $additionalAssetFileNames = Add-AdditionalAssets -Xml $xml -Listing $Listing
+    $trailerFileNames = Add-Trailers -Xml $xml -Submission $Submission -Lang $Lang
     Add-AppFeatures -Xml $Xml -Listing $Listing
     Add-RecommendedHardware -Xml $Xml -Listing $Listing
     Add-CopyrightAndTrademark -Xml $Xml -Listing $Listing
@@ -924,7 +1183,13 @@ function ConvertFrom-Listing
     $content = Get-Content -Encoding UTF8 -Path $filePath
     $content -join [Environment]::NewLine | Out-File -Force -Encoding utf8 -FilePath $filePath
 
-    return $imageNames
+    # PowerShell likes to convert arrays of single items back to individual items.
+    # We need to ensure that we're definitely concatenting arrays together, and don't have
+    # any single items in there.  Therefore, we wrap each variable in an array to force it
+    # to be an array for merging purposes.
+    $mediaFileNames = @($screenshotFileNames) + @($additionalAssetFileNames) + @($trailerFileNames)
+
+    return $mediaFileNames
 }
 
 function Ensure-PdpFilePath
@@ -977,83 +1242,89 @@ function Ensure-PdpFilePath
     return (Join-Path -Path $dropFolder -ChildPath $FileName)
 }
 
-function Show-ImageFileNames
+function Show-AssetFileNames
 {
 <#
     .SYNOPSIS
-        Informs the user what the image filenames are that they need to make available to StoreBroker.
+        Informs the user what the asset filenames are that they need to make available to StoreBroker.
 
     .DESCRIPTION
-        Informs the user what the image filenames are that they need to make available to StoreBroker.
+        Informs the user what the asset filenames are that they need to make available to StoreBroker.
 
-    .PARAMETER LangImageNames
-        A hashtable, indexed by langcode, containing an array of image names that the listing
+    .PARAMETER LangAssetNames
+        A hashtable, indexed by langcode, containing an array of asset names that the listing
         for that langcode references.
 
     .PARAMETER Release
         The release name that was added to the PDP files.
 
+    .PARAMETER Submission
+        Ths submission object that was used to generate the set of PDP files.
+
     .EXAMPLE
-        Show-ImageFileNames -LangImageNames $langImageNames -Release "1701"
+        Show-AssetFileNames -LangAssetNames $langAssetNames -Release "1701" -Submission $sub
 #>
     [CmdletBinding()]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification="The most common scenario is that there will be multiple images, not a singular image.")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification="The most common scenario is that there will be multiple assets, not a singular asset.")]
     param(
         [Parameter(Mandatory)]
-        [hashtable] $LangImageNames,
+        [hashtable] $LangAssetNames,
 
         [Parameter(Mandatory)]
-        [string] $Release
+        [string] $Release,
+
+        [Parameter(Mandatory)]
+        [PSCustomObject] $Submission
     )
 
-    # If there are no screenshots, nothing to do here
-    if ($LangImageNames.Count -eq 0)
+    # If there are no assets, nothing to do here
+    if ($LangAssetNames.Count -eq 0)
     {
         return
     }
 
     Write-Log -Message @(
-        "You now need to find all of your images and place them here: <ImagesRootPath>\$Release\<langcode>\...",
+        "You now need to find all of your assets and place them here: <ImagesRootPath>\$Release\<langcode>\...",
         "  where <ImagesRootPath> is the path defined in your config file,",
-        "  and <langcode> is the same langcode for the directory of the PDP file referencing those images.")
+        "  and <langcode> is the same langcode for the directory of the PDP file referencing those assets.")
 
     # Quick analysis to help teams out if they need to do anything special with their PDP's
 
-    $langs = $LangImageNames.Keys | ConvertTo-Array
-    $seenImages = $LangImageNames[$langs[0]]
-    $imagesDiffer = $false
-    for ($i = 1; ($i -lt $langs.Count) -and (-not $imagesDiffer); $i++)
+    $langs = $LangAssetNames.Keys | ConvertTo-Array
+    $seenAssets = $LangAssetNames[$langs[0]]
+    $assetsDiffer = $false
+    for ($i = 1; ($i -lt $langs.Count) -and (-not $assetsDiffer); $i++)
     {
-        if (($LangImageNames[$langs[$i]].Count -ne $seenImages.Count))
+        if (($LangAssetNames[$langs[$i]].Count -ne $seenAssets.Count))
         {
-            $imagesDiffer = $true
+            $assetsDiffer = $true
             break
         }
 
-        foreach ($image in $LangImageNames[$langs[$i]])
+        foreach ($asset in $LangAssetNames[$langs[$i]])
         {
-            if ($seenImages -notcontains $image)
+            if ($seenAssets -notcontains $asset)
             {
-                $imagesDiffer = $true
+                $assetsDiffer = $true
                 break
             }
         }
     }
 
-    # Now show the user the image filenames
-    if ($imagesDiffer)
+    # Now show the user the asset filenames
+    if ($assetsDiffer)
     {
         Write-Log -Level Warning -Message @(
-            "It appears that you don't have consistent images across all languages.",
+            "It appears that you don't have consistent assets across all languages.",
             "While StoreBroker supports this scenario, some localization systems may",
             "not support this without additional work.  Please refer to the FAQ in",
             "the documentation for more info on how to best handle this scenario.")
 
         $output = @()
-        $output += "The currently referenced image filenames, per langcode, are as follows:"
-        foreach ($langCode in ($LangImageNames.Keys.GetEnumerator() | Sort-Object))
+        $output += "The currently referenced asset filenames, per langcode, are as follows:"
+        foreach ($langCode in ($LangAssetNames.Keys.GetEnumerator() | Sort-Object))
         {
-            $output += " * [$langCode]: " + ($LangImageNames.$langCode -join ", ")
+            $output += " * [$langCode]: " + ($LangAssetNames.$langCode -join ", ")
         }
 
         Write-Log -Message $output
@@ -1061,8 +1332,20 @@ function Show-ImageFileNames
     else
     {
         Write-Log -Message @(
-            "Every language that has a PDP references the following images:",
-            "`t$($seenImages -join `"`n`t`")")
+            "Every language that has a PDP references the following assets:",
+            "`t$($seenAssets -join `"`n`t`")")
+    }
+
+    if ($Submission.trailers.Count -gt 0)
+    {
+        Write-Log -Level Warning -Message @(
+            "Your generated PDP files are missing the trailer screenshot filenames due to API limitations.",
+            "You will need to manually update the PDP with those filenames before the PDP's can be used.",
+            "",
+            "Additionally, you should review the generated PDP files and add the appropriate",
+            "`"FallbackLanguage`" attributes (review Documentation/PDP.md for more info)",
+            "so that trailers (and possibly trailer screenshots) can be easily shared across languages."
+        )
     }
 }
 
@@ -1078,15 +1361,19 @@ function Main
         throw $message
     }
 
-    if ([String]::IsNullOrEmpty($SubmissionId))
+    $sub = $Submission
+    if ($null -eq $sub)
     {
-        $app = Get-Application -AppId $AppId
-        $SubmissionId = $app.lastPublishedApplicationSubmission.id
+        if ([String]::IsNullOrEmpty($SubmissionId))
+        {
+            $app = Get-Application -AppId $AppId
+            $SubmissionId = $app.lastPublishedApplicationSubmission.id
+        }
+
+        $sub = Get-ApplicationSubmission -AppId $AppId -SubmissionId $SubmissionId
     }
 
-    $sub = Get-ApplicationSubmission -AppId $AppId -SubmissionId $SubmissionId
-
-    $langImageNames = @{}
+    $langAssetNames = @{}
     $langs = ($sub.listings | Get-Member -type NoteProperty)
     $pdpsGenerated = 0
     $langs |
@@ -1096,8 +1383,8 @@ function Main
             Write-Progress -Activity "Generating PDP" -Status $lang -PercentComplete $(($pdpsGenerated / $langs.Count) * 100)
             try
             {
-                $imageNames = ConvertFrom-Listing -Listing ($sub.listings.$lang.baseListing) -Lang $lang -Release $Release -PdpRootPath $OutPath -FileName $PdpFileName
-                $langImageNames[$lang] = $imageNames
+                $assetFileNames = ConvertFrom-Listing -Submission $sub -Listing ($sub.listings.$lang.baseListing) -Lang $lang -Release $Release -PdpRootPath $OutPath -FileName $PdpFileName
+                $langAssetNames[$lang] = $assetFileNames
                 $pdpsGenerated++
             }
             catch
@@ -1108,7 +1395,7 @@ function Main
         }
 
     Write-Log -Message "PDP's have been created here: $OutPath"
-    Show-ImageFileNames -LangImageNames $langImageNames -Release $Release
+    Show-AssetFileNames -LangAssetNames $langAssetNames -Release $Release -Submission $sub
 }
 
 

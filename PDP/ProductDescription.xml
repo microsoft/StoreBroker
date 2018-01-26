@@ -28,7 +28,7 @@
       Various performance optimiazations, this app is wicked-fast now.
    </ReleaseNotes>
 
-  <ScreenshotCaptions>
+   <ScreenshotCaptions>
     <!-- Valid length: 200 character limit, up to 9 elements per platform -->
     <!-- Valid attributes: any of DesktopImage, MobileImage, XboxImage, SurfaceHubImage, and HoloLensImage -->
     <Caption _locID="App_caption1"
@@ -48,7 +48,26 @@
     <Caption _locID="App_caption3"
         DesktopImage="Desktop3.jpg">
     <!-- _locComment_text="{MaxLength=200} Screenshot caption 3" -->Add text to your video</Caption>
-  </ScreenshotCaptions>
+   </ScreenshotCaptions>
+
+   <AdditionalAssets>
+     <!-- Valid elements: StoreLogo9x16, StoreLogoSquare, Icon (use this value for the 1:1 300x300 pixels logo), -->
+     <!-- PromotionalArt16x9, PromotionalArtwork2400X1200, XboxBrandedKeyArt, XboxTitledHeroArt, XboxFeaturedPromotionalArt, -->
+     <!-- SquareIcon358X358, BackgroundImage1000X800, PromotionalArtwork414X180 -->
+     <!-- There is no content for any of these elements... just a single attribute called FileName. -->
+     <XboxBrandedKeyArt FileName="xboxBrandedKeyArt.png"/>
+     <PromotionalArtwork2400X1200 FileName="PromoArtLarge.png"/>
+     <StoreLogo9x16 FileName="logo9x16.png"/>
+   </AdditionalAssets>
+
+   <Trailers>
+     <Trailer FileName="trailer1.mp4">
+        <Title _locID="App_trailerTitle1"><!-- _locComment_text="{MaxLength=200} Trailer title 1" -->This is Trailer 1's title.</Title>
+        <Images> <!-- Current maximum of 1 image per trailer allowed -->
+          <Image FileName="trailer1screenshot.png"><!-- _locComment_text="{Locked} Trailer Image 1 description" -->Description of trailer 1's screenshot that no user will ever see.</Image>
+        </Images>
+     </Trailer>
+   </Trailers>
 
    <AppFeatures>
      <!-- Valid length: 200 character limit, up to 20 -->

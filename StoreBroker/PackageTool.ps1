@@ -1,6 +1,5 @@
 # Copyright (C) Microsoft Corporation.  All rights reserved.
 
-
 # Default file name of the AppConfig in the module folder
 $script:defaultConfigFileName = "AppConfigTemplate.json"
 $script:defaultIapConfigFileName = "IapConfigTemplate.json"
@@ -281,16 +280,16 @@ function Get-StoreBrokerConfigFileContentForAppId
 
         $sub = Get-ApplicationSubmission -AppId $AppId -SubmissionId $($app.lastPublishedApplicationSubmission.id)
 
-        $updated = $updated -replace '"appId": ".*",', "`"appId`": `"$AppId`","
+        $updated = $updated -replace '"appId": ".*",', "`"appId`": $($AppId | ConvertTo-Json),"
 
         # PUBLISH MODE AND VISIBILITY
-        $updated = $updated -replace '"targetPublishMode": ".*",', "`"targetPublishMode`": `"$($sub.targetPublishMode)`","
-        $updated = $updated -replace '"targetPublishDate": .*,', "`"targetPublishDate`": `"$($sub.targetPublishDate)`","
-        $updated = $updated -replace '"visibility": ".*",', "`"visibility`": `"$($sub.visibility)`","
+        $updated = $updated -replace '"targetPublishMode": ".*",', "`"targetPublishMode`": $($sub.targetPublishMode | ConvertTo-Json),"
+        $updated = $updated -replace '"targetPublishDate": .*,', "`"targetPublishDate`": $($sub.targetPublishDate | ConvertTo-Json),"
+        $updated = $updated -replace '"visibility": ".*",', "`"visibility`": $($sub.visibility | ConvertTo-Json),"
 
         # PRICING AND AVAILABILITY
-        $updated = $updated -replace '"priceId": ".*",', "`"priceId`": `"$($sub.pricing.priceId)`","
-        $updated = $updated -replace '"trialPeriod": ".*",', "`"trialPeriod`": `"$($sub.pricing.trialPeriod)`","
+        $updated = $updated -replace '"priceId": ".*",', "`"priceId`": $($sub.pricing.priceId | ConvertTo-Json),"
+        $updated = $updated -replace '"trialPeriod": ".*",', "`"trialPeriod`": $($sub.pricing.trialPeriod | ConvertTo-Json),"
 
         $marketSpecificPricings = $sub.pricing.marketSpecificPricings | ConvertTo-Json -Depth $script:jsonConversionDepth
         $updated = $updated -replace '(\s+)"marketSpecificPricings": {.*(\r|\n)+\s*}', "`$1`"marketSpecificPricings`": $marketSpecificPricings"
@@ -304,7 +303,7 @@ function Get-StoreBrokerConfigFileContentForAppId
         {
             if ($families -match $family)
             {
-                $updated = $updated -replace "`"$family`": [^,\r\n]*(,)?", "`"$family`": $($families.$family.ToString().ToLower())`$1"
+                $updated = $updated -replace "`"$family`": [^,\r\n]*(,)?", "`"$family`": $($families.$family | ConvertTo-Json)`$1"
             }
             else
             {
@@ -312,21 +311,54 @@ function Get-StoreBrokerConfigFileContentForAppId
             }
         }
 
-        $updated = $updated -replace '"allowMicrosoftDecideAppAvailabilityToFutureDeviceFamilies": .*,', "`"allowMicrosoftDecideAppAvailabilityToFutureDeviceFamilies`": $($sub.allowMicrosoftDecideAppAvailabilityToFutureDeviceFamilies.ToString().ToLower()),"
-        $updated = $updated -replace '"enterpriseLicensing": ".*",', "`"enterpriseLicensing`": `"$($sub.enterpriseLicensing)`","
+        $updated = $updated -replace '"allowMicrosoftDecideAppAvailabilityToFutureDeviceFamilies": .*,', "`"allowMicrosoftDecideAppAvailabilityToFutureDeviceFamilies`": $($sub.allowMicrosoftDecideAppAvailabilityToFutureDeviceFamilies | ConvertTo-Json),"
+        $updated = $updated -replace '"enterpriseLicensing": ".*",', "`"enterpriseLicensing`": $($sub.enterpriseLicensing | ConvertTo-Json),"
 
         # APP PROPERTIES
-        $updated = $updated -replace '"applicationCategory": ".*",', "`"applicationCategory`": `"$($sub.applicationCategory)`","
+        $updated = $updated -replace '"applicationCategory": ".*",', "`"applicationCategory`": $($sub.applicationCategory | ConvertTo-Json),"
 
         $hardwarePreferences = $sub.hardwarePreferences | ConvertTo-Json -Depth $script:jsonConversionDepth
         if ($null -eq $hardwarePreferences) { $hardwarePreferences = "[ ]" }
         $updated = $updated -replace '(\s+)"hardwarePreferences": \[.*(\r|\n)+\s*\]', "`$1`"hardwarePreferences`": $hardwarePreferences"
 
-        $updated = $updated -replace '"hasExternalInAppProducts": .*,', "`"hasExternalInAppProducts`": $($sub.hasExternalInAppProducts.ToString().ToLower()),"
-        $updated = $updated -replace '"meetAccessibilityGuidelines": .*,', "`"meetAccessibilityGuidelines`": $($sub.meetAccessibilityGuidelines.ToString().ToLower()),"
-        $updated = $updated -replace '"canInstallOnRemovableMedia": .*,', "`"canInstallOnRemovableMedia`": $($sub.canInstallOnRemovableMedia.ToString().ToLower()),"
-        $updated = $updated -replace '"automaticBackupEnabled": .*,', "`"automaticBackupEnabled`": $($sub.automaticBackupEnabled.ToString().ToLower()),"
-        $updated = $updated -replace '"isGameDvrEnabled": .*,', "`"isGameDvrEnabled`": $($sub.isGameDvrEnabled.ToString().ToLower()),"
+        $updated = $updated -replace '"hasExternalInAppProducts": .*,', "`"hasExternalInAppProducts`": $($sub.hasExternalInAppProducts | ConvertTo-Json),"
+        $updated = $updated -replace '"meetAccessibilityGuidelines": .*,', "`"meetAccessibilityGuidelines`": $($sub.meetAccessibilityGuidelines | ConvertTo-Json),"
+        $updated = $updated -replace '"canInstallOnRemovableMedia": .*,', "`"canInstallOnRemovableMedia`": $($sub.canInstallOnRemovableMedia | ConvertTo-Json),"
+        $updated = $updated -replace '"automaticBackupEnabled": .*,', "`"automaticBackupEnabled`": $($sub.automaticBackupEnabled | ConvertTo-Json),"
+        $updated = $updated -replace '"isGameDvrEnabled": .*,', "`"isGameDvrEnabled`": $($sub.isGameDvrEnabled | ConvertTo-Json),"
+
+        # GAMING OPTIONS
+        if ($app.hasAdvancedListingPermission)
+        {
+            $gamingOptionsGenres = $sub.gamingOptions.genres | ConvertTo-Json -Depth $script:jsonConversionDepth
+            if ($null -eq $gamingOptionsGenres) { $gamingOptionsGenres = "[ ]" }
+            $updated = $updated -replace '(\s+)"genres": \[.*(\r|\n)+\s*\]', "`$1`"genres`": $gamingOptionsGenres"
+
+            $updated = $updated -replace '"isLocalMultiplayer": .*,', "`"isLocalMultiplayer`": $($sub.gamingOptions.isLocalMultiplayer | ConvertTo-Json),"
+            $updated = $updated -replace '"isLocalCooperative": .*,', "`"isLocalCooperative`": $($sub.gamingOptions.isLocalCooperative | ConvertTo-Json),"
+            $updated = $updated -replace '"isOnlineMultiplayer": .*,', "`"isOnlineMultiplayer`": $($sub.gamingOptions.isOnlineMultiplayer | ConvertTo-Json),"
+            $updated = $updated -replace '"isOnlineCooperative": .*,', "`"isOnlineCooperative`": $($sub.gamingOptions.isOnlineCooperative | ConvertTo-Json),"
+
+            $localMultiplayerMinPlayers = $sub.gamingOptions.localMultiplayerMinPlayers
+            if ($null -eq $localMultiplayerMinPlayers) { $localMultiplayerMinPlayers = 0 }
+            $updated = $updated -replace '"localMultiplayerMinPlayers": .*,', "`"localMultiplayerMinPlayers`": $localMultiplayerMinPlayers,"
+
+            $localMultiplayerMaxPlayers = $sub.gamingOptions.localMultiplayerMaxPlayers
+            if ($null -eq $localMultiplayerMaxPlayers) { $localMultiplayerMaxPlayers = 0 }
+            $updated = $updated -replace '"localMultiplayerMaxPlayers": .*,', "`"localMultiplayerMaxPlayers`": $localMultiplayerMaxPlayers,"
+
+            $localCooperativeMinPlayers = $sub.gamingOptions.localCooperativeMinPlayers
+            if ($null -eq $localCooperativeMinPlayers) { $localCooperativeMinPlayers = 0 }
+            $updated = $updated -replace '"localCooperativeMinPlayers": .*,', "`"localCooperativeMinPlayers`": $localCooperativeMinPlayers,"
+
+            $localCooperativeMaxPlayers = $sub.gamingOptions.localCooperativeMaxPlayers
+            if ($null -eq $localCooperativeMaxPlayers) { $localCooperativeMaxPlayers = 0 }
+            $updated = $updated -replace '"localCooperativeMaxPlayers": .*,', "`"localCooperativeMaxPlayers`": $localCooperativeMaxPlayers,"
+
+            $updated = $updated -replace '"isBroadcastingPrivilegeGranted": .*,', "`"isBroadcastingPrivilegeGranted`": $($sub.gamingOptions.isBroadcastingPrivilegeGranted | ConvertTo-Json),"
+            $updated = $updated -replace '"isCrossPlayEnabled": .*,', "`"isCrossPlayEnabled`": $($sub.gamingOptions.isCrossPlayEnabled | ConvertTo-Json),"
+            $updated = $updated -replace '"kinectDataForExternal": .*', "`"kinectDataForExternal`": $($sub.gamingOptions.kinectDataForExternal | ConvertTo-Json)"
+        }
 
         # NOTES FOR CERTIFICATION
         $notesForCertification = Get-EscapedJsonValue -Value $sub.notesForCertification
@@ -807,19 +839,18 @@ function Convert-ListingToObject
                             $imageFileName = $caption.$member
                             if (-not [System.String]::IsNullOrWhiteSpace($imageFileName))
                             {
-                                # We start with the fallback language specified on an individual caption.
-                                # If one is not specified, then we'll look to see if there is one specified
-                                # for all captions on the ScreenshotCaptions element.  If one is not specified
+                                # We start with the fallback language specified on an individual asset.
+                                # We continue to climb up to find a more generally defined FallbackLanguage
+                                # until we hit the ProductDescription node.  If one is still not specified
                                 # there, then we'll try using the one specified at the commandline/config file.
-                                $requestedFallbackLanguage = $caption.FallbackLanguage
-                                if ([String]::IsNullOrWhiteSpace($requestedFallbackLanguage))
-                                {
-                                    $requestedFallbackLanguage = $ProductDescriptionNode.ScreenshotCaptions.FallbackLanguage
-                                    if ([String]::IsNullOrWhiteSpace($requestedFallbackLanguage))
-                                    {
-                                        $requestedFallbackLanguage = $MediaFallbackLanguage
-                                    }
-                                }
+                                $requestedFallbackLanguage = (
+                                    $caption.FallbackLanguage,
+                                    $ProductDescriptionNode.ScreenshotCaptions.FallbackLanguage,
+                                    $ProductDescriptionNode.FallbackLanguage,
+                                    $MediaFallbackLanguage) |
+                                        Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+                                        Select-Object -First 1
+
 
                                 $params = @{
                                     'Filename' = $imageFileName
@@ -842,6 +873,45 @@ function Convert-ListingToObject
                         }
                     }
 
+                    # Handle additional image types (those without captions: AdditionalAssets)
+                    $additionalAssets = $ProductDescriptionNode.AdditionalAssets.ChildNodes |
+                        Where-Object NodeType -eq Element
+
+                    foreach ($assetType in $additionalAssets)
+                    {
+                        $assetTypeName = $assetType.LocalName
+                        $imageFileName = $assetType.FileName
+
+                        # We start with the fallback language specified on an individual asset.
+                        # We continue to climb up to find a more generally defined FallbackLanguage
+                        # until we hit the ProductDescription node.  If one is still not specified
+                        # there, then we'll try using the one specified at the commandline/config file.
+                        $requestedFallbackLanguage = (
+                            $assetType.FallbackLanguage,
+                            $ProductDescriptionNode.AdditionalAssets.FallbackLanguage,
+                            $ProductDescriptionNode.FallbackLanguage,
+                            $MediaFallbackLanguage) |
+                                Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+                                Select-Object -First 1
+
+
+                        $params = @{
+                            'Filename' = $imageFileName
+                            'ImagesRootPath' = $ImagesRootPath
+                            'Language' = $language
+                            'Release' = $ProductDescriptionNode.Release
+                            'MediaFallbackLanguage' = $requestedFallbackLanguage
+                        }
+
+                        $fileRelativePackagePath = Get-LocalizedMediaFile @params
+
+                        $imageListings += @{
+                            "fileName" = $fileRelativePackagePath;
+                            "fileStatus" = "PendingUpload";
+                            "imageType" = $assetTypeName;
+                        }
+                    }
+
                     $baseListing["images"] = $imageListings
                     # BaseListing done
 
@@ -855,6 +925,183 @@ function Convert-ListingToObject
                     }
 
                     Write-Output @{ "lang" = $language.ToLowerInvariant(); "listing" = $listing }
+                }
+                catch [System.InvalidCastException]
+                {
+                    $output = "Provided .xml file is not a valid .xml document: $xmlFilePath"
+                    Write-Log -Message $output -Level Error
+                    throw $output
+                }
+            }
+        }
+    }
+}
+
+function Convert-TrailersToObject
+{
+<#
+    .SYNOPSIS
+        Consumes a single localized .xml file into a listing object.
+
+    .DESCRIPTION
+        Consumes a single localized .xml file into a listing object.
+        If a node has only content, then that content is assigned.
+        If a node has children, it's children are pooled into an array and assigned.
+        The ScreenshotCaptions node is special.  For each caption, the function
+        checks if there is an associated Desktop/Mobile/Xbox image, and adds new
+        information for each type found.
+
+    .PARAMETER PDPRootPath
+        The root path of all the PDPs.  'XmlFilePath' should begin with 'PDPRootPath',
+        so this function splits 'XmlFilePath' using 'PDPRootPath'.  The result
+        should begin with the lang-code of the file being processed.
+
+    .PARAMETER LanguageExclude
+        Array of lang-code strings that SHOULD NOT be processed.
+
+    .PARAMETER ImagesRootPath
+        A path to the root path containing the new submission's images.  A screenshot
+        caption has the potential for relative paths to Desktop, Mobile, and Xbox images.
+        Each relative path is appended to ImagesRootPath to create a full path to the image.
+
+    .PARAMETER XmlFilePath
+        A full path to the localized .xml file to be parsed.
+
+    .PARAMETER MediaFallbackLanguage
+        Some apps may not localize all of their metadata media (images, trailers, etc..)
+        across all languages.  By default, StoreBroker will look in the PDP langcode's subfolder
+        within ImagesRootPath for that language's media content.  If the requested filename is
+        not found, StoreBroker packaging will fail. If you specify a fallback language here
+        (e.g. 'en-us'), then if the requested file isn't found in the PDP language's media
+        subfolder, StoreBroker will then look into the fallback language's media subfolder for
+        the exactly same-named image, and only fail then if it still cannot be found.
+#>
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(Mandatory)]
+        [string] $PDPRootPath,
+
+        [Parameter(Mandatory)]
+        [AllowNull()]
+        [AllowEmptyString()]
+        [string[]] $LanguageExclude,
+
+        [Parameter(Mandatory)]
+        [Alias('MediaRootPath')]
+        [string] $ImagesRootPath,
+
+        [Parameter(
+            Mandatory,
+            ValueFromPipeline)]
+        [string[]] $XmlFilePaths,
+
+        [string] $MediaFallbackLanguage
+    )
+
+    PROCESS
+    {
+        foreach ($xmlFilePath in $XmlFilePaths)
+        {
+            if ($PSCmdlet.ShouldProcess($xmlFilePath, "Convert-ListingToObject"))
+            {
+                try
+                {
+                    # Identify lang-code of the file to process.
+                    # $array[-1] == $array[$array.Count-1]
+                    if ($PDPRootPath[-1] -ne '\') { $PDPRootPath = "$PDPRootPath\" }
+
+                    $split = $xmlFilePath -split $PDPRootPath, 0, "SimpleMatch" |
+                             Where-Object { -not [String]::IsNullOrWhiteSpace($_) } |
+                             Select-Object -First 1
+                    $language = $split -split "\", 0, "SimpleMatch" |
+                                Where-Object { -not [String]::IsNullOrWhiteSpace($_) } |
+                                Select-Object -First 1
+
+                    Write-Log -Message "Processing [$language]: $xmlFilePath" -Level Verbose
+                    # Skip processing if language is marked for exclusion
+                    if ($language -in $LanguageExclude)
+                    {
+                        $out = "Skipping file '$xmlFilePath' because its lang-code '$language' is in the language exclusion list."
+                        Write-Log -Message $out -Level Verbose
+
+                        return
+                    }
+
+                    $xml = [xml] (Get-Content -Path $xmlFilePath -Encoding UTF8)
+
+                    # ProductDescription node contains the metadata
+                    $ProductDescriptionNode = $xml.ProductDescription
+
+                    # Verify xml conforms to schema
+                    Test-Xml -XsdFile (Get-XsdPath -NamespaceUri $ProductDescriptionNode.xmlns) -XmlFile $xmlFilePath
+
+                    # Handle trailer content
+                    $trailers = $ProductDescriptionNode.Trailers.ChildNodes |
+                        Where-Object NodeType -eq Element
+
+                    $trailerListings = @{}
+                    foreach ($trailer in $trailers)
+                    {
+                        $trailerTitle = $trailer.Title.InnerText.Trim()
+                        $trailerFileName = $trailer.FileName
+
+                        # We start with the fallback language specified on the trailer.
+                        # We continue to climb up to find a more generally defined FallbackLanguage
+                        # until we hit the ProductDescription node.  If one is still not specified
+                        # there, then we'll try using the one specified at the commandline/config file.
+                        $requestedFallbackLanguage = (
+                            $trailer.FallbackLanguage,
+                            $ProductDescriptionNode.Trailers.FallbackLanguage,
+                            $ProductDescriptionNode.FallbackLanguage,
+                            $MediaFallbackLanguage) |
+                                Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+                                Select-Object -First 1
+
+                        $params = @{
+                            'Filename' = $trailerFileName
+                            'ImagesRootPath' = $ImagesRootPath
+                            'Language' = $language
+                            'Release' = $ProductDescriptionNode.Release
+                            'MediaFallbackLanguage' = $requestedFallbackLanguage
+                        }
+
+                        $trailerRelativePackagePath = Get-LocalizedMediaFile @params
+
+                        $requestedFallbackLanguage = (
+                            $trailer.Images.Image.FallbackLanguage,
+                            $trailer.Images.FallbackLanguage,
+                            $trailer.FallbackLanguage,
+                            $ProductDescriptionNode.Trailers.FallbackLanguage,
+                            $ProductDescriptionNode.FallbackLanguage,
+                            $MediaFallbackLanguage) |
+                                Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+                                Select-Object -First 1
+
+                        $params = @{
+                            'Filename' = $trailer.Images.Image.FileName
+                            'ImagesRootPath' = $ImagesRootPath
+                            'Language' = $language
+                            'Release' = $ProductDescriptionNode.Release
+                            'MediaFallbackLanguage' = $requestedFallbackLanguage
+                        }
+
+                        $screenshotRelativePackagePath = Get-LocalizedMediaFile @params
+                        $screenshotDescription = $trailer.Images.Image.InnerText.Trim()
+
+                        $trailerLangCodeListing = [ordered]@{
+                            'title' = $trailerTitle
+                            'imageList' = @(
+                                [ordered]@{
+                                    'fileName' = $screenshotRelativePackagePath
+                                    'description' = $screenshotDescription
+                                }
+                            )
+                        }
+
+                        $trailerListings[$trailerRelativePackagePath] = @{$language = $trailerLangCodeListing}
+                    }
+
+                    Write-Output $trailerListings
                 }
                 catch [System.InvalidCastException]
                 {
@@ -967,10 +1214,10 @@ function Get-LocalizedMediaFile
 
     if ($null -eq $image)
     {
-        $output = "Could not find image [$Filename] in any subdirectory of [$mediaLanguageSourcePath]."
+        $output = "Could not find media file [$Filename] in any subdirectory of [$mediaLanguageSourcePath]."
         if ($null -ne $mediaFallbackLanguageSourcePath)
         {
-            $output += " Image also not found in fallback language location [$mediaFallbackLanguageSourcePath]";
+            $output += " Media file also not found in fallback language location [$mediaFallbackLanguageSourcePath]"
         }
 
         Write-Log -Message $output -Level Error
@@ -979,7 +1226,7 @@ function Get-LocalizedMediaFile
 
     if ($image.Count -gt 1)
     {
-        $output = "More then one version of [$Filename] has been found for this language. Please ensure only one copy of this image exists within the language's sub-folders: [$($image.FullName -join ', ')]"
+        $output = "More then one version of [$Filename] has been found for this language. Please ensure only one copy of this media file exists within the language's sub-folders: [$($image.FullName -join ', ')]"
         Write-Log -Message $output -Level Warning
         #throw $output
     }
@@ -1090,6 +1337,142 @@ function Convert-ListingsMetadata
     Write-Log -Message "Conversion complete." -Level Verbose
 
     return $listings
+}
+
+function Convert-TrailersMetadata
+{
+<#
+    .SYNOPSIS
+        Top-level function for consuming localized metadata about the application's trailers.
+        Each language's .xml file, in a subfolder under XmlListingsRootPath, is parsed and
+        added to the trailers element within the application's listing metadata.
+
+    .PARAMETER PDPRootPath
+        The root path to the directory containing language-specific subfolders holding the
+        localized metadata.
+
+    .PARAMETER PDPInclude
+        The name of the XML file to be parsed (same for every language). Wildcards are allowed.
+        It is okay to specify both 'PDPInclude' and 'PDPExclude'.
+
+    .PARAMETER PDPExclude
+        XML filenames to be excluded from parsing. Wildcards are allowed. It is okay to specify
+        both 'PDPInclude' and 'PDPExclude'.
+
+    .PARAMETER LanguageExclude
+        Array of lang-code strings that SHOULD NOT be processed.
+
+    .PARAMETER ImagesRootPath
+        The root path to the directory where this submission's images are located.
+
+    .PARAMETER MediaFallbackLanguage
+        Some apps may not localize all of their metadata media (images, trailers, etc..)
+        across all languages.  By default, StoreBroker will look in the PDP langcode's subfolder
+        within ImagesRootPath for that language's media content.  If the requested filename is
+        not found, StoreBroker packaging will fail. If you specify a fallback language here
+        (e.g. 'en-us'), then if the requested file isn't found in the PDP language's media
+        subfolder, StoreBroker will then look into the fallback language's media subfolder for
+        the exactly same-named image, and only fail then if it still cannot be found.
+
+    .OUTPUTS
+        Array   An array of all the trailers and their associated localized content (title, screenshot and description)
+
+    .EXAMPLE
+        Convert-TrailersMetadata -PDPRootPath 'C:\PDP\' -PDPInclude 'ProductDescription.xml' -ImagesRootPath 'C:\AppImages'
+
+        Assumes the folder structure:
+        C:\PDP\language1\...\ProductDescription.xml
+        C:\PDP\language2\...\ProductDescription.xml
+#>
+    [CmdletBinding()]
+    [OutputType([Hashtable])]
+    param(
+        [Parameter(Mandatory)]
+        [ValidateScript({
+            if (Test-Path -PathType Container -Path $_) { $true }
+            else { throw "'$_' is not a directory or cannot be found." } })]
+        [string] $PDPRootPath,
+
+        [Parameter(Mandatory)]
+        [AllowNull()]
+        [AllowEmptyString()]
+        [string[]] $PDPInclude,
+
+        [Parameter(Mandatory)]
+        [AllowNull()]
+        [AllowEmptyString()]
+        [string[]] $PDPExclude,
+
+        [Parameter(Mandatory)]
+        [AllowNull()]
+        [AllowEmptyString()]
+        [string[]] $LanguageExclude,
+
+        [Parameter(Mandatory)]
+        [ValidateScript( {
+            if (Test-Path -PathType Container -Path $_) { $true }
+            else { throw "'$_' is not a directory or cannot be found." } })]
+        [Alias('MediaRootPath')]
+        [string] $ImagesRootPath,
+
+        [string] $MediaFallbackLanguage
+    )
+
+    $trailers = @{}
+
+    Write-Log -Message "Converting application trailers metadata." -Level Verbose
+
+    $dictionaries = (Get-ChildItem -File $PDPRootPath -Recurse -Include $PDPInclude -Exclude $PDPExclude).FullName |
+        Convert-TrailersToObject -PDPRootPath $PDPRootPath -LanguageExclude $LanguageExclude -ImagesRootPath $ImagesRootPath -MediaFallbackLanguage $MediaFallbackLanguage
+
+    # What we just got back is an array of dictionaries, where each dictionary
+    # is the trailer data for a single PDP file.  We actually need that merged
+    # together into a single dictionary that contains all of the trailer data
+    # for the entire set of PDP's that were processed.
+    foreach ($dictionary in $dictionaries)
+    {
+        # ...and then each entry in the dictionary is a different trailer,
+        # and its value is another dictionary with a single key (the langcode).
+        # The langcode value entry contains the remaining trailer/langcode-specific
+        # data (trailer title, screenshot path, screenshot description).
+        foreach ($trailer in $dictionary.GetEnumerator())
+        {
+            $trailerRelativeFilePath = $trailer.Key
+
+            $trailerLangData = $trailer.Value.GetEnumerator() | Select-Object -First 1
+            $language = $trailerLangData.Key
+            $trailerData = $trailerLangData.Value
+
+            if ($null -eq $trailers[$trailerRelativeFilePath])
+            {
+                $trailers[$trailerRelativeFilePath] = @{}
+            }
+
+            $trailers[$trailerRelativeFilePath][$language] = $trailerData
+        }
+    }
+
+    # Now that we've normalized the data, we need to convert it into the
+    # object format that the JSON schema is expecting (in this case,
+    # an array of trailers with multi-nested dictionaries).
+    $trailersArray = @()
+    foreach ($trailer in $trailers.GetEnumerator())
+    {
+        # To simplify debugging, we'll ensure that the languages are all sorted
+        $trailerAssets = [ordered]@{}
+        $trailer.Value.GetEnumerator() |
+            Sort-Object -Property Key |
+            ForEach-Object { $trailerAssets[$_.Key] = $_.Value }
+
+        $trailersArray += [ordered]@{
+            'videoFileName' = $trailer.Key
+            'trailerAssets' = $trailerAssets
+        }
+    }
+
+    Write-Log -Message "Conversion complete." -Level Verbose
+
+    return $trailersArray
 }
 
 function Convert-InAppProductListingToObject
@@ -1219,11 +1602,17 @@ function Convert-InAppProductListingToObject
                     $imageFileName = $InAppProductDescriptionNode.icon.fileName
                     if (-not [System.String]::IsNullOrWhiteSpace($imageFileName))
                     {
-                        $requestedFallbackLanguage = $InAppProductDescriptionNode.icon.FallbackLanguage
-                        if ([String]::IsNullOrWhiteSpace($requestedFallbackLanguage))
-                        {
-                            $requestedFallbackLanguage = $MediaFallbackLanguage
-                        }
+
+                        # We start with the fallback language specified on an individual asset.
+                        # We continue to climb up to find a more generally defined FallbackLanguage
+                        # until we hit the ProductDescription node.  If one is still not specified
+                        # there, then we'll try using the one specified at the commandline/config file.
+                        $requestedFallbackLanguage = (
+                            $InAppProductDescriptionNode.icon.FallbackLanguage,
+                            $InAppProductDescriptionNode.FallbackLanguage,
+                            $MediaFallbackLanguage) |
+                                Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+                                Select-Object -First 1
 
                         $params = @{
                             'Filename' = $imageFileName
@@ -2337,6 +2726,13 @@ function Get-SubmissionRequestBody
         }
 
         $submissionRequestBody.listings = Convert-ListingsMetadata @listingsResources
+
+        $submissionRequestBody | Add-Member -MemberType NoteProperty -Name "trailers" -Value (New-Object System.Object)
+
+        # PowerShell will convert an array of a single object back to a single object.
+        # We need to force it to stay as an array, since the Trailers node in the JSON
+        # is an array of trailers.
+        $submissionRequestBody.trailers = @(Convert-TrailersMetadata @listingsResources)
     }
 
     $submissionRequestBody = Remove-DeprecatedProperties -SubmissionRequestBody $submissionRequestBody

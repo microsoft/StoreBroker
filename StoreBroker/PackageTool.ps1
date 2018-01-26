@@ -2914,12 +2914,11 @@ function Join-SubmissionPackage
     # At the moment, the only switch supported is AddPackages, but this may change over time.
     if (-not $AddPackages)
     {
-        $output = @()
-        $output += "You have not specified any `"modification`" switch for joining the packages."
-        $output += "This means that the new package payload will be identical to the Master [$MasterJsonPath]."
-        $output += "If this was not your intention, please read-up on the documentation for this command:"
-        $output += "     Get-Help Join-PackagePayload -ShowWindow"
-        Write-Log $($output -join [Environment]::NewLine) -Level Warning
+        Write-Log -Level Warning -Message @(
+            "You have not specified any `"modification`" switch for joining the packages.",
+            "This means that the new package payload will be identical to the Master [$MasterJsonPath].",
+            "If this was not your intention, please read-up on the documentation for this command:",
+            "     Get-Help Join-PackagePayload -ShowWindow")
     }
 
     # Unpack the zips

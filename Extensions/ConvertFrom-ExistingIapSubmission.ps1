@@ -482,11 +482,10 @@ function Show-ImageFileNames
         return
     }
 
-    $output = @()
-    $output += "You now need to find all of your images and place them here: <ImagesRootPath>\$Release\<langcode>\..."
-    $output += "  where <ImagesRootPath> is the path defined in your config file,"
-    $output += "  and <langcode> is the same langcode for the directory of the PDP file referencing those images."
-    Write-Log $($output -join [Environment]::NewLine)
+    Write-Log -Message @(
+        "You now need to find all of your images and place them here: <ImagesRootPath>\$Release\<langcode>\...",
+        "  where <ImagesRootPath> is the path defined in your config file,",
+        "  and <langcode> is the same langcode for the directory of the PDP file referencing those images.")
 
     # Quick analysis to help teams out if they need to do anything special with their PDP's
 
@@ -514,12 +513,11 @@ function Show-ImageFileNames
     # Now show the user the image filenames
     if ($imagesDiffer)
     {
-        $output = @()
-        $output += "It appears that you don't have consistent images across all languages."
-        $output += "While StoreBroker supports this scenario, some localization systems may"
-        $output += "not support this without additional work.  Please refer to the FAQ in"
-        $output += "the documentation for more info on how to best handle this scenario."
-        Write-Log $($output -join [Environment]::NewLine) -Level Warning
+        Write-Log -Level Warning -Message @(
+            "It appears that you don't have consistent images across all languages.",
+            "While StoreBroker supports this scenario, some localization systems may",
+            "not support this without additional work.  Please refer to the FAQ in",
+            "the documentation for more info on how to best handle this scenario.")
 
         $output = @()
         $output += "The currently referenced image filenames, per langcode, are as follows:"
@@ -528,14 +526,13 @@ function Show-ImageFileNames
             $output += " * [$langCode]: " + ($LangImageNames.$langCode -join ", ")
         }
 
-        Write-Log $($output -join [Environment]::NewLine)
+        Write-Log $output
     }
     else
     {
-        $output = @()
-        $output += "Every language that has a PDP references the following images:"
-        $output += "`t$($seenImages -join `"`n`t`")"
-        Write-Log $($output -join [Environment]::NewLine)
+        Write-Log -Message @(
+            "Every language that has a PDP references the following images:",
+            "`t$($seenImages -join `"`n`t`")")
     }
 }
 
@@ -592,11 +589,10 @@ function Main
     }
     else
     {
-        $output = @()
-        $output += "No PDPs were generated."
-        $output += "Please verify that this existing In-App Product has one or more language listings that this extension can convert,"
-        $output += "otherwise you can start fresh using the sample PDP\InAppProductDescription.xml as a starting point."
-        Write-Log $($output -join [Environment]::NewLine) -Level Warning
+        Write-Log -Level Warning -Message @(
+            "No PDPs were generated.",
+            "Please verify that this existing In-App Product has one or more language listings that this extension can convert,",
+            "otherwise you can start fresh using the sample PDP\InAppProductDescription.xml as a starting point.")
     }
 }
 

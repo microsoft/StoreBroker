@@ -429,7 +429,9 @@ function Write-Log
         The Git repo for this module can be found here: http://aka.ms/StoreBroker
 
     .PARAMETER Message
-        The message(s) to be logged. This parameter supports pipelining but there are no
+        The message(s) to be logged. Each element of the array will be written to a separate line.
+
+        This parameter supports pipelining but there are no
         performance benefits to doing so. For more information, see the .NOTES for this
         cmdlet.
 
@@ -475,7 +477,7 @@ function Write-Log
 
         Logs the message:
 
-        Write-LogHelper : 2018-01-23 12:57:37 : dabelc : There was a problem.
+        Write-Log : 2018-01-23 12:57:37 : dabelc : There was a problem.
         Here is the exception information:
         You cannot call a method on a null-valued expression.
         At line:1 char:7

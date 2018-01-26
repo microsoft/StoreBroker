@@ -29,7 +29,7 @@ function Get-NugetExe
     {
         $sourceNugetExe = "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe"
         $script:nugetExePath = Join-Path $(New-TemporaryDirectory) "nuget.exe"
-    
+
         Write-Log "Downloading $sourceNugetExe to $script:nugetExePath" -Level Verbose
         Invoke-WebRequest $sourceNugetExe -OutFile $script:nugetExePath
     }
@@ -118,11 +118,11 @@ function Get-NugetPackage
 
                 if (-not [System.String]::IsNullOrEmpty($Version))
                 {
-                    & $NugetPath install $PackageName -o $TargetPath -version $Version -source nuget.org 
+                    & $NugetPath install $PackageName -o $TargetPath -version $Version -source nuget.org
                 }
                 else
                 {
-                    & $NugetPath install $PackageName -o $TargetPath -source nuget.org 
+                    & $NugetPath install $PackageName -o $TargetPath -source nuget.org
                 }
             }
 
@@ -138,7 +138,7 @@ function Get-NugetPackage
                 Receive-Job $jobName -AutoRemoveJob -Wait -ErrorAction SilentlyContinue -ErrorVariable remoteErrors | Out-Null
             }
         }
-           
+
         if ($remoteErrors.Count -gt 0)
         {
             throw $remoteErrors[0].Exception
@@ -224,14 +224,14 @@ function Get-NugetPackageDllPath
         on the machine, and returns the path to it.
 
         This will first look for the assembly in the module's script directory.
-        
+
         Next it will look for the assembly in the location defined by
         $SBAlternateAssemblyDir.  This value would have to be defined by the user
         prior to execution of this cmdlet.
-        
+
         If not found there, it will look in a temp folder established during this
         PowerShell session.
-        
+
         If still not found, it will download the nuget package
         for it to a temp folder accessible during this PowerShell session.
 
@@ -354,14 +354,13 @@ function Get-NugetPackageDllPath
     $cachedAssemblyPath = Join-Path $(Join-Path $script:tempAssemblyCacheDir $AssemblyPackageTailDirectory) $AssemblyName
     if (Test-Path -Path $cachedAssemblyPath -PathType Leaf)
     {
-        $output = @()
-        $output += "To avoid this download delay in the future, copy the following file:"
-        $output += "  [$cachedAssemblyPath]"
-        $output += "either to:"
-        $output += "  [$PSScriptRoot]"
-        $output += "or to:"
-        $output += "  a directory of your choosing, and save that directory path to `$SBAlternateAssemblyDir"
-        Write-Log $($output -join [Environment]::NewLine)
+        Write-Log -Message @(
+            "To avoid this download delay in the future, copy the following file:",
+            "  [$cachedAssemblyPath]",
+            "either to:",
+            "  [$PSScriptRoot]",
+            "or to:",
+            "  a directory of your choosing, and save that directory path to `$SBAlternateAssemblyDir")
 
         return $cachedAssemblyPath
     }

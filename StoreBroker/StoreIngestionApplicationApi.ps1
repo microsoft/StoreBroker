@@ -300,7 +300,7 @@ function Format-Application
 
     End
     {
-       Write-Log $($output -join [Environment]::NewLine)
+       Write-Log $output
     }
 }
 
@@ -524,7 +524,7 @@ function Format-ApplicationSubmission
 
     End
     {
-        Write-Log $($output -join [Environment]::NewLine)
+        Write-Log $output
     }
 }
 
@@ -1079,15 +1079,14 @@ function Update-ApplicationSubmission
     {
         $configPath = Join-Path -Path ([System.Environment]::GetFolderPath('Desktop')) -ChildPath 'newconfig.json'
 
-        $output = @()
-        $output += "The config file used to generate this submission did not have an AppId defined in it."
-        $output += "The AppId entry in the config helps ensure that payloads are not submitted to the wrong application."
-        $output += "Please update your app's StoreBroker config file by adding an `"appId`" property with"
-        $output += "your app's AppId to the `"appSubmission`" section.  If you're unclear on what change"
-        $output += "needs to be done, you can re-generate your config file using"
-        $output += "   New-StoreBrokerConfigFile -AppId $AppId -Path `"$configPath`""
-        $output += "and then diff the new config file against your current one to see the requested appId change."
-        Write-Log $($output -join [Environment]::NewLine) -Level Warning
+        Write-Log -Level Warning -Message @(
+            "The config file used to generate this submission did not have an AppId defined in it.",
+            "The AppId entry in the config helps ensure that payloads are not submitted to the wrong application.",
+            "Please update your app's StoreBroker config file by adding an `"appId`" property with",
+            "your app's AppId to the `"appSubmission`" section.  If you're unclear on what change",
+            "needs to be done, you can re-generate your config file using",
+            "   New-StoreBrokerConfigFile -AppId $AppId -Path `"$configPath`"",
+            "and then diff the new config file against your current one to see the requested appId change.")
     }
     else
     {
@@ -1115,12 +1114,11 @@ function Update-ApplicationSubmission
         (-not $UpdateAppProperties) -and
         (-not $UpdateNotesForCertification))
     {
-        $output = @()
-        $output += "You have not specified any `"modification`" switch for updating the submission."
-        $output += "This means that the new submission will be identical to the current one."
-        $output += "If this was not your intention, please read-up on the documentation for this command:"
-        $output += "     Get-Help Update-ApplicationSubmission -ShowWindow"
-        Write-Log $($output -join [Environment]::NewLine) -Level Warning
+        Write-Log -Level Warning -Message @(
+            "You have not specified any `"modification`" switch for updating the submission.",
+            "This means that the new submission will be identical to the current one.",
+            "If this was not your intention, please read-up on the documentation for this command:",
+            "     Get-Help Update-ApplicationSubmission -ShowWindow")
     }
 
     if ([System.String]::IsNullOrEmpty($AccessToken))
@@ -1187,15 +1185,14 @@ function Update-ApplicationSubmission
         $submissionId = $replacedSubmission.id
         $uploadUrl = $replacedSubmission.fileUploadUrl
 
-        $output = @()
-        $output += "Successfully cloned the existing submission and modified its content."
-        $output += "You can view it on the Dev Portal here:"
-        $output += "    https://dev.windows.com/en-us/dashboard/apps/$AppId/submissions/$submissionId/"
-        $output += "or by running this command:"
-        $output += "    Get-ApplicationSubmission -AppId $AppId -SubmissionId $submissionId | Format-ApplicationSubmission"
-        $output += ""
-        $output += $script:manualPublishWarning -f 'Update-ApplicationSubmission'
-        Write-Log $($output -join [Environment]::NewLine)
+        Write-Log -Message @(
+            "Successfully cloned the existing submission and modified its content.",
+            "You can view it on the Dev Portal here:",
+            "    https://dev.windows.com/en-us/dashboard/apps/$AppId/submissions/$submissionId/",
+            "or by running this command:",
+            "    Get-ApplicationSubmission -AppId $AppId -SubmissionId $submissionId | Format-ApplicationSubmission",
+            "",
+            $script:manualPublishWarning -f 'Update-ApplicationSubmission')
 
         if (![System.String]::IsNullOrEmpty($PackagePath))
         {
@@ -1204,10 +1201,9 @@ function Update-ApplicationSubmission
         }
         elseif (!$AutoCommit)
         {
-            $output = @()
-            $output += "Your next step is to upload the package using:"
-            $output += "  Upload-SubmissionPackage -PackagePath <package> -UploadUrl `"$uploadUrl`""
-            Write-Log $($output -join [Environment]::NewLine)
+            Write-Log -Message @(
+                "Your next step is to upload the package using:",
+                "  Upload-SubmissionPackage -PackagePath <package> -UploadUrl `"$uploadUrl`"")
         }
 
         if ($AutoCommit)
@@ -1226,10 +1222,9 @@ function Update-ApplicationSubmission
         }
         else
         {
-            $output = @()
-            $output += "When you're ready to commit, run this command:"
-            $output += "  Commit-ApplicationSubmission -AppId $AppId -SubmissionId $submissionId"
-            Write-Log $($output -join [Environment]::NewLine)
+            Write-Log -Message @(
+                "When you're ready to commit, run this command:",
+                "  Commit-ApplicationSubmission -AppId $AppId -SubmissionId $submissionId")
         }
 
         # Record the telemetry for this event.
@@ -1431,13 +1426,12 @@ function Patch-ApplicationSubmission
         $PatchedSubmission.packageDeliveryOptions.packageRollout.isPackageRollout = $true
         $PatchedSubmission.packageDeliveryOptions.packageRollout.packageRolloutPercentage = $PackageRolloutPercentage
 
-        $output = @()
-        $output += "Your rollout selections apply to all of your packages, but will only apply to your customers running OS"
-        $output += "versions that support package flights (Windows.Desktop build 10586 or later; Windows.Mobile build 10586.63"
-        $output += "or later, and Xbox), including any customers who get the app via Store-managed licensing via the"
-        $output += "Windows Store for Business.  When using gradual package rollout, customers on earlier OS versions will not"
-        $output += "get packages from the latest submission until you finalize the package rollout."
-        Write-Log $($output -join [Environment]::NewLine) -Level Warning
+        Write-Log -Level Warning -Message @(
+            "Your rollout selections apply to all of your packages, but will only apply to your customers running OS",
+            "versions that support package flights (Windows.Desktop build 10586 or later; Windows.Mobile build 10586.63",
+            "or later, and Xbox), including any customers who get the app via Store-managed licensing via the",
+            "Windows Store for Business.  When using gradual package rollout, customers on earlier OS versions will not",
+            "get packages from the latest submission until you finalize the package rollout.")
     }
 
     $PatchedSubmission.packageDeliveryOptions.isMandatoryUpdate = [bool]$IsMandatoryUpdate
@@ -1817,19 +1811,18 @@ function Complete-ApplicationSubmission
 
         $null = Invoke-SBRestMethod @params
 
-        $output = @()
-        $output += "The submission has been successfully committed."
-        $output += "This is just the beginning though."
-        $output += "It still has multiple phases of validation to get through, and there's no telling how long that might take."
-        $output += "You can view the progress of the submission validation on the Dev Portal here:"
-        $output += "    https://dev.windows.com/en-us/dashboard/apps/$AppId/submissions/$submissionId/"
-        $output += "or by running this command:"
-        $output += "    Get-ApplicationSubmission -AppId $AppId -SubmissionId $submissionId | Format-ApplicationSubmission"
-        $output += "You can automatically monitor this submission with this command:"
-        $output += "    Start-ApplicationSubmissionMonitor -AppId $AppId -SubmissionId $submissionId -EmailNotifyTo $env:username"
-        $output += ""
-        $output += $script:manualPublishWarning -f 'Update-ApplicationSubmission'
-        Write-Log $($output -join [Environment]::NewLine)
+        Write-Log -Message @(
+            "The submission has been successfully committed.",
+            "This is just the beginning though.",
+            "It still has multiple phases of validation to get through, and there's no telling how long that might take.",
+            "You can view the progress of the submission validation on the Dev Portal here:",
+            "    https://dev.windows.com/en-us/dashboard/apps/$AppId/submissions/$submissionId/",
+            "or by running this command:",
+            "    Get-ApplicationSubmission -AppId $AppId -SubmissionId $submissionId | Format-ApplicationSubmission",
+            "You can automatically monitor this submission with this command:",
+            "    Start-ApplicationSubmissionMonitor -AppId $AppId -SubmissionId $submissionId -EmailNotifyTo $env:username",
+            "",
+            $script:manualPublishWarning -f 'Update-ApplicationSubmission')
     }
     catch [System.InvalidOperationException]
     {
@@ -2011,13 +2004,12 @@ function Update-ApplicationSubmissionPackageRollout
 
         if ($Percentage -eq 100)
         {
-            $output = @()
-            $output += "Changing the rollout percentage to 100% does not ensure that all of your customers will get the"
-            $output += "packages from the latest submissions, because some customers may be on OS versions that don't"
-            $output += "support rollout. You must finalize the rollout in order to stop distributing the older packages"
-            $output += "and update all existing customers to the newer ones by calling"
-            $output += "    Complete-ApplicationFlightSubmissionPackageRollout -AppId $AppId -FlightId $FlightId -SubmissionId $SubmissionId"
-            Write-Log $($output -join [Environment]::NewLine) -Level Warning
+            Write-Log -Level Warning -Message @(
+                "Changing the rollout percentage to 100% does not ensure that all of your customers will get the",
+                "packages from the latest submissions, because some customers may be on OS versions that don't",
+                "support rollout. You must finalize the rollout in order to stop distributing the older packages",
+                "and update all existing customers to the newer ones by calling",
+                "    Complete-ApplicationFlightSubmissionPackageRollout -AppId $AppId -FlightId $FlightId -SubmissionId $SubmissionId")
         }
     }
     catch [System.InvalidOperationException]
@@ -2105,18 +2097,16 @@ function Stop-ApplicationSubmissionPackageRollout
 
         $result = Invoke-SBRestMethod @params
 
-        $output = @()
-        $output += "Package rollout for this submission has been halted."
-        $output += "Users will now receive the packages from SubmissionId: $($result.fallbackSubmissionId)"
-        Write-Log $($output -join [Environment]::NewLine)
+        Write-Log -Message @(
+            "Package rollout for this submission has been halted.",
+            "Users will now receive the packages from SubmissionId: $($result.fallbackSubmissionId)")
 
-        $output = @()
-        $output += "Any customers who already have the newer packages will keep those packages; they won't be rolled back to the previous version."
-        $output += "To provide an update to these customers, you'll need to create a new submission with the packages you'd like them to get."
-        $output += "Note that if you use a gradual rollout in your next submission, customers who had the package you halted will be offered"
-        $output += "the new update in the same order they were offered the halted package.  The new rollout will be between your last finalized"
-        $output += "submission and your newest submission; once you halt a package rollout, those packages will no longer be distributed to any customers."
-        Write-Log $($output -join [Environment]::NewLine) -Level Warning
+        Write-Log -Level Warning -Message @(
+            "Any customers who already have the newer packages will keep those packages; they won't be rolled back to the previous version.",
+            "To provide an update to these customers, you'll need to create a new submission with the packages you'd like them to get.",
+            "Note that if you use a gradual rollout in your next submission, customers who had the package you halted will be offered",
+            "the new update in the same order they were offered the halted package.  The new rollout will be between your last finalized",
+            "submission and your newest submission; once you halt a package rollout, those packages will no longer be distributed to any customers.")
     }
     catch [System.InvalidOperationException]
     {

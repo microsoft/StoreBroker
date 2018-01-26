@@ -696,10 +696,9 @@ function Flush-TelemetryClient
     catch
     {
         # Any other scenario is one that we want to identify and fix so that we don't miss telemetry
-        $output = @()
-        $output += "Encountered a problem while trying to record telemetry events."
-        $output += "This is non-fatal, but it would be helpful if you could report this problem"
-        $output += "to the StoreBroker team for further investigation:"
-        Write-Log $($output -join [Environment]::NewLine) -Exception $_ -Level Warning
+        Write-Log -Level Warning -Exception $_ -Message @(
+            "Encountered a problem while trying to record telemetry events.",
+            "This is non-fatal, but it would be helpful if you could report this problem",
+            "to the StoreBroker team for further investigation:")
     }
 }

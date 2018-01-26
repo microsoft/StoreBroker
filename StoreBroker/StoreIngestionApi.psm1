@@ -410,10 +410,10 @@ function Get-AccessToken
     $credential = $script:authCredential
     if ($null -eq $credential)
     {
-        $output = @()
-        $output += "Prompting for credentials."
-        $output += "To avoid doing this every time, consider using Set-StoreBrokerAuthentication to cache the values for this session."
-        Write-Log $($output -join [Environment]::NewLine)
+        Write-Log -Message @(
+            "Prompting for credentials.",
+            "To avoid doing this every time, consider using Set-StoreBrokerAuthentication to cache the values for this session.")
+
         $credential = Get-Credential -Message "Enter your client id as your username, and your client secret as your password. ***To avoid getting this prompt every time, consider using Set-StoreBrokerAuthentication.***"
     }
 
@@ -1377,7 +1377,7 @@ function Start-SubmissionMonitor
                     $shouldMonitor = $false
                 }
 
-                Write-Log $($body -join [Environment]::NewLine)
+                Write-Log $body
 
                 if ($EmailNotifyTo.Count -gt 0)
                 {

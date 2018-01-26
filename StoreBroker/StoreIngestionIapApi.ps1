@@ -296,7 +296,7 @@ function Format-InAppProduct
 
     End
     {
-        Write-Log $($output -join [Environment]::NewLine)
+        Write-Log $output
     }
 }
 
@@ -854,7 +854,7 @@ function Format-InAppProductSubmission
 
     End
     {
-        Write-Log $($output -join [Environment]::NewLine)
+        Write-Log $output
     }
 }
 
@@ -1312,15 +1312,14 @@ function Update-InAppProductSubmission
     {
         $configPath = Join-Path -Path ([System.Environment]::GetFolderPath('Desktop')) -ChildPath 'newconfig.json'
 
-        $output = @()
-        $output += "The config file used to generate this submission did not have an IapId defined in it."
-        $output += "The IapId entry in the config helps ensure that payloads are not submitted to the wrong In-App Product."
-        $output += "Please update your app's StoreBroker config file by adding an `"iapId`" property with"
-        $output += "your IAP's IapId to the `"iapSubmission`" section.  If you're unclear on what change"
-        $output += "needs to be done, you can re-generate your config file using"
-        $output += "   New-StoreBrokerInAppProductConfigFile -IapId $IapId -Path `"$configPath`""
-        $output += "and then diff the new config file against your current one to see the requested iapId change."
-        Write-Log $($output -join [Environment]::NewLine) -Level Warning
+        Write-Log -Level Warning -Message @(
+            "The config file used to generate this submission did not have an IapId defined in it.",
+            "The IapId entry in the config helps ensure that payloads are not submitted to the wrong In-App Product.",
+            "Please update your app's StoreBroker config file by adding an `"iapId`" property with",
+            "your IAP's IapId to the `"iapSubmission`" section.  If you're unclear on what change",
+            "needs to be done, you can re-generate your config file using",
+            "   New-StoreBrokerInAppProductConfigFile -IapId $IapId -Path `"$configPath`"",
+            "and then diff the new config file against your current one to see the requested iapId change.")
     }
     else
     {
@@ -1345,12 +1344,11 @@ function Update-InAppProductSubmission
         (-not $UpdatePricingAndAvailability) -and
         (-not $UpdateProperties))
     {
-        $output = @()
-        $output += "You have not specified any `"modification`" switch for updating the submission."
-        $output += "This means that the new submission will be identical to the current one."
-        $output += "If this was not your intention, please read-up on the documentation for this command:"
-        $output += "     Get-Help Update-InAppProductSubmission -ShowWindow"
-        Write-Log $($output -join [Environment]::NewLine) -Level Warning
+        Write-Log -Level Warning -Message @(
+            "You have not specified any `"modification`" switch for updating the submission.",
+            "This means that the new submission will be identical to the current one.",
+            "If this was not your intention, please read-up on the documentation for this command:",
+            "     Get-Help Update-InAppProductSubmission -ShowWindow")
     }
 
     if ([System.String]::IsNullOrEmpty($AccessToken))
@@ -1408,15 +1406,14 @@ function Update-InAppProductSubmission
         $submissionId = $replacedSubmission.id
         $uploadUrl = $replacedSubmission.fileUploadUrl
 
-        $output = @()
-        $output += "Successfully cloned the existing submission and modified its content."
-        $output += "You can view it on the Dev Portal here:"
-        $output += "    https://dev.windows.com/en-us/dashboard/iaps/$IapId/submissions/$submissionId/"
-        $output += "or by running this command:"
-        $output += "    Get-InAppProductSubmission -IapId $IapId -SubmissionId $submissionId | Format-InAppProductSubmission"
-        $output += ""
-        $output += $script:manualPublishWarning -f 'Update-InAppProductSubmission'
-        Write-Log $($output -join [Environment]::NewLine)
+        Write-Log -Message @(
+            "Successfully cloned the existing submission and modified its content.",
+            "You can view it on the Dev Portal here:",
+            "    https://dev.windows.com/en-us/dashboard/iaps/$IapId/submissions/$submissionId/",
+            "or by running this command:",
+            "    Get-InAppProductSubmission -IapId $IapId -SubmissionId $submissionId | Format-InAppProductSubmission",
+            "",
+            $script:manualPublishWarning -f 'Update-InAppProductSubmission')
 
         if (![System.String]::IsNullOrEmpty($PackagePath))
         {
@@ -1425,10 +1422,9 @@ function Update-InAppProductSubmission
         }
         elseif (!$AutoCommit)
         {
-            $output = @()
-            $output += "Your next step is to upload the package using:"
-            $output += "  Upload-SubmissionPackage -PackagePath <package> -UploadUrl `"$uploadUrl`""
-            Write-Log $($output -join [Environment]::NewLine)
+            Write-Log -Message @(
+                "Your next step is to upload the package using:",
+                "  Upload-SubmissionPackage -PackagePath <package> -UploadUrl `"$uploadUrl`"")
         }
 
         if ($AutoCommit)
@@ -1447,10 +1443,9 @@ function Update-InAppProductSubmission
         }
         else
         {
-            $output = @()
-            $output += "When you're ready to commit, run this command:"
-            $output += "  Commit-InAppProductSubmission -IapId $IapId -SubmissionId $submissionId"
-            Write-Log $($output -join [Environment]::NewLine)
+            Write-Log -Message @(
+                "When you're ready to commit, run this command:",
+                "  Commit-InAppProductSubmission -IapId $IapId -SubmissionId $submissionId")
         }
 
         # Record the telemetry for this event.
@@ -1877,19 +1872,18 @@ function Complete-InAppProductSubmission
 
         $null = Invoke-SBRestMethod @params
 
-        $output = @()
-        $output += "The submission has been successfully committed."
-        $output += "This is just the beginning though."
-        $output += "It still has multiple phases of validation to get through, and there's no telling how long that might take."
-        $output += "You can view the progress of the submission validation on the Dev Portal here:"
-        $output += "    https://dev.windows.com/en-us/dashboard/iaps/$IapId/submissions/$submissionId/"
-        $output += "or by running this command:"
-        $output += "    Get-InAppProductSubmission -IapId $IapId -SubmissionId $submissionId | Format-InAppProductSubmission"
-        $output += "You can automatically monitor this submission with this command:"
-        $output += "    Start-InAppProductSubmissionMonitor -IapId $IapId -SubmissionId $submissionId -EmailNotifyTo $env:username"
-        $output += ""
-        $output += $script:manualPublishWarning -f 'Update-InAppProductSubmission'
-        Write-Log $($output -join [Environment]::NewLine)
+        Write-Log -Message @(
+            "The submission has been successfully committed.",
+            "This is just the beginning though.",
+            "It still has multiple phases of validation to get through, and there's no telling how long that might take.",
+            "You can view the progress of the submission validation on the Dev Portal here:",
+            "    https://dev.windows.com/en-us/dashboard/iaps/$IapId/submissions/$submissionId/",
+            "or by running this command:",
+            "    Get-InAppProductSubmission -IapId $IapId -SubmissionId $submissionId | Format-InAppProductSubmission",
+            "You can automatically monitor this submission with this command:",
+            "    Start-InAppProductSubmissionMonitor -IapId $IapId -SubmissionId $submissionId -EmailNotifyTo $env:username",
+            "",
+            $script:manualPublishWarning -f 'Update-InAppProductSubmission')
     }
     catch [System.InvalidOperationException]
     {

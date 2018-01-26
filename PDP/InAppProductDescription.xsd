@@ -1,14 +1,20 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<xs:schema 
-  attributeFormDefault="unqualified" 
-  elementFormDefault="qualified" 
-  targetNamespace="http://schemas.microsoft.com/appx/2012/InAppProductDescription" 
+<xs:schema
+  attributeFormDefault="unqualified"
+  elementFormDefault="qualified"
+  targetNamespace="http://schemas.microsoft.com/appx/2012/InAppProductDescription"
   xmlns:xs="http://www.w3.org/2001/XMLSchema"
   xmlns:tns="http://schemas.microsoft.com/appx/2012/InAppProductDescription">
 
   <xs:simpleType name="NonNullNormalizedString">
     <xs:restriction base="xs:normalizedString">
       <xs:minLength value="1" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="LangCodeString">
+    <xs:restriction base="xs:normalizedString">
+      <xs:pattern value="\s*(\S(\r|\n|.){0,29}\s*)?"/>
     </xs:restriction>
   </xs:simpleType>
 
@@ -36,13 +42,7 @@
         </xs:restriction>
       </xs:simpleType>
     </xs:attribute>
-    <xs:attribute name="FallbackLanguage">
-      <xs:simpleType>
-        <xs:restriction base="xs:string">
-          <xs:maxLength value="255" />
-        </xs:restriction>
-      </xs:simpleType>
-    </xs:attribute>
+    <xs:attribute name="FallbackLanguage" type="tns:LangCodeString" />
   </xs:attributeGroup>
 
   <xs:simpleType name="ReleaseString">
@@ -107,6 +107,7 @@
       </xs:all>
       <xs:attribute name="language" type="xs:language" use="required" />
       <xs:attribute name="Release" type="tns:ReleaseString" use="required" />
+      <xs:attribute name="FallbackLanguage" type="tns:LangCodeString" />
     </xs:complexType>
   </xs:element>
 </xs:schema>

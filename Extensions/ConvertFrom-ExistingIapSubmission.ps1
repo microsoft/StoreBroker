@@ -21,6 +21,9 @@
         The most recent submission for IapId will be used unless a value for this parameter is
         provided.
 
+    .PARAMETER SubmissionId
+        The submission object that you want to convert, which was previously retrieved.
+
     .PARAMETER Release
         The release to use.  This value will be placed in each new PDP and used in conjunction with '-OutPath'.
         Some examples could be "1601" for a January 2016 release, "March 2016", or even just "1".
@@ -36,14 +39,48 @@
         Each of these sub-folders will have region-specific subfolders for their file content.
 
     .EXAMPLE
-        .\ConvertFrom-ExistingSubmission -IapId 0ABCDEF12345 -Release "March Release" -OutPath "C:\NewPDPs"
+        .\ConvertFrom-ExistingIapSubmission -IapId 0ABCDEF12345 -Release "March Release" -OutPath "C:\NewPDPs"
+
+        Converts the data from the last published submission for IapId 0ABCDEF12345.  The generated files
+        will use the default name of "PDP.xml" and be located in lang-code specific sub-directories within
+        c:\NewPDPs.
+
+    .EXAMPLE
+        .\ConvertFrom-ExistingIapSubmission -IapId 0ABCDEF12345 -SubmissionId 1234567890123456789 -Release "March Release" -PdpFileName "InAppProductDescription.xml" -OutPath "C:\NewPDPs"
+
+        Converts the data from submission 1234567890123456789 for IapId 0ABCDEF12345 (which might be a
+        published or pending submission).  The generated files will be named "InAppProductDescription.xml" and
+        will be located in lang-code specific sub-directories within c:\NewPDPs.
+
+    .EXAMPLE
+        .\ConvertFrom-ExistingIapSubmission -Submission $sub -Release "March Release" -OutPath "C:\NewPDPs"
+
+        Converts the data from a submission object that was captured earlier in your PowerShell session.
+        It might have come from Get-InAppProductSubmission, or it might have been generated some other way.
+        This method of running the script was created more for debugging purposes, but others may find it
+        useful. The generated files will use the default name of "PDP.xml" and be located in lang-code
+        specific sub-directories within c:\NewPDPs.
 #>
-[CmdletBinding()]
+[CmdletBinding(
+    SupportsShouldProcess,
+    DefaultParametersetName = "UseApi")]
 param(
-    [Parameter(Mandatory)]
+    [Parameter(
+        Mandatory,
+        ParameterSetName = "UseApi",
+        Position = 0)]
     [string] $IapId,
 
+    [Parameter(
+        ParameterSetName = "UseApi",
+        Position = 1)]
     [string] $SubmissionId = $null,
+
+    [Parameter(
+        Mandatory,
+        ParameterSetName = "ProvideSubmission",
+        Position = 0)]
+    [PSCustomObject] $Submission = $null,
 
     [Parameter(Mandatory)]
     [string] $Release,
@@ -205,7 +242,7 @@ function Add-Title
     $maxChars = 100
     $paramSet = @{
         "Element" = $elementNode;
-        "Attribute" = @{ $script:LocIdAttribute = $script:LocIdFormat -f $elementName };
+        "Attribute" = @{ $script:LocIdAttribute = ($script:LocIdFormat -f $elementName) };
         "Comment" = @(
             " [required] ",
             ($script:CommentFormat -f $maxChars, "IAP $elementName"))
@@ -242,7 +279,7 @@ function Add-Description
     $maxChars = 200
     $paramSet = @{
         "Element" = $elementNode;
-        "Attribute" = @{ $script:LocIdAttribute = $script:LocIdFormat -f $elementName };
+        "Attribute" = @{ $script:LocIdAttribute = ($script:LocIdFormat -f $elementName) };
         "Comment" = @(
             " [optional] ",
             ($script:CommentFormat -f $maxChars, "IAP $elementName"))
@@ -552,18 +589,22 @@ function Main
         throw $message
     }
 
-    if ([String]::IsNullOrEmpty($SubmissionId))
+    $sub = $Submission
+    if ($null -eq $sub)
     {
-        $iap = Get-InAppProduct -IapId $IapId
-        $SubmissionId = $iap.lastPublishedInAppProductSubmission.id
         if ([String]::IsNullOrEmpty($SubmissionId))
         {
-            $SubmissionId = $iap.pendingInAppProductSubmission.id
-            Write-Log -Message "No published submission exists for this In-App Product.  Using the current pending submission." -Level Warning
+            $iap = Get-InAppProduct -IapId $IapId
+            $SubmissionId = $iap.lastPublishedInAppProductSubmission.id
+            if ([String]::IsNullOrEmpty($SubmissionId))
+            {
+                $SubmissionId = $iap.pendingInAppProductSubmission.id
+                Write-Log -Message "No published submission exists for this In-App Product.  Using the current pending submission." -Level Warning
+            }
         }
-    }
 
-    $sub = Get-InAppProductSubmission -IapId $IapId -SubmissionId $SubmissionId
+        $sub = Get-InAppProductSubmission -IapId $IapId -SubmissionId $SubmissionId
+    }
 
     $langImageNames = @{}
     $langs = ($sub.listings | Get-Member -type NoteProperty)

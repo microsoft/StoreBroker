@@ -293,6 +293,7 @@ function Format-Application
         $output += "Primary Name              : $($ApplicationData.primaryName)"
         $output += "Id                        : $($ApplicationData.id)"
         $output += "Package Family Name       : $($ApplicationData.packageFamilyName)"
+        $output += "Supports Advanced Listings: $($ApplicationData.hasAdvancedListingPermission)"
         $output += "First Published Date      : $(Get-Date -Date $ApplicationData.firstPublishedDate -Format R)"
         $output += "Last Published Submission : $($ApplicationData.lastPublishedApplicationSubmission.id)"
         $output += "Pending Submission        : $(if ($null -eq $ApplicationData.pendingApplicationSubmission.id) { "---" } else { $ApplicationData.pendingApplicationSubmission.id } )"
@@ -432,6 +433,31 @@ function Format-ApplicationSubmission
 
     Process
     {
+        # Normalize the trailer data by language so that the data can be displayed
+        # with the rest of the language listing information
+        $trailers = $ApplicationSubmissionData.trailers
+        $trailerByLang = [ordered]@{}
+        foreach ($trailer in $ApplicationSubmissionData.trailers)
+        {
+            foreach ($lang in ($trailer.trailerAssets | Get-Member -type NoteProperty).Name)
+            {
+                $trailerData = [PSCustomObject]@{
+                    fileName = $trailer.videoFileName
+                    fileId = $trailer.videoFileId
+                    title = $trailer.trailerAssets.$lang.title
+                    screenshot = $trailer.trailerAssets.$lang.imageList[0].fileName
+                    screenshotDescription = $trailer.trailerAssets.$lang.imageList[0].description
+                }
+
+                if ($null -eq $trailerByLang[$lang])
+                {
+                    $trailerByLang[$lang] = @()
+                }
+
+                $trailerByLang[$lang] += $trailerData
+            }
+        }
+
         $output += ""
         $output += "Submission Id                       : $($ApplicationSubmissionData.id)"
         $output += "Friendly Name                       : $($ApplicationSubmissionData.friendlyName)"
@@ -501,8 +527,39 @@ function Format-ApplicationSubmission
             $output += "$(" " * $indentLength)Images              : {0}" -f $(if ($listings.$lang.baseListing.images.count -eq 0) { "<None>" } else { "" })
             $output += $listings.$lang.baseListing.images | Format-SimpleTableString -IndentationLevel $($indentLength * 2)
             $output += ""
+
+            # Only show the Trailers section if the application has advanced listing support
+            # (the section will be null / won't exist if the app doesn't have that support)
+            if ($null -ne $trailers)
+            {
+                $langTrailers = $trailerByLang[$lang]
+                $output += "$(" " * $indentLength)Trailers            : {0}" -f $(if ($langTrailers.count -eq 0) { "<None>" } else { "" })
+                $output += $langTrailers | Format-SimpleTableString -IndentationLevel $($indentLength * 2)
+                $output += ""
+            }
+
             $output += "$(" " * $indentLength)Platform Overrides  : {0}" -f $(if ($listings.$lang.platformOverrides) { "<None>" } else { "" })
             $output += $listings.$lang.platformOverrides | Format-SimpleTableString -IndentationLevel $indentLength
+            $output += ""
+        }
+
+        # Only show the Gaming Options section if the application has advanced listing support
+        # (the section will be null / won't exist if the app doesn't have that support)
+        if ($null -ne $ApplicationSubmissionData.gamingOptions)
+        {
+            $output += "Gaming Options"
+            $output += "$(" " * $indentLength)Genres                          : $($ApplicationSubmissionData.gamingOptions.genres -join ', ')"
+            $output += "$(" " * $indentLength)isLocalMultiplayer              : $($ApplicationSubmissionData.gamingOptions.isLocalMultiplayer)"
+            $output += "$(" " * $indentLength)isLocalCooperative              : $($ApplicationSubmissionData.gamingOptions.isLocalCooperative)"
+            $output += "$(" " * $indentLength)isOnlineMultiplayer             : $($ApplicationSubmissionData.gamingOptions.isOnlineMultiplayer)"
+            $output += "$(" " * $indentLength)isOnlineCooperative             : $($ApplicationSubmissionData.gamingOptions.isOnlineCooperative)"
+            $output += "$(" " * $indentLength)localMultiplayerMinPlayers      : $($ApplicationSubmissionData.gamingOptions.localMultiplayerMinPlayers)"
+            $output += "$(" " * $indentLength)localMultiplayerMaxPlayers      : $($ApplicationSubmissionData.gamingOptions.localMultiplayerMaxPlayers)"
+            $output += "$(" " * $indentLength)localCooperativeMinPlayers      : $($ApplicationSubmissionData.gamingOptions.localCooperativeMinPlayers)"
+            $output += "$(" " * $indentLength)localCooperativeMaxPlayers      : $($ApplicationSubmissionData.gamingOptions.localCooperativeMaxPlayers)"
+            $output += "$(" " * $indentLength)isBroadcastingPrivilegeGranted  : $($ApplicationSubmissionData.gamingOptions.isBroadcastingPrivilegeGranted)"
+            $output += "$(" " * $indentLength)isCrossPlayEnabled              : $($ApplicationSubmissionData.gamingOptions.isCrossPlayEnabled)"
+            $output += "$(" " * $indentLength)kinectDataForExternal           : $($ApplicationSubmissionData.gamingOptions.kinectDataForExternal)"
             $output += ""
         }
 
@@ -948,7 +1005,19 @@ function Update-ApplicationSubmission
         hardwarePreferences, hasExternalInAppProducts, meetAccessibilityGuidelines,
         canInstallOnRemovableMedia, automaticBackupEnabled, and isGameDvrEnabled.
 
-    .PARAMETER UpdateNotesForCertification
+    .PARAMETER UpdateGamingOptions
+        Updates fields under the "Ganming Options" category in the PackageTool config file.
+        This option can only be used if your application has  "Advanced Listings Support" enabled on it.
+        Updates the following fields using values from SubmissionDataPath under gamingOptions:
+        genres, isLocalMultiplayer, isLocalCooperative, isOnlineMultiplayer, isOnlineCooperative,
+        localMultiplayerMinPlayers, localMultiplayerMaxPlayers, localCooperativeMinPlayers,
+        localCooperativeMaxPlayers, isBroadcastingPrivilegeGranted, isCrossPlayEnabled, and kinectDataForExternal.
+
+     .PARAMETER UpdateTrailers
+        Replaces the trailers array in the final, patched submission with the trailers array
+        from SubmissionDataPath.
+
+     .PARAMETER UpdateNotesForCertification
         Updates the notesForCertification field using the value from SubmissionDataPath.
 
     .PARAMETER AccessToken
@@ -1057,6 +1126,10 @@ function Update-ApplicationSubmission
 
         [switch] $UpdateAppProperties,
 
+        [switch] $UpdateGamingOptions,
+
+        [switch] $UpdateTrailers,
+
         [switch] $UpdateNotesForCertification,
 
         [string] $AccessToken = "",
@@ -1112,6 +1185,8 @@ function Update-ApplicationSubmission
         (-not $UpdatePublishModeAndVisibility) -and
         (-not $UpdatePricingAndAvailability) -and
         (-not $UpdateAppProperties) -and
+        (-not $UpdateGamingOptions) -and
+        (-not $UpdateTrailers) -and
         (-not $UpdateNotesForCertification))
     {
         Write-Log -Level Warning -Message @(
@@ -1159,6 +1234,8 @@ function Update-ApplicationSubmission
             $params.Add("UpdatePublishModeAndVisibility", $UpdatePublishModeAndVisibility)
             $params.Add("UpdatePricingAndAvailability", $UpdatePricingAndAvailability)
             $params.Add("UpdateAppProperties", $UpdateAppProperties)
+            $params.Add("UpdateGamingOptions", $UpdateGamingOptions)
+            $params.Add("UpdateTrailers", $UpdateTrailers)
             $params.Add("UpdateNotesForCertification", $UpdateNotesForCertification)
             if ($PackageRolloutPercentage -ge 0) { $params.Add("PackageRolloutPercentage", $PackageRolloutPercentage) }
             $params.Add("IsMandatoryUpdate", $IsMandatoryUpdate)
@@ -1242,6 +1319,8 @@ function Update-ApplicationSubmission
             [StoreBrokerTelemetryProperty]::UpdateListings = $UpdateListings
             [StoreBrokerTelemetryProperty]::UpdatePublishModeAndVisibility = $UpdatePublishModeAndVisibility
             [StoreBrokerTelemetryProperty]::UpdatePricingAndAvailability = $UpdatePricingAndAvailability
+            [StoreBrokerTelemetryProperty]::UpdateGamingOptions = $UpdateGamingOptions
+            [StoreBrokerTelemetryProperty]::UpdateTrailers = $UpdateTrailers
             [StoreBrokerTelemetryProperty]::UpdateAppProperties = $UpdateAppProperties
             [StoreBrokerTelemetryProperty]::UpdateNotesForCertification = $UpdateNotesForCertification
         }
@@ -1346,6 +1425,18 @@ function Patch-ApplicationSubmission
         hardwarePreferences, hasExternalInAppProducts, meetAccessibilityGuidelines,
         canInstallOnRemovableMedia, automaticBackupEnabled, and isGameDvrEnabled.
 
+    .PARAMETER UpdateGamingOptions
+        Updates fields under the "Ganming Options" category in the PackageTool config file.
+        This option can only be used if your application has  "Advanced Listings Support" enabled on it.
+        Updates the following fields using values from SubmissionDataPath under gamingOptions:
+        genres, isLocalMultiplayer, isLocalCooperative, isOnlineMultiplayer, isOnlineCooperative,
+        localMultiplayerMinPlayers, localMultiplayerMaxPlayers, localCooperativeMinPlayers,
+        localCooperativeMaxPlayers, isBroadcastingPrivilegeGranted, isCrossPlayEnabled, and kinectDataForExternal.
+
+    .PARAMETER UpdateTrailers
+        Replaces the trailers array in the final, patched submission with the trailers array
+        from SubmissionDataPath.
+
     .PARAMETER UpdateNotesForCertification
         Updates the notesForCertification field using the value from SubmissionDataPath.
 
@@ -1406,6 +1497,10 @@ function Patch-ApplicationSubmission
         [switch] $UpdatePricingAndAvailability,
 
         [switch] $UpdateAppProperties,
+
+        [switch] $UpdateGamingOptions,
+
+        [switch] $UpdateTrailers,
 
         [switch] $UpdateNotesForCertification
     )
@@ -1619,6 +1714,57 @@ function Patch-ApplicationSubmission
         $PatchedSubmission.canInstallOnRemovableMedia = $NewSubmission.canInstallOnRemovableMedia
         $PatchedSubmission.automaticBackupEnabled = $NewSubmission.automaticBackupEnabled
         $PatchedSubmission.isGameDvrEnabled = $NewSubmission.isGameDvrEnabled
+    }
+
+    if ($UpdateGamingOptions)
+    {
+        # Making the assumption that hasAdvancedListingsPermission is false here since the
+        # current submission object doesn't contain a gamingOptions node.
+        if ($null -eq $PatchedSubmission.gamingOptions)
+        {
+            $output = @()
+            $output += "You selected to update the Gaming Options for this submission, but it appears that the app"
+            $output += "does not have `"Advanced Listings Support`" enabled. Unable to continue."
+            $output = $output -join [Environment]::NewLine
+            Write-Log -Message $output -Level Error
+            throw $output
+        }
+
+        if ($null -eq $NewSubmission.gamingOptions)
+        {
+            $output = @()
+            $output += "You selected to update the Gaming Options for this submission, but it appears you don't have"
+            $output += "that section in your config file.  You should probably re-generate your config file with"
+            $output += "New-StoreBrokerConfigFile, transfer any modified properties to that new config file, and then"
+            $output += "re-generate your StoreBroker payload with New-SubmissionPackage."
+            $output = $output -join [Environment]::NewLine
+            Write-Log -Message $output -Level Error
+            throw $output
+        }
+
+        # Gaming options is an array with a single item, but it's important that we ensure that
+        # PowerShell doesn't convert that to just be a single object, so we force it back into
+        # an array.
+        $PatchedSubmission.gamingOptions = DeepCopy-Object -Object (, $NewSubmission.gamingOptions)
+    }
+
+    if ($UpdateGamingOptions)
+    {
+        # Making the assumption that hasAdvancedListingsPermission is false here since the
+        # current submission object doesn't contain a trailers node.
+        if ($null -eq $PatchedSubmission.trailers)
+        {
+            $output = @()
+            $output += "You selected to update the Trailers for this submission, but it appears that the app"
+            $output += "does not have `"Advanced Listings Support`" enabled. Unable to continue."
+            $output = $output -join [Environment]::NewLine
+            Write-Log -Message $output -Level Error
+            throw $output
+        }
+
+        # Trailers has to be an array, so it's important that in the cases when we have 0 or 1
+        # trailers, we don't let PowerShell convert it away from an array to a single object.
+        $PatchedSubmission.trailers = DeepCopy-Object -Object (, $NewSubmission.trailers)
     }
 
     if ($UpdateNotesForCertification)

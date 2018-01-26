@@ -65,7 +65,7 @@ when the module is loaded.
 
  **`$global:SBLogPath`** - [string] The logfile. Defaults to
    `$env:USERPROFILE\Documents\StoreBroker.log`
-    
+
  **`$global:SBLoggingEnabled`** [bool] Defaults to `$true`. To disable file-based logging,
     set to `$false`
 
@@ -158,7 +158,7 @@ following the instructions in [SETUP.md](SETUP.md):
 
 Generating the submission request JSON/zip package is done with
 
-    New-SubmissionPackage -ConfigPath <config-path> -PDPRootPath <path> [[-Release] <string>] -PDPInclude <filename> [-PDPExclude <filename>] -ImagesRootPath <path> -AppxPath <full-path>[, <additional-path>]+ -OutPath <output-dir> -OutName <output-name>  
+    New-SubmissionPackage -ConfigPath <config-path> -PDPRootPath <path> [[-Release] <string>] -PDPInclude <filename> [-PDPExclude <filename>] -ImagesRootPath <path> -AppxPath <full-path>[, <additional-path>]+ -OutPath <output-dir> -OutName <output-name>
 
 > Items in brackets ('[]') are optional.
 
@@ -167,13 +167,13 @@ files. For more info, run:
 
     Get-Help New-SubmissionPackage -Parameter PdpRootPath
     Get-Help New-SubmissionPackage -Parameter Release
-    
+
 > If one of your parameters does not change often, you can specify a value in the config file and
 > leave out this parameter at runtime. In this case, you should specify the remaining parameters
 > to `New-SubmissionPackage` with their parameter names.  As an example, it is possible to leave
 > out `OutPath` but if you don't specify the remaining parameters by name, then the value of the
 > next parameter, `OutName`, will be mapped to the `OutPath` parameter, causing a failure.
-    
+
 As part of its input, `New-SubmissionPackage` expects a configuration file, which you should
 have [already created](SETUP.md#getting-your-config).
 
@@ -242,7 +242,7 @@ cloned submission:
    > **WARNING:** Use this switch with care.  If you use this switch and your StoreBroker
    > payload doesn't have all the packages for all the OS versions & platforms that you currently
    > support (and want to continue to support), then you risk making your app unavailable to some
-   > of your users.   
+   > of your users.
 
  * **`-UpdateListings`** - This will replace the cloned submission's listings metadata with yours
    (the localized content from the PDP's), deleting any existing screenshots along the way.  This
@@ -262,6 +262,17 @@ cloned submission:
    `hardwarePreferences`, `hasExternalInAppProducts`, `meetAccessibilityGuidelines`,
    `canInstallOnRemovableMedia`, `automaticBackupEnabled`, and `isGameDvrEnabled` of
    the cloned submission to that which is specified in your json.
+
+ * **`-UpdateGamingOptions`** - This will update all values under the `gamingOptions`
+   node specified in your json.  Please note that your application must have
+   ["Advanced Listing Permission"](https://docs.microsoft.com/en-us/windows/uwp/monetize/manage-app-submissions#advanced-listings)
+   enabled for this to work.
+
+ * **`-UpdateTrailers`** - This will replace the cloned submission's trailers metadata with yours
+   (the localized content from the PDP's), deleting any existing data along the way.
+   Please note that your application must have
+   ["Advanced Listing Permission"](https://docs.microsoft.com/en-us/windows/uwp/monetize/manage-app-submissions#advanced-listings)
+   enabled for this to work.  For more info on trailers, review [PDP.md](./PDP.md#trailers).
 
  * **`-UpdateNotesForCertification`** - This will change the `notesForCertification` field of
    the cloned submission to that which is specified in your json.
@@ -344,14 +355,14 @@ with a single command.  However, should one choose to do so, you can perform all
 manually.
 
  * Clone the existing published submission so that you can generate an update.
- 
+
           $sub = New-ApplicationSubmission -AppId <appId> [-Force]
 
     * By using the `-Force` switch, it will call `Remove-ApplicationSubmission` behind the
       scenes if it finds that there's an existing pending submission for your app.
 
  * Read in the content of the json file from your `New-SubmissionPackage` payload:
- 
+
           $json = (Get-Content .\submission.json -Encoding UTF8) | ConvertFrom-Json
 
  * If you need to update any content for the cloned submission, here is where you'd "patch in"
@@ -536,7 +547,7 @@ While most of those parameters are straight-forward, the last two deserve explan
 
 > If for some reason you have an existing pending submission that you want to update (as opposed
 > to cloning the existing published submission), use `-SubmissionId` to specify it, and that
-> will be used instead of creating a new cloned submission.  That parameter 
+> will be used instead of creating a new cloned submission.  That parameter
 
 The following key switches can be added in any order or combination, and they will indicate what
 content from the .json that you are providing needs to be added to or replaced within the
@@ -735,7 +746,7 @@ following the instructions in [SETUP.md](SETUP.md):
 
 Generating the submission request JSON/zip package is done with
 
-    New-InAppProductSubmissionPackage -ConfigPath <config-path> -PDPRootPath <path> [[-Release] <string>] -PDPInclude <filename> [-PDPExclude <filename>] -ImagesRootPath <path> -OutPath <output-dir> -OutName <output-name>  
+    New-InAppProductSubmissionPackage -ConfigPath <config-path> -PDPRootPath <path> [[-Release] <string>] -PDPInclude <filename> [-PDPExclude <filename>] -ImagesRootPath <path> -OutPath <output-dir> -OutName <output-name>
 
 > Items in brackets ('[]') are optional.
 
@@ -744,14 +755,14 @@ files. For more info, run:
 
     Get-Help New-InAppProductSubmissionPackage -Parameter PdpRootPath
     Get-Help New-InAppProductSubmissionPackage -Parameter Release
-    
+
 > If one of your parameters does not change often, you can specify a value in the config file and
 > leave out this parameter at runtime. In this case, you should specify the remaining parameters
 > to `New-InAppProductSubmissionPackage` with their parameter names.  As an example, it is
 > possible to leave out `OutPath` but if you don't specify the remaining parameters by name,
 > then the value of the next parameter, `OutName`, will be mapped to the `OutPath` parameter,
 > causing a failure.
-    
+
 As part of its input, `New-InAppProductSubmissionPackage` expects a configuration file, which
 you should have [already created](SETUP.md#getting-your-iap-config).
 
@@ -775,7 +786,7 @@ The basic syntax looks of the update command looks like this:
 
 > If for some reason you have an existing pending submission that you want to update (as opposed
 > to cloning the existing published submission), use `-SubmissionId` to specify it, and that
-> will be used instead of creating a new cloned submission.  That parameter 
+> will be used instead of creating a new cloned submission.  That parameter
 
 The following key switches can be added in any order or combination, and they will indicate what
 content from the .json that you are providing needs to be added to or replaced within the
@@ -1117,7 +1128,7 @@ us for analysis.  We expose it here for complete transparency.
      to all the languages that you want it localized for.  If different languages need
      a different set of captions (e.g. screenshots), then that means that you simply
      need to have multiple English PDP files, and localize the different English PDP's into
-     the right set of languages appropriate for that content. 
+     the right set of languages appropriate for that content.
 
 * **What I submit to the Store is the result of multiple builds.  How can I submit the results
   in a single submission?**
@@ -1131,9 +1142,9 @@ us for analysis.  We expose it here for complete transparency.
 
      We offer an additional command that can be used to combine two payload into a single payload
      (and if you have more than two, just daisy chain the output from one as the input to the next).
-    
+
             Join-SubmissionPackage -MasterJsonPath <path> -AdditionalJsonPath <path> -OutJsonPath <path> -AddPackages
-     
+
      As you'll recall, a payload is a json/zip pair.  The <path> specified in each of these
      parameters is the path to the json file, and the .zip file is determined from that same base
      name.  The resulting output will be identitical to the json/zip pair provided for

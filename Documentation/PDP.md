@@ -9,6 +9,8 @@
 *   [Sections](#sections)
     *   [Screenshots and Captions](#screenshots-and-captions)
         *   [Folder Structure](#folder-structure)
+    *   [Additional Assets](#additional-assets)
+        *   [Trailers](#trailers)
     *   [Icons](#icons)
     *   [Fallback Language Support](#fallback-language-support)
 *   [Schemas And Samples](#schemas-and-samples)
@@ -114,6 +116,80 @@ where:
     looking recusively for the specific filename
  * `img.png`: the filename that you specified in the caption's platform-specific image attribute
 
+### Additional Assets
+
+> Only relevant for Application submissions
+
+There are three different types of images that can be used for a listing:
+  1. Screenshots (these have captions)
+  2. Additional Assets (these are images that have no concept of captions)
+  3. Trailer screenshots (which also don't have captions, but are tied to trailers)
+
+In the [previous section](#screenshots-and-captions), we talked about screenshots
+(and their captions).  Now we will talk about #2 (Additional Assets).
+
+You can learn more about the specifics of these different images and how they're used by referring to the
+[dev portal's online documentation](https://docs.microsoft.com/en-us/windows/uwp/publish/app-screenshots-and-images),
+and the related [API documentation](https://docs.microsoft.com/en-us/windows/uwp/monetize/manage-app-submissions#image-object).
+
+To define these assets, there is a top-level element called `AdditionalAssets` (which
+is a sibling to `ScreenshotCaptions`).  It can contain any (or all) of the following
+elements:
+
+ * `StoreLogo9x16`
+ * `StoreLogoSquare`
+ * `Icon`
+ * `PromotionalArt16x9`
+ * `PromotionalArtwork2400X1200`
+ * `XboxBrandedKeyArt`
+ * `XboxTitledHeroArt`
+ * `XboxFeaturedPromotionalArt`
+ * `SquareIcon358X358`
+ * `BackgroundImage1000X800`
+ * `PromotionalArtwork414X180`
+
+These elements do not have any InnerText/content -- they only have a single attribute
+called `FileName` which should reference the .png file for that image type.
+
+Similar to Screenshots, there is full [fallback language support](#fallback-language-support).
+You can add the `FallbackLanguage` attribute on an individual element to only affect that one
+image type, or you can add it to `AdditionalAssets` to affect them all (or to
+`ProductDescription` to affect all asset types).
+
+#### Trailers
+
+> Only relevant for Application submissions
+
+> Can only be set on applications that have
+> [`Advanced Listing Permission`](https://docs.microsoft.com/en-us/windows/uwp/monetize/manage-app-submissions#advanced-listings).
+
+You can learn more about the specifics of trailers and how they're used by referring to the
+[dev portal's online documentation](https://docs.microsoft.com/en-us/windows/uwp/publish/app-screenshots-and-images#trailers).
+
+A single trailer consists of the following information:
+  * trailer filename
+  * trailer title (localizable)
+  * trailer screenshot filename (only one permitted)
+  * trailer screenshot description (metadata only, never seen be a user)
+
+From an authoring perspective, it looks like this (with loc comment/attributes removed for brevity):
+
+    <Trailers>
+        <Trailer FileName="trailer1.mp4">
+            <Title>This is the trailer's title</Title>
+            <Images>
+               <Image FileName="trailer1screenshot.png">The user will never see this text</Image>
+            </Images>
+        </Trailer>
+    </Trailers>
+
+While companies may or may not provide localized screenshots per region, most companies will only
+ever produce their trailers for a limited number of different languages/regions, and re-use
+those same trailers across most other locales.  Therefore, it is highly advised that you leverage
+[fallback language support](#fallback-language-support) when authoring your trailers
+so that trailers are propery re-used, thus reducing the size of the final package that needs
+to be uploaded to the Store.
+
 ### Icons
 
 > Only relevant for In-App Product (IAP) ("add-on") submissions
@@ -142,6 +218,13 @@ For screenshot and icons, you can specify a `FallbackLanguage` attribute whose v
 screenshots, the attribute is available on both the `<ScreenshotCaptions />` _and_ `<Caption />` elements.
 It can be set on either, or both, of those elements.  If specified on both, the value in the `<Caption />`
 node value will win, since it is the more-specific value.
+
+Similarly, there is support for `AdditionalAsset` images (on the individual element nodes as well as on
+the `AdditionalAsset` node itself), and for trailers on the `Trailers`, `Trailer`, `Images` and `Image`
+elements).
+
+You can also set `FallbackLanguage` at the root element (`ProductDescription` or `InAppProductDescription`)
+to affect every media type.
 
 As usual, StoreBroker will first search for any media files referenced by that element in that PDP's
 langcode-specific images/media sub-folder.  If not found, it will then look in the fallback language's

@@ -1145,6 +1145,10 @@ function Start-SubmissionMonitor
         If provided, this will treat the submission being monitored as an In-App Product
         submission as opposed to an application submission.
 
+    .PARAMETER PollingInterval
+        The number of minutes that SubmissionMonitor should sleep before re-polling for
+        status again.
+
     .PARAMETER NoStatus
         If this switch is specified, long-running commands will run on the main thread
         with no commandline status update.  When not specified, those commands run in
@@ -1209,6 +1213,8 @@ function Start-SubmissionMonitor
             ParameterSetName="Iap",
             Position=0)]
         [string] $IapId,
+
+        [int] $PollingInterval = 5,
 
         [switch] $NoStatus,
 
@@ -1402,7 +1408,7 @@ function Start-SubmissionMonitor
 
         if ($shouldMonitor)
         {
-            $secondsBetweenChecks = 60
+            $secondsBetweenChecks = $PollingInterval * 60
             Write-Log -Message "Status is [$lastStatus]. Waiting $secondsBetweenChecks seconds before checking again..."
             Start-Sleep -Seconds $secondsBetweenChecks
         }

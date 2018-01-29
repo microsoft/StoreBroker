@@ -6,7 +6,7 @@
     CompanyName = 'Microsoft Corporation'
     Copyright = 'Copyright (C) Microsoft Corporation.  All rights reserved.'
 
-    ModuleVersion = '1.14.0'
+    ModuleVersion = '1.14.1'
     Description = 'Provides command-line access to the Windows Store Submission REST API.'
 
     RootModule = 'StoreIngestionApi'
@@ -135,7 +135,7 @@
 
     #VariablesToExport = '*'
 
-    # Private data to pass to the module specified in RootModule/ModuleToProcess. 
+    # Private data to pass to the module specified in RootModule/ModuleToProcess.
     PrivateData = @{
         # Hashtable with additional module metadata used by PowerShell.
         PSData = @{

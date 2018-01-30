@@ -223,20 +223,20 @@ function Set-StoreBrokerAuthentication
         [string] $TenantName = $null
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
     if ($UseProxy)
     {
         if ((-not [String]::IsNullOrWhiteSpace($TenantId)) -and (-not [String]::IsNullOrWhiteSpace($TenantName)))
         {
             $message = "You cannot set both TenantId and TenantName.  Only provide one of them."
-            Write-Log $message -Level Error
+            Write-Log -Message $message -Level Error
             throw $message
         }
 
         if ($null -ne $script:authCredential)
         {
-            Write-Log "Your cached credentials will no longer be used since you have enabled Proxy usage." -Level Warning
+            Write-Log -Message "Your cached credentials will no longer be used since you have enabled Proxy usage." -Level Warning
         }
 
         if ($ProxyEndpoint.EndsWith('/') -or $ProxyEndpoint.EndsWith('\'))
@@ -285,7 +285,7 @@ function Set-StoreBrokerAuthentication
     {
         if (-not $OnlyCacheTenantId)
         {
-            Write-Log "No credential provided.  Not changing current cached credential." -Level Error
+            Write-Log -Message "No credential provided.  Not changing current cached credential." -Level Error
         }
     }
     else
@@ -324,7 +324,7 @@ function Clear-StoreBrokerAuthentication
 
     Set-TelemetryEvent -EventName Clear-StoreBrokerAuthentication
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
     if ($PSCmdlet.ShouldProcess("", "Clear tenantId"))
     {
@@ -402,7 +402,7 @@ function Get-AccessToken
         $output += "   http://aka.ms/StoreBroker"
 
         $newLineOutput = ($output -join [Environment]::NewLine)
-        Write-Log $newLineOutput -Level Error
+        Write-Log -Message $newLineOutput -Level Error
         throw $newLineOutput
     }
 
@@ -420,7 +420,7 @@ function Get-AccessToken
     if ($null -eq $credential)
     {
         $output = "You must supply valid credentials (client id and secret) to use this module."
-        Write-Log  $output -Level Error
+        Write-Log -Message  $output -Level Error
         throw $output
     }
 
@@ -446,7 +446,7 @@ function Get-AccessToken
     try
     {
         Write-Log -Message "Getting access token..." -Level Verbose
-        Write-Log "Accessing [POST] $url" -Level Verbose
+        Write-Log -Message "Accessing [POST] $url" -Level Verbose
 
         if ($NoStatus)
         {
@@ -506,7 +506,7 @@ function Get-AccessToken
         $output += "$($_.ErrorDetails | ConvertFrom-JSON | Out-String)"
 
         $newLineOutput = ($output -join [Environment]::NewLine)
-        Write-Log $newLineOutput -Level Error
+        Write-Log -Message $newLineOutput -Level Error
         throw $newLineOutput
     }
     catch [System.Management.Automation.RuntimeException]
@@ -526,7 +526,7 @@ function Get-AccessToken
         }
 
         $newLineOutput = ($output -join [Environment]::NewLine)
-        Write-Log $newLineOutput -Level Error
+        Write-Log -Message $newLineOutput -Level Error
         throw $newLineOutput
     }
 }
@@ -567,11 +567,11 @@ function Get-ServiceEndpoint
         {
             # Specifically logging this at the normal level because we want this to be SUPER clear
             # to users so that they don't get confused by the results of their commands.
-            Write-Log "Using PROXY INT service endpoint. Return to PROD by setting `$global:SBUseInt = `$false"
+            Write-Log -Message "Using PROXY INT service endpoint. Return to PROD by setting `$global:SBUseInt = `$false"
         }
         else
         {
-            Write-Log "Using PROXY PROD service endpoint" -Level Verbose
+            Write-Log -Message "Using PROXY PROD service endpoint" -Level Verbose
         }
 
         # The endpoint is the same for both in the Proxy case.  But we'll add an additional
@@ -583,12 +583,12 @@ function Get-ServiceEndpoint
     {
         # Specifically logging this at the normal level because we want this to be SUPER clear
         # to users so that they don't get confused by the results of their commands.
-        Write-Log "Using INT service endpoint. Return to PROD by setting `$global:SBUseInt = `$false"
+        Write-Log -Message "Using INT service endpoint. Return to PROD by setting `$global:SBUseInt = `$false"
         return $serviceEndpointInt
     }
     else
     {
-        Write-Log "Using PROD service endpoint" -Level Verbose
+        Write-Log -Message "Using PROD service endpoint" -Level Verbose
         return $serviceEndpointProd
     }
 }
@@ -782,9 +782,9 @@ function Set-SubmissionPackage
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::PackagePath = (Get-PiiSafeString -PlainText $PackagePath) }
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
-    Write-Log "Attempting to upload the package ($PackagePath) for the submission to $UploadUrl..." -Level Verbose
+    Write-Log -Message "Attempting to upload the package ($PackagePath) for the submission to $UploadUrl..." -Level Verbose
 
     $azureStorageDll = Get-AzureStorageDllPath -NoStatus:$NoStatus
     $azureStorageDataMovementDll = Get-AzureStorageDataMovementDllPath -NoStatus:$NoStatus
@@ -887,7 +887,7 @@ function Set-SubmissionPackage
 
         Set-TelemetryException -Exception $_.Exception -ErrorBucket Set-SubmissionPackage -Properties $telemetryProperties
         $newLineOutput = ($output -join [Environment]::NewLine)
-        Write-Log $newLineOutput -Level Error
+        Write-Log -Message $newLineOutput -Level Error
         throw $newLineOutput
     }
     catch
@@ -903,7 +903,7 @@ function Set-SubmissionPackage
 
         Set-TelemetryException -Exception $_.Exception -ErrorBucket Set-SubmissionPackage -Properties $telemetryProperties
         $newLineOutput = ($output -join [Environment]::NewLine)
-        Write-Log $newLineOutput -Level Error
+        Write-Log -Message $newLineOutput -Level Error
         throw $newLineOutput
     }
     finally
@@ -912,7 +912,7 @@ function Set-SubmissionPackage
         [System.Net.ServicePointManager]::Expect100Continue = $origExpect100Continue
     }
 
-    Write-Log "Successfully uploaded the application package." -Level Verbose
+    Write-Log -Message "Successfully uploaded the application package." -Level Verbose
 }
 
 function Get-SubmissionPackage
@@ -978,9 +978,9 @@ function Get-SubmissionPackage
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::PackagePath = (Get-PiiSafeString -PlainText $PackagePath) }
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
-    Write-Log "Attempting to download the contents of $UploadUrl to $PackagePath..." -Level Verbose
+    Write-Log -Message "Attempting to download the contents of $UploadUrl to $PackagePath..." -Level Verbose
 
     $azureStorageDll = Get-AzureStorageDllPath -NoStatus:$NoStatus
     $azureStorageDataMovementDll = Get-AzureStorageDataMovementDllPath -NoStatus:$NoStatus
@@ -1083,7 +1083,7 @@ function Get-SubmissionPackage
 
         Set-TelemetryException -Exception $_.Exception -ErrorBucket Get-SubmissionPackage -Properties $telemetryProperties
         $newLineOutput = ($output -join [Environment]::NewLine)
-        Write-Log $newLineOutput -Level Error
+        Write-Log -Message $newLineOutput -Level Error
         throw $newLineOutput
     }
     catch
@@ -1099,7 +1099,7 @@ function Get-SubmissionPackage
 
         Set-TelemetryException -Exception $_.Exception -ErrorBucket Get-SubmissionPackage -Properties $telemetryProperties
         $newLineOutput = ($output -join [Environment]::NewLine)
-        Write-Log $newLineOutput -Level Error
+        Write-Log -Message $newLineOutput -Level Error
         throw $newLineOutput
     }
     finally
@@ -1108,7 +1108,7 @@ function Get-SubmissionPackage
         [System.Net.ServicePointManager]::Expect100Continue = $origExpect100Continue
     }
 
-    Write-Log "Successfully downloaded the blob contents." -Level Verbose
+    Write-Log -Message "Successfully downloaded the blob contents." -Level Verbose
 }
 
 function Start-SubmissionMonitor
@@ -1215,7 +1215,7 @@ function Start-SubmissionMonitor
         [switch] $PassThru
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
     # Telemetry-related
     $telemetryProperties = @{
@@ -1377,7 +1377,7 @@ function Start-SubmissionMonitor
                     $shouldMonitor = $false
                 }
 
-                Write-Log $body
+                Write-Log -Message $body
 
                 if ($EmailNotifyTo.Count -gt 0)
                 {
@@ -1392,7 +1392,7 @@ function Start-SubmissionMonitor
             # "The operation has timed out.", but this wording could clearly change over time.
             if ($_.Exception.Message -ilike "*timed*")
             {
-                Write-Log "Got exception while trying to check on submission and will try again. The exception was:" -Exception $_ -Level Warning
+                Write-Log -Message "Got exception while trying to check on submission and will try again. The exception was:" -Exception $_ -Level Warning
             }
             else
             {
@@ -1403,7 +1403,7 @@ function Start-SubmissionMonitor
         if ($shouldMonitor)
         {
             $secondsBetweenChecks = 60
-            Write-Log "Status is [$lastStatus]. Waiting $secondsBetweenChecks seconds before checking again..."
+            Write-Log -Message "Status is [$lastStatus]. Waiting $secondsBetweenChecks seconds before checking again..."
             Start-Sleep -Seconds $secondsBetweenChecks
         }
     }
@@ -1486,7 +1486,7 @@ function Open-DevPortal
 
     Set-TelemetryEvent -EventName Open-DevPortal -Properties $telemetryProperties
 
-    Write-Log "Opening Dev Portal in default web browser."
+    Write-Log -Message "Opening Dev Portal in default web browser."
 
     $appUrl        = "https://developer.microsoft.com/en-us/dashboard/apps/$AppId"
     $submissionUrl = "https://developer.microsoft.com/en-us/dashboard/apps/$AppId/submissions/$SubmissionId/"
@@ -1558,7 +1558,7 @@ function Open-Store()
         $uri = $webUri
     }
 
-    Write-Log "Launching $uri" -Level Verbose
+    Write-Log -Message "Launching $uri" -Level Verbose
     Start-Process -FilePath $uri
 }
 
@@ -1790,8 +1790,8 @@ function Invoke-SBRestMethod
 
         try
         {
-            Write-Log $Description -Level Verbose
-            Write-Log "Accessing [$Method] $url [Timeout = $global:SBWebRequestTimeoutSec]" -Level Verbose
+            Write-Log -Message $Description -Level Verbose
+            Write-Log -Message "Accessing [$Method] $url [Timeout = $global:SBWebRequestTimeoutSec]" -Level Verbose
 
             if ($NoStatus)
             {
@@ -1814,7 +1814,7 @@ function Invoke-SBRestMethod
                     $result = Invoke-WebRequest @params
                     if ($Method -eq 'delete')
                     {
-                        Write-Log "Successfully removed." -Level Verbose
+                        Write-Log -Message "Successfully removed." -Level Verbose
                     }
                 }
             }
@@ -1873,7 +1873,7 @@ function Invoke-SBRestMethod
                             }
                             catch
                             {
-                                Write-Log "Unable to retrieve the raw HTTP Web Response:" -Exception $_ -Level Warning
+                                Write-Log -Message "Unable to retrieve the raw HTTP Web Response:" -Exception $_ -Level Warning
                             }
 
                             if ($_.Exception.Response.Headers.Count -gt 0)
@@ -1905,14 +1905,14 @@ function Invoke-SBRestMethod
 
                 if ($Method -eq 'delete')
                 {
-                    Write-Log "Successfully removed." -Level Verbose
+                    Write-Log -Message "Successfully removed." -Level Verbose
                 }
             }
 
             $correlationId = $result.Headers[$script:headerMSCorrelationId]
             if (-not [String]::IsNullOrEmpty($correlationId))
             {
-                Write-Log "$($script:headerMSCorrelationId) : $correlationId" -Level Verbose
+                Write-Log -Message "$($script:headerMSCorrelationId) : $correlationId" -Level Verbose
             }
 
             # Record the telemetry for this event.
@@ -1962,7 +1962,7 @@ function Invoke-SBRestMethod
                 }
                 catch
                 {
-                    Write-Log "Unable to retrieve the raw HTTP Web Response:" -Exception $_ -Level Warning
+                    Write-Log -Message "Unable to retrieve the raw HTTP Web Response:" -Exception $_ -Level Warning
                 }
 
                 if ($ex.Response.Headers.Count -gt 0)
@@ -2067,7 +2067,7 @@ function Invoke-SBRestMethod
             if (-not [String]::IsNullOrEmpty($correlationId))
             {
                 $output += $script:headerMSCorrelationId + ': ' + $correlationId
-                Write-Log "$($script:headerMSCorrelationId): $correlationId" -Level Verbose
+                Write-Log -Message "$($script:headerMSCorrelationId): $correlationId" -Level Verbose
             }
 
             $newLineOutput = ($output -join [Environment]::NewLine)
@@ -2075,8 +2075,8 @@ function Invoke-SBRestMethod
             {
                 if ($numRetries -ge $global:SBMaxAutoRetries)
                 {
-                    Write-Log $newLineOutput -Level Error
-                    Write-Log "Maximum retries for request has been reached ($global:SBMaxAutoRetries).  Will now fail." -Level Error
+                    Write-Log -Message $newLineOutput -Level Error
+                    Write-Log -Message "Maximum retries for request has been reached ($global:SBMaxAutoRetries).  Will now fail." -Level Error
                     Set-TelemetryException -Exception $ex -ErrorBucket $errorBucket -Properties $localTelemetryProperties
                     throw $newLineOutput
                 }
@@ -2085,15 +2085,15 @@ function Invoke-SBRestMethod
                     $numRetries++
                     $localTelemetryProperties[[StoreBrokerTelemetryProperty]::NumRetries] = $numRetries
                     $localTelemetryProperties[[StoreBrokerTelemetryProperty]::RetryStatusCode] = $statusCode
-                    Write-Log $newLineOutput -Level Warning
-                    Write-Log "This status code ($statusCode) is configured to auto-retry (via `$global:SBAutoRetryErrorCodes).  StoreBroker will auto-retry (attempt #$numRetries) in $retryDelayMin minute(s). Sleeping..." -Level Warning
+                    Write-Log -Message $newLineOutput -Level Warning
+                    Write-Log -Message "This status code ($statusCode) is configured to auto-retry (via `$global:SBAutoRetryErrorCodes).  StoreBroker will auto-retry (attempt #$numRetries) in $retryDelayMin minute(s). Sleeping..." -Level Warning
                     Start-Sleep -Seconds ($retryDelayMin * 60)
                     $retryDelayMin = $retryDelayMin * 2 # Exponential sleep increase for next retry
                 }
             }
             else
             {
-                Write-Log $newLineOutput -Level Error
+                Write-Log -Message $newLineOutput -Level Error
                 Set-TelemetryException -Exception $ex -ErrorBucket $errorBucket -Properties $localTelemetryProperties
                 throw $newLineOutput
             }

@@ -146,14 +146,14 @@ function Wait-JobWithAnimation
         Write-InteractiveHost "`rDONE - Operation took $([int]($iteration / $framesPerSecond)) second(s) $Description" -NoNewline -f Green
 
         # We forcibly set Verbose to false here since we don't need it printed to the screen, since we just did above -- we just need to log it.
-        Write-Log "DONE - Operation took $([int]($iteration / $framesPerSecond)) second(s) $Description" -Level Verbose -Verbose:$false
+        Write-Log -Message "DONE - Operation took $([int]($iteration / $framesPerSecond)) second(s) $Description" -Level Verbose -Verbose:$false
     }
     else
     {
         Write-InteractiveHost "`rDONE (FAILED) - Operation took $([int]($iteration / $framesPerSecond)) second(s) $Description" -NoNewline -f Red
 
         # We forcibly set Verbose to false here since we don't need it printed to the screen, since we just did above -- we just need to log it.
-        Write-Log "DONE (FAILED) - Operation took $([int]($iteration / $framesPerSecond)) second(s) $Description" -Level Verbose -Verbose:$false
+        Write-Log -Message "DONE (FAILED) - Operation took $([int]($iteration / $framesPerSecond)) second(s) $Description" -Level Verbose -Verbose:$false
     }
 
     Write-InteractiveHost ""
@@ -680,7 +680,7 @@ function New-TemporaryDirectory
 
     $tempFolderPath = Join-Path -Path $env:TEMP -ChildPath $guid
 
-    Write-Log "Creating temporary directory: $tempFolderPath" -Level Verbose
+    Write-Log -Message "Creating temporary directory: $tempFolderPath" -Level Verbose
     New-Item -ItemType directory -Path $tempFolderPath
 }
 
@@ -780,7 +780,7 @@ function Send-SBMailMessage
         while ($remainingAttempts -gt 0)
         {
             $remainingAttempts--
-            Write-Log "Sending email to $($fixedTo -join ', ')" -Level Verbose
+            Write-Log -Message "Sending email to $($fixedTo -join ', ')" -Level Verbose
 
             try
             {
@@ -791,12 +791,12 @@ function Send-SBMailMessage
             {
                 if ($remainingAttempts -gt 0)
                 {
-                    Write-Log "Exception trying to send mail. Will try again in $retryBackoffSeconds seconds." -Exception $_ -Level Warning
+                    Write-Log -Message "Exception trying to send mail. Will try again in $retryBackoffSeconds seconds." -Exception $_ -Level Warning
                     Start-Sleep -Seconds $retryBackoffSeconds
                 }
                 else
                 {
-                    Write-Log "Exception trying to send mail. Retry attempts exhausted. Unable to send email." -Exception $_ -Level Error
+                    Write-Log -Message "Exception trying to send mail. Retry attempts exhausted. Unable to send email." -Exception $_ -Level Error
                 }
             }
         }
@@ -949,13 +949,13 @@ function Ensure-Directory
 
         if (-not (Test-Path -PathType Container -Path $Path))
         {
-            Write-Log "Creating directory: [$Path]" -Level Verbose
+            Write-Log -Message "Creating directory: [$Path]" -Level Verbose
             New-Item -ItemType Directory -Path $Path | Out-Null
         }
     }
     catch
     {
-        Write-Log "Could not ensure directory: [$Path]" -Level Error
+        Write-Log -Message "Could not ensure directory: [$Path]" -Level Error
 
         throw
     }

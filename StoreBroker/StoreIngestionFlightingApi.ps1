@@ -88,7 +88,7 @@ function Get-ApplicationFlights
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
     $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::AppId = $AppId }
 
@@ -149,7 +149,7 @@ function Format-ApplicationFlights
     {
         Set-TelemetryEvent -EventName Format-ApplicationFlights
 
-        Write-Log "Displaying Application Flights..." -Level Verbose
+        Write-Log -Message "Displaying Application Flights..." -Level Verbose
 
         $publishedSubmissionField = @{ label="lastPublishedSubmission"; Expression={ if ([String]::IsNullOrEmpty($_.lastPublishedFlightSubmission.id)) { "<None>" } else { $_.lastPublishedFlightSubmission.id } }; }
         $pendingSubmissionField = @{ label="pendingSubmission"; Expression={ if ($null -eq $_.pendingFlightSubmission) { "<None>" } else { $_.pendingFlightSubmission.id } }; }
@@ -164,7 +164,7 @@ function Format-ApplicationFlights
 
     End
     {
-        Write-Log $($flights | Format-Table friendlyName, flightId, rankHigherThan, $publishedSubmissionField, $pendingSubmissionField, groupIds | Out-String)
+        Write-Log -Message $($flights | Format-Table friendlyName, flightId, rankHigherThan, $publishedSubmissionField, $pendingSubmissionField, groupIds | Out-String)
     }
 }
 
@@ -235,7 +235,7 @@ function Get-ApplicationFlight
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
     $telemetryProperties = @{
         [StoreBrokerTelemetryProperty]::AppId = $AppId
@@ -295,7 +295,7 @@ function Format-ApplicationFlight
     {
         Set-TelemetryEvent -EventName Format-ApplicationFlight
 
-        Write-Log "Displaying Application Flight..." -Level Verbose
+        Write-Log -Message "Displaying Application Flight..." -Level Verbose
 
         $indentLength = 5
         $output = @()
@@ -321,7 +321,7 @@ function Format-ApplicationFlight
 
     End
     {
-        Write-Log $output
+        Write-Log -Message $output
     }
 }
 
@@ -350,13 +350,13 @@ function Get-FlightGroups
 
     Set-TelemetryEvent -EventName Get-FlightGroups
 
-    Write-Log "Opening the Dev Portal UI in your default browser to view flight groups because there is currently no API access for this data."
-    Write-Log "The FlightGroupID is the number at the end of the URL when you click on any flight group name."
+    Write-Log -Message "Opening the Dev Portal UI in your default browser to view flight groups because there is currently no API access for this data."
+    Write-Log -Message "The FlightGroupID is the number at the end of the URL when you click on any flight group name."
 
     if (-not [String]::IsNullOrWhiteSpace($global:SBInternalGroupIds))
     {
-        Write-Log "For the Microsoft-internal pre-defined flight group ids, see below:"
-        Write-Log "`n$($global:SBInternalGroupIds | Format-Table Name, @{ label="FlightGroupId"; Expression={ $_.Value }; }| Out-String)"
+        Write-Log -Message "For the Microsoft-internal pre-defined flight group ids, see below:"
+        Write-Log -Message "`n$($global:SBInternalGroupIds | Format-Table Name, @{ label="FlightGroupId"; Expression={ $_.Value }; }| Out-String)"
     }
 
     Start-Process -FilePath "https://developer.microsoft.com/en-us/dashboard/groups"
@@ -428,7 +428,7 @@ function New-ApplicationFlight
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
     # Convert the input into a Json body.
     $hashBody = @{}
@@ -526,7 +526,7 @@ function Remove-ApplicationFlight
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
     $telemetryProperties = @{
         [StoreBrokerTelemetryProperty]::AppId = $AppId
@@ -619,7 +619,7 @@ function Get-ApplicationFlightSubmission
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
     $telemetryProperties = @{
         [StoreBrokerTelemetryProperty]::AppId = $AppId
@@ -678,7 +678,7 @@ function Format-ApplicationFlightSubmission
     {
         Set-TelemetryEvent -EventName Format-ApplicationFlightSubmission
 
-        Write-Log "Displaying Application Submission..." -Level Verbose
+        Write-Log -Message "Displaying Application Submission..." -Level Verbose
 
         $indentLength = 5
         $output = @()
@@ -733,7 +733,7 @@ function Format-ApplicationFlightSubmission
 
     End
     {
-        Write-Log $output
+        Write-Log -Message $output
     }
 }
 
@@ -804,7 +804,7 @@ function Get-ApplicationFlightSubmissionStatus
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
     $telemetryProperties = @{
         [StoreBrokerTelemetryProperty]::AppId = $AppId
@@ -887,7 +887,7 @@ function Remove-ApplicationFlightSubmission
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
     $telemetryProperties = @{
         [StoreBrokerTelemetryProperty]::AppId = $AppId
@@ -991,7 +991,7 @@ function New-ApplicationFlightSubmission
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
     if ([System.String]::IsNullOrEmpty($AccessToken))
     {
@@ -1009,7 +1009,7 @@ function New-ApplicationFlightSubmission
 
             if ($Force -and ($null -ne $pendingSubmissionId))
             {
-                Write-Log "Force creation requested. Removing pending submission." -Level Verbose
+                Write-Log -Message "Force creation requested. Removing pending submission." -Level Verbose
                 Remove-ApplicationFlightSubmission -AppId $AppId -FlightId $FlightId -SubmissionId $pendingSubmissionId -AccessToken $AccessToken -NoStatus:$NoStatus
             }
 
@@ -1022,12 +1022,12 @@ function New-ApplicationFlightSubmission
                 {
                     if ($ExistingPackageRolloutAction -eq 'Finalize')
                     {
-                        Write-Log "Finalizing package rollout for existing submission before continuing." -Level Verbose
+                        Write-Log -Message "Finalizing package rollout for existing submission before continuing." -Level Verbose
                         Complete-ApplicationFlightSubmissionPackageRollout -AppId $AppId -FlightId $FlightId -SubmissionId $publishedSubmissionId -AccessToken $AccessToken -NoStatus:$NoStatus
                     }
                     elseif ($ExistingPackageRolloutAction -eq 'Halt')
                     {
-                        Write-Log "Halting package rollout for existing submission before continuing." -Level Verbose
+                        Write-Log -Message "Halting package rollout for existing submission before continuing." -Level Verbose
                         Stop-ApplicationFlightSubmissionPackageRollout -AppId $AppId -FlightId $FlightId -SubmissionId $publishedSubmissionId -AccessToken $AccessToken -NoStatus:$NoStatus
                     }
                 }
@@ -1270,9 +1270,9 @@ function Update-ApplicationFlightSubmission
 
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
-    Write-Log "Reading in the submission content from: $SubmissionDataPath" -Level Verbose
+    Write-Log -Message "Reading in the submission content from: $SubmissionDataPath" -Level Verbose
     if ($PSCmdlet.ShouldProcess($SubmissionDataPath, "Get-Content"))
     {
         $submission = [string](Get-Content $SubmissionDataPath -Encoding UTF8) | ConvertFrom-Json
@@ -1302,7 +1302,7 @@ function Update-ApplicationFlightSubmission
             $output += "You either entered the wrong AppId at the commandline, or you're referencing the wrong submission content to upload."
 
             $newLineOutput = ($output -join [Environment]::NewLine)
-            Write-Log $newLineOutput -Level Error
+            Write-Log -Message $newLineOutput -Level Error
             throw $newLineOutput
         }
     }
@@ -1344,7 +1344,7 @@ function Update-ApplicationFlightSubmission
                 $output += "The submission that you requested to modify ($SubmissionId) is in '$($submissionToUpdate.status)' state."
 
                 $newLineOutput = ($output -join [Environment]::NewLine)
-                Write-Log $newLineOutput -Level Error
+                Write-Log -Message $newLineOutput -Level Error
                 throw $newLineOutput
             }
         }
@@ -1394,7 +1394,7 @@ function Update-ApplicationFlightSubmission
 
         if (![System.String]::IsNullOrEmpty($PackagePath))
         {
-            Write-Log "Uploading the package [$PackagePath] since it was provided." -Level Verbose
+            Write-Log -Message "Uploading the package [$PackagePath] since it was provided." -Level Verbose
             Set-SubmissionPackage -PackagePath $PackagePath -UploadUrl $uploadUrl -NoStatus:$NoStatus
         }
         elseif (!$AutoCommit)
@@ -1415,7 +1415,7 @@ function Update-ApplicationFlightSubmission
                 $AccessToken = $null
             }
 
-            Write-Log "Commiting the submission since -AutoCommit was requested." -Level Verbose
+            Write-Log -Message "Commiting the submission since -AutoCommit was requested." -Level Verbose
             Complete-ApplicationFlightSubmission -AppId $AppId -FlightId $FlightId -SubmissionId $submissionId -AccessToken $AccessToken -NoStatus:$NoStatus
         }
         else
@@ -1583,7 +1583,7 @@ function Patch-ApplicationFlightSubmission
         [switch] $UpdateNotesForCertification
     )
 
-    Write-Log "Patching the content of the submission." -Level Verbose
+    Write-Log -Message "Patching the content of the submission." -Level Verbose
 
     # Our method should have zero side-effects -- we don't want to modify any parameter
     # that was passed-in to us.  To that end, we'll create a deep copy of the ClonedSubmisison,
@@ -1616,7 +1616,7 @@ function Patch-ApplicationFlightSubmission
         }
         else
         {
-            Write-Log "MandatoryUpdateEffectiveDate specified without indicating IsMandatoryUpdate.  The value will be ignored." -Level Warning
+            Write-Log -Message "MandatoryUpdateEffectiveDate specified without indicating IsMandatoryUpdate.  The value will be ignored." -Level Warning
         }
     }
 
@@ -1626,7 +1626,7 @@ function Patch-ApplicationFlightSubmission
         $output += "Your submission doesn't contain any packages, so you cannot Add or Replace packages."
         $output += "Please check your input settings to New-SubmissionPackage and ensure you're providing a value for AppxPath."
         $output = $output -join [Environment]::NewLine
-        Write-Log $output -Level Error
+        Write-Log -Message $output -Level Error
         throw $output
     }
 
@@ -1660,7 +1660,7 @@ function Patch-ApplicationFlightSubmission
         if (($TargetPublishMode -eq $script:keywordSpecificDate) -and ($null -eq $TargetPublishDate))
         {
             $output = "TargetPublishMode was set to '$script:keywordSpecificDate' but TargetPublishDate was not specified."
-            Write-Log $output -Level Error
+            Write-Log -Message $output -Level Error
             throw $output
         }
 
@@ -1672,7 +1672,7 @@ function Patch-ApplicationFlightSubmission
         if ($TargetPublishMode -ne $script:keywordSpecificDate)
         {
             $output = "A TargetPublishDate was specified, but the TargetPublishMode was [$TargetPublishMode],  not '$script:keywordSpecificDate'."
-            Write-Log $output -Level Error
+            Write-Log -Message $output -Level Error
             throw $output
         }
 
@@ -1687,11 +1687,11 @@ function Patch-ApplicationFlightSubmission
     # To better assist with debugging, we'll store exactly the original and modified JSON submission bodies.
     $tempFile = [System.IO.Path]::GetTempFileName() # New-TemporaryFile requires PS 5.0
     ($ClonedSubmission | ConvertTo-Json -Depth $script:jsonConversionDepth) | Set-Content -Path $tempFile -Encoding UTF8
-    Write-Log "The original cloned JSON content can be found here: [$tempFile]" -Level Verbose
+    Write-Log -Message "The original cloned JSON content can be found here: [$tempFile]" -Level Verbose
 
     $tempFile = [System.IO.Path]::GetTempFileName() # New-TemporaryFile requires PS 5.0
     ($PatchedSubmission | ConvertTo-Json -Depth $script:jsonConversionDepth) | Set-Content -Path $tempFile -Encoding UTF8
-    Write-Log "The patched JSON content can be found here: [$tempFile]" -Level Verbose
+    Write-Log -Message "The patched JSON content can be found here: [$tempFile]" -Level Verbose
 
     return $PatchedSubmission
 }
@@ -1765,7 +1765,7 @@ function Set-ApplicationFlightSubmission
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
     $submissionId = $UpdatedSubmission.id
     $flightId = $UpdatedSubmission.flightId
@@ -1859,7 +1859,7 @@ function Complete-ApplicationFlightSubmission
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
     try
     {
@@ -2049,7 +2049,7 @@ function Get-ApplicationFlightSubmissionPackageRollout
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
     try
     {
@@ -2148,7 +2148,7 @@ function Update-ApplicationFlightSubmissionPackageRollout
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
     try
     {
@@ -2171,7 +2171,7 @@ function Update-ApplicationFlightSubmissionPackageRollout
 
         $null = Invoke-SBRestMethod @params
 
-        Write-Log "Package rollout for this submission has been updated to $Percentage%."
+        Write-Log -Message "Package rollout for this submission has been updated to $Percentage%."
 
         if ($Percentage -eq 100)
         {
@@ -2255,7 +2255,7 @@ function Stop-ApplicationFlightSubmissionPackageRollout
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
     try
     {
@@ -2359,7 +2359,7 @@ function Complete-ApplicationFlightSubmissionPackageRollout
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
     try
     {
@@ -2381,7 +2381,7 @@ function Complete-ApplicationFlightSubmissionPackageRollout
 
         $null = Invoke-SBRestMethod @params
 
-        Write-Log "Package rollout for this submission has been finalized.  All users in this flight will now receive these packages."
+        Write-Log -Message "Package rollout for this submission has been finalized.  All users in this flight will now receive these packages."
     }
     catch [System.InvalidOperationException]
     {

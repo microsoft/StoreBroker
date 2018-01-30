@@ -397,8 +397,8 @@ function Get-TelemetryClient
 
     if ($null -eq $script:SBTelemetryClient)
     {
-        Write-Log "Telemetry is currently enabled.  It can be disabled by setting ""`$global:SBDisableTelemetry = `$true"". Refer to USAGE.md#telemetry for more information."
-        Write-Log "Initializing telemetry client." -Level Verbose
+        Write-Log -Message "Telemetry is currently enabled.  It can be disabled by setting ""`$global:SBDisableTelemetry = `$true"". Refer to USAGE.md#telemetry for more information."
+        Write-Log -Message "Initializing telemetry client." -Level Verbose
 
         $dlls = @(
                     (Get-ThreadingTasksDllPath -NoStatus:$NoStatus),
@@ -494,11 +494,11 @@ function Set-TelemetryEvent
 
     if ($global:SBDisableTelemetry)
     {
-        Write-Log "Telemetry has been disabled via `$global:SBDisableTelemetry. Skipping reporting event." -Level Verbose
+        Write-Log -Message "Telemetry has been disabled via `$global:SBDisableTelemetry. Skipping reporting event." -Level Verbose
         return
     }
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
     try
     {
@@ -520,7 +520,7 @@ function Set-TelemetryEvent
     {
         # Telemetry should be best-effort.  Failures while trying to handle telemetry should not
         # cause exceptions in the app itself.
-        Write-Log "Set-TelemetryEvent failed:" -Exception $_ -Level Error
+        Write-Log -Message "Set-TelemetryEvent failed:" -Exception $_ -Level Error
     }
 }
 
@@ -597,11 +597,11 @@ function Set-TelemetryException
 
     if ($global:SBDisableTelemetry)
     {
-        Write-Log "Telemetry has been disabled via `$global:SBDisableTelemetry. Skipping reporting event." -Level Verbose
+        Write-Log -Message "Telemetry has been disabled via `$global:SBDisableTelemetry. Skipping reporting event." -Level Verbose
         return
     }
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
     try
     {
@@ -629,7 +629,7 @@ function Set-TelemetryException
     {
         # Telemetry should be best-effort.  Failures while trying to handle telemetry should not
         # cause exceptions in the app itself.
-        Write-Log "Set-TelemetryException failed:" -Exception $_ -Level Error
+        Write-Log -Message "Set-TelemetryException failed:" -Exception $_ -Level Error
     }
 }
 
@@ -675,11 +675,11 @@ function Flush-TelemetryClient
 
     if ($global:SBDisableTelemetry)
     {
-        Write-Log "Telemetry has been disabled via `$global:SBDisableTelemetry. Skipping reporting event." -Level Verbose
+        Write-Log -Message "Telemetry has been disabled via `$global:SBDisableTelemetry. Skipping reporting event." -Level Verbose
         return
     }
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
     $telemetryClient = Get-TelemetryClient -NoStatus:$NoStatus
 
@@ -689,7 +689,7 @@ function Flush-TelemetryClient
     }
     catch [System.Net.WebException]
     {
-        Write-Log "Encountered exception while trying to flush telemetry events:" -Exception $_ -Level Warning
+        Write-Log -Message "Encountered exception while trying to flush telemetry events:" -Exception $_ -Level Warning
 
         Set-TelemetryException -Exception ($_.Exception) -ErrorBucket "TelemetryFlush" -NoFlush -NoStatus:$NoStatus
     }

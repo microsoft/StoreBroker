@@ -30,7 +30,7 @@ function Get-NugetExe
         $sourceNugetExe = "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe"
         $script:nugetExePath = Join-Path $(New-TemporaryDirectory) "nuget.exe"
 
-        Write-Log "Downloading $sourceNugetExe to $script:nugetExePath" -Level Verbose
+        Write-Log -Message "Downloading $sourceNugetExe to $script:nugetExePath" -Level Verbose
         Invoke-WebRequest $sourceNugetExe -OutFile $script:nugetExePath
     }
 
@@ -89,7 +89,7 @@ function Get-NugetPackage
         [switch] $NoStatus
     )
 
-    Write-Log "Downloading nuget package [$PackageName] to [$TargetPath]" -Level Verbose
+    Write-Log -Message "Downloading nuget package [$PackageName] to [$TargetPath]" -Level Verbose
 
     $nugetPath = Get-NugetExe
 
@@ -290,7 +290,7 @@ function Get-NugetPackageDllPath
         [switch] $NoStatus
     )
 
-    Write-Log "Looking for $AssemblyName" -Level Verbose
+    Write-Log -Message "Looking for $AssemblyName" -Level Verbose
 
     # First we'll check to see if the user has cached the assembly into the module's script directory
     $moduleAssembly = Join-Path $PSScriptRoot $AssemblyName
@@ -298,12 +298,12 @@ function Get-NugetPackageDllPath
     {
         if (Test-AssemblyIsDesiredVersion -AssemblyPath $moduleAssembly -DesiredVersion $NugetPackageVersion)
         {
-            Write-Log "Found $AssemblyName in module directory ($PSScriptRoot)." -Level Verbose
+            Write-Log -Message "Found $AssemblyName in module directory ($PSScriptRoot)." -Level Verbose
             return $moduleAssembly
         }
         else
         {
-            Write-Log "Found $AssemblyName in module directory ($PSScriptRoot), but its version number didn't match required [$NugetPackageVersion]." -Level Verbose
+            Write-Log -Message "Found $AssemblyName in module directory ($PSScriptRoot), but its version number didn't match required [$NugetPackageVersion]." -Level Verbose
         }
     }
 
@@ -315,12 +315,12 @@ function Get-NugetPackageDllPath
         {
             if (Test-AssemblyIsDesiredVersion -AssemblyPath $alternateAssemblyPath -DesiredVersion $NugetPackageVersion)
             {
-                Write-Log "Found $AssemblyName in alternate directory ($SBAlternateAssemblyDir)." -Level Verbose
+                Write-Log -Message "Found $AssemblyName in alternate directory ($SBAlternateAssemblyDir)." -Level Verbose
                 return $alternateAssemblyPath
             }
             else
             {
-                Write-Log "Found $AssemblyName in alternate directory ($SBAlternateAssemblyDir), but its version number didn't match required [$NugetPackageVersion]." -Level Verbose
+                Write-Log -Message "Found $AssemblyName in alternate directory ($SBAlternateAssemblyDir), but its version number didn't match required [$NugetPackageVersion]." -Level Verbose
             }
         }
     }
@@ -337,18 +337,18 @@ function Get-NugetPackageDllPath
         {
             if (Test-AssemblyIsDesiredVersion -AssemblyPath $cachedAssemblyPath -DesiredVersion $NugetPackageVersion)
             {
-                Write-Log "Found $AssemblyName in temp directory ($script:tempAssemblyCacheDir)." -Level Verbose
+                Write-Log -Message "Found $AssemblyName in temp directory ($script:tempAssemblyCacheDir)." -Level Verbose
                 return $cachedAssemblyPath
             }
             else
             {
-                Write-Log "Found $AssemblyName in temp directory ($script:tempAssemblyCacheDir), but its version number didn't match required [$NugetPackageVersion]." -Level Verbose
+                Write-Log -Message "Found $AssemblyName in temp directory ($script:tempAssemblyCacheDir), but its version number didn't match required [$NugetPackageVersion]." -Level Verbose
             }
         }
     }
 
     # Still not found, so we'll go ahead and download the package via nuget.
-    Write-Log "$AssemblyName is needed and wasn't found.  Acquiring it via nuget..." -Level Verbose
+    Write-Log -Message "$AssemblyName is needed and wasn't found.  Acquiring it via nuget..." -Level Verbose
     Get-NugetPackage -PackageName $NugetPackageName -Version $NugetPackageVersion -TargetPath $script:tempAssemblyCacheDir -NoStatus:$NoStatus
 
     $cachedAssemblyPath = Join-Path $(Join-Path $script:tempAssemblyCacheDir $AssemblyPackageTailDirectory) $AssemblyName
@@ -366,6 +366,6 @@ function Get-NugetPackageDllPath
     }
 
     $output = "Unable to acquire a reference to $AssemblyName."
-    Write-Log $output -Level Error
+    Write-Log -Message $output -Level Error
     throw $output
 }

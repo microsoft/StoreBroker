@@ -104,7 +104,7 @@ function Get-StoreBrokerConfigFileContentForIapId
         if ([String]::IsNullOrEmpty($submissionId))
         {
             $submissionId = $iap.pendingInAppProductSubmission.id
-            Write-Log "No published submission exists for this In-App Product.  Using the current pending submission." -Level Warning
+            Write-Log -Message "No published submission exists for this In-App Product.  Using the current pending submission." -Level Warning
         }
 
         $sub = Get-InAppProductSubmission -IapId $IapId -SubmissionId $submissionId
@@ -141,7 +141,7 @@ function Get-StoreBrokerConfigFileContentForIapId
     }
     catch
     {
-        Write-Log "Encountered problems getting current In-App Product submission values:" -Exception $_ -Level Error
+        Write-Log -Message "Encountered problems getting current In-App Product submission values:" -Exception $_ -Level Error
         throw
     }
 }
@@ -199,9 +199,9 @@ function New-StoreBrokerInAppProductConfigFile
     $dir = Split-Path -Parent -Path $Path
     if (-not (Test-Path -PathType Container -Path $dir))
     {
-        Write-Log "Creating directory: $dir" -Level Verbose
+        Write-Log -Message "Creating directory: $dir" -Level Verbose
         New-Item -Force -ItemType Directory -Path $dir | Out-Null
-        Write-Log "Created directory." -Level Verbose
+        Write-Log -Message "Created directory." -Level Verbose
     }
 
     $sourcePath = Join-Path -Path $PSScriptRoot -ChildPath $script:defaultIapConfigFileName
@@ -214,9 +214,9 @@ function New-StoreBrokerInAppProductConfigFile
         $template = Get-StoreBrokerConfigFileContentForIapId -ConfigContent $template -IapId $IapId
     }
 
-    Write-Log "Copying (Item: $sourcePath) to (Target: $Path)." -Level Verbose
+    Write-Log -Message "Copying (Item: $sourcePath) to (Target: $Path)." -Level Verbose
     Set-Content -Path $Path -Value $template -Encoding UTF8 -Force
-    Write-Log "Copy complete." -Level Verbose
+    Write-Log -Message "Copy complete." -Level Verbose
 
     $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::IapId = $IapId }
     Set-TelemetryEvent -EventName New-StoreBrokerIapConfigFile -Properties $telemetryProperties
@@ -336,7 +336,7 @@ function Get-StoreBrokerConfigFileContentForAppId
     }
     catch
     {
-        Write-Log "Encountered problems getting current application submission values:" -Exception $_ -Level Error
+        Write-Log -Message "Encountered problems getting current application submission values:" -Exception $_ -Level Error
         throw
     }
 }
@@ -394,9 +394,9 @@ function New-StoreBrokerConfigFile
     $dir = Split-Path -Parent -Path $Path
     if (-not (Test-Path -PathType Container -Path $dir))
     {
-        Write-Log "Creating directory: $dir" -Level Verbose
+        Write-Log -Message "Creating directory: $dir" -Level Verbose
         New-Item -Force -ItemType Directory -Path $dir | Out-Null
-        Write-Log "Created directory." -Level Verbose
+        Write-Log -Message "Created directory." -Level Verbose
     }
 
     $sourcePath = Join-Path -Path $PSScriptRoot -ChildPath $script:defaultConfigFileName
@@ -409,9 +409,9 @@ function New-StoreBrokerConfigFile
         $template = Get-StoreBrokerConfigFileContentForAppId -ConfigContent $template -AppId $AppId
     }
 
-    Write-Log "Copying (Item: $sourcePath) to (Target: $Path)." -Level Verbose
+    Write-Log -Message "Copying (Item: $sourcePath) to (Target: $Path)." -Level Verbose
     Set-Content -Path $Path -Value $template -Encoding UTF8 -Force
-    Write-Log "Copy complete." -Level Verbose
+    Write-Log -Message "Copy complete." -Level Verbose
 
     $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::AppId = $AppId }
     Set-TelemetryEvent -EventName New-StoreBrokerConfigFile -Properties $telemetryProperties
@@ -470,9 +470,9 @@ function Out-DirectoryToZip
             {
                 if (Test-Path -PathType Leaf -Include "*.zip" -Path $zipPath)
                 {
-                    Write-Log "Removing zip path: [$zipPath]." -Level Verbose
+                    Write-Log -Message "Removing zip path: [$zipPath]." -Level Verbose
                     Remove-Item -Force -Recurse -Path $zipPath
-                    Write-Log "Removal complete." -Level Verbose
+                    Write-Log -Message "Removal complete." -Level Verbose
                 }
             }
 
@@ -484,22 +484,22 @@ function Out-DirectoryToZip
             $compressionLevel = [System.IO.Compression.CompressionLevel]::NoCompression
             $includeBaseDir = $false
 
-            Write-Log "Compressing [$Path] to [$tempLocalZipPath]." -Level Verbose
+            Write-Log -Message "Compressing [$Path] to [$tempLocalZipPath]." -Level Verbose
             [System.IO.Compression.ZipFile]::CreateFromDirectory($Path, $tempLocalZipPath, $compressionLevel, $includeBaseDir)
-            Write-Log "Compression complete." -Level Verbose
+            Write-Log -Message "Compression complete." -Level Verbose
 
-            Write-Log "Moving [$tempLocalZipPath] to [$Destination]." -Level Verbose
+            Write-Log -Message "Moving [$tempLocalZipPath] to [$Destination]." -Level Verbose
             Move-Item -Force -Path $tempLocalZipPath -Destination $Destination
-            Write-Log "Move complete." -Level Verbose
+            Write-Log -Message "Move complete." -Level Verbose
         }
     }
     finally
     {
         if ($null -ne $tempLocalZipDir)
         {
-            Write-Log "Removing temporary directory: [$tempLocalZipDir]." -Level Verbose
+            Write-Log -Message "Removing temporary directory: [$tempLocalZipDir]." -Level Verbose
             Remove-Item -Force -Recurse -Path $tempLocalZipDir -ErrorAction Ignore
-            Write-Log "Removal complete." -Level Verbose
+            Write-Log -Message "Removal complete." -Level Verbose
         }
     }
 }
@@ -529,13 +529,13 @@ function Write-SubmissionRequestBody
     {
         Ensure-Directory -Path (Split-Path -Parent -Path $OutFilePath)
 
-        Write-Log "Writing submission request JSON file: [$OutFilePath]." -Level Verbose
+        Write-Log -Message "Writing submission request JSON file: [$OutFilePath]." -Level Verbose
 
         $JsonObject |
             ConvertTo-Json -Depth $script:jsonConversionDepth -Compress |
             Out-File -Encoding utf8 -FilePath $OutFilePath
 
-        Write-Log "Writing complete." -Level Verbose
+        Write-Log -Message "Writing complete." -Level Verbose
     }
 }
 
@@ -635,7 +635,7 @@ function Test-Xml
         $script:validationErrors | ForEach-Object { $msg += $_ }
         $msg = $msg -join [Environment]::NewLine
 
-        Write-Log $msg -Level Error
+        Write-Log -Message $msg -Level Error
         throw $msg
     }
 }
@@ -724,7 +724,7 @@ function Convert-ListingToObject
                     if ($language -in $LanguageExclude)
                     {
                         $out = "Skipping file '$xmlFilePath' because its lang-code '$language' is in the language exclusion list."
-                        Write-Log $out -Level Verbose
+                        Write-Log -Message $out -Level Verbose
 
                         return
                     }
@@ -859,7 +859,7 @@ function Convert-ListingToObject
                 catch [System.InvalidCastException]
                 {
                     $output = "Provided .xml file is not a valid .xml document: $xmlFilePath"
-                    Write-Log $output -Level Error
+                    Write-Log -Message $output -Level Error
                     throw $output
                 }
             }
@@ -947,7 +947,7 @@ function Get-LocalizedMediaFile
         $mediaFallbackLanguageSourcePath = [System.IO.Path]::Combine($ImagesRootPath, $Release, $MediaFallbackLanguage)
         if (-not (Test-Path -Path $mediaFallbackLanguageSourcePath -PathType Container))
         {
-            Write-Log "A fallback language was specified [$MediaFallbackLanguage], but a folder for that language does not exist [$mediaFallbackLanguageSourcePath], so media fallback support has been disabled." -Level Warning
+            Write-Log -Message "A fallback language was specified [$MediaFallbackLanguage], but a folder for that language does not exist [$mediaFallbackLanguageSourcePath], so media fallback support has been disabled." -Level Warning
             $mediaFallbackLanguageSourcePath = $null
         }
     }
@@ -960,7 +960,7 @@ function Get-LocalizedMediaFile
 
     if (($null -eq $image) -and ($null -ne $mediaFallbackLanguageSourcePath))
     {
-        Write-Log "[$Language] version of $Filename not found.  Using fallback language [$MediaFallbackLanguage] version." -Level Verbose
+        Write-Log -Message "[$Language] version of $Filename not found.  Using fallback language [$MediaFallbackLanguage] version." -Level Verbose
         $image = Get-ChildItem -Recurse -File -Path $mediaFallbackLanguageSourcePath -Include $Filename
         $fileRelativePackagePath = [System.IO.Path]::Combine($script:packageImageFolderName, $MediaFallbackLanguage, $Filename)
     }
@@ -973,14 +973,14 @@ function Get-LocalizedMediaFile
             $output += " Image also not found in fallback language location [$mediaFallbackLanguageSourcePath]";
         }
 
-        Write-Log $output -Level Error
+        Write-Log -Message $output -Level Error
         throw $output
     }
 
     if ($image.Count -gt 1)
     {
         $output = "More then one version of [$Filename] has been found for this language. Please ensure only one copy of this image exists within the language's sub-folders: [$($image.FullName -join ', ')]"
-        Write-Log $output -Level Warning
+        Write-Log -Message $output -Level Warning
         #throw $output
     }
 
@@ -1081,13 +1081,13 @@ function Convert-ListingsMetadata
 
     $listings = @{}
 
-    Write-Log "Converting application listings metadata." -Level Verbose
+    Write-Log -Message "Converting application listings metadata." -Level Verbose
 
     (Get-ChildItem -File $PDPRootPath -Recurse -Include $PDPInclude -Exclude $PDPExclude).FullName |
         Convert-ListingToObject -PDPRootPath $PDPRootPath -LanguageExclude $LanguageExclude -ImagesRootPath $ImagesRootPath -MediaFallbackLanguage $MediaFallbackLanguage |
         ForEach-Object { $listings[$_."lang"] = $_."listing" }
 
-    Write-Log "Conversion complete." -Level Verbose
+    Write-Log -Message "Conversion complete." -Level Verbose
 
     return $listings
 }
@@ -1173,7 +1173,7 @@ function Convert-InAppProductListingToObject
                     if ($language -in $LanguageExclude)
                     {
                         $out = "Skipping file '$xmlFilePath' because its lang-code '$language' is in the language exclusion list."
-                        Write-Log $out -Level Verbose
+                        Write-Log -Message $out -Level Verbose
 
                         return
                     }
@@ -1248,7 +1248,7 @@ function Convert-InAppProductListingToObject
                 catch [System.InvalidCastException]
                 {
                     $output = "Provided .xml file is not a valid .xml document: $xmlFilePath"
-                    Write-Log $output -Level Error
+                    Write-Log -Message $output -Level Error
                     throw $output
                 }
             }
@@ -1338,13 +1338,13 @@ function Convert-InAppProductListingsMetadata
 
     $listings = @{}
 
-    Write-Log "Converting IAP listings metadata." -Level Verbose
+    Write-Log -Message "Converting IAP listings metadata." -Level Verbose
 
     (Get-ChildItem -File $PDPRootPath -Recurse -Include $PDPInclude -Exclude $PDPExclude).FullName |
         Convert-InAppProductListingToObject -PDPRootPath $PDPRootPath -LanguageExclude $LanguageExclude -ImagesRootPath $ImagesRootPath -MediaFallbackLanguage $MediaFallbackLanguage |
         ForEach-Object { $listings[$_."lang"] = $_."listing" }
 
-    Write-Log "Conversion complete." -Level Verbose
+    Write-Log -Message "Conversion complete." -Level Verbose
 
     return $listings
 }
@@ -1395,16 +1395,16 @@ function Open-AppxContainer
         }
         while (Test-Path -PathType Leaf -Path $containerZipPath)
 
-        Write-Log "Copying (Item: $AppxContainerPath) to (Target: $containerZipPath)." -Level Verbose
+        Write-Log -Message "Copying (Item: $AppxContainerPath) to (Target: $containerZipPath)." -Level Verbose
         Copy-Item -Force -Path $AppxContainerPath -Destination $containerZipPath
-        Write-Log "Copy complete." -Level Verbose
+        Write-Log -Message "Copy complete." -Level Verbose
 
         # Expand CONTAINER.appxcontainer.zip to CONTAINER folder
         $expandedContainerPath = New-TemporaryDirectory
 
-        Write-Log "Unzipping archive (Item: $containerZipPath) to (Target: $expandedContainerPath)." -Level Verbose
+        Write-Log -Message "Unzipping archive (Item: $containerZipPath) to (Target: $expandedContainerPath)." -Level Verbose
         [System.IO.Compression.ZipFile]::ExtractToDirectory($containerZipPath, $expandedContainerPath)
-        Write-Log "Unzip complete." -Level Verbose
+        Write-Log -Message "Unzip complete." -Level Verbose
 
         return $expandedContainerPath
     }
@@ -1412,9 +1412,9 @@ function Open-AppxContainer
     {
         if ((-not [System.String]::IsNullOrEmpty($expandedContainerPath)) -and (Test-Path $expandedContainerPath))
         {
-            Write-Log "Deleting item: $expandedContainerPath" -Level Verbose
+            Write-Log -Message "Deleting item: $expandedContainerPath" -Level Verbose
             Remove-Item -Force -Recurse -Path $expandedContainerPath -ErrorAction SilentlyContinue
-            Write-Log "Deletion complete." -Level Verbose
+            Write-Log -Message "Deletion complete." -Level Verbose
         }
 
         throw
@@ -1423,9 +1423,9 @@ function Open-AppxContainer
     {
         if ((-not [System.String]::IsNullOrEmpty($containerZipPath)) -and (Test-Path $containerZipPath))
         {
-            Write-Log "Deleting item: $containerZipPath" -Level Verbose
+            Write-Log -Message "Deleting item: $containerZipPath" -Level Verbose
             Remove-Item -Force -Recurse -Path $containerZipPath -ErrorAction SilentlyContinue
-            Write-Log "Deletion complete." -Level Verbose
+            Write-Log -Message "Deletion complete." -Level Verbose
         }
     }
 }
@@ -1523,7 +1523,7 @@ function Get-TargetPlatform
     $minOSVersion = $root.Prerequisites.OSMinVersion
     if ([String]::IsNullOrEmpty($minOSVersion))
     {
-        Write-Log "Could not find OSMinVersion in [$AppxManifestPath]" -Level Warning
+        Write-Log -Message "Could not find OSMinVersion in [$AppxManifestPath]" -Level Warning
         return $null
     }
 
@@ -1600,7 +1600,7 @@ function Read-AppxMetadata
             throw "`"$AppxPath`" is not a proper .appx. Could not find an AppxManifest.xml."
         }
 
-        Write-Log "Opening `"$appxManifest`"." -Level Verbose
+        Write-Log -Message "Opening `"$appxManifest`"." -Level Verbose
         $manifest = [xml] (Get-Content -Path $appxManifest -Encoding UTF8)
 
 
@@ -1654,9 +1654,9 @@ function Read-AppxMetadata
     {
         if (-not [String]::IsNullOrWhiteSpace($expandedAppxPath))
         {
-            Write-Log "Deleting item: $expandedAppxPath" -Level Verbose
+            Write-Log -Message "Deleting item: $expandedAppxPath" -Level Verbose
             Remove-Item -Force -Recurse -Path $expandedAppxPath -ErrorAction SilentlyContinue | Out-Null
-            Write-Log "Deletion complete." -Level Verbose
+            Write-Log -Message "Deletion complete." -Level Verbose
         }
     }
 
@@ -1716,7 +1716,7 @@ function Read-AppxUploadMetadata
     {
         $throwFormat = "`"$AppxuploadPath`" is not a proper .appxupload. There must be exactly one {0} inside the file."
 
-        Write-Log "Opening `"$AppxuploadPath`"." -Level Verbose
+        Write-Log -Message "Opening `"$AppxuploadPath`"." -Level Verbose
         $expandedContainerPath = Open-AppxContainer -AppxContainerPath $AppxPath
 
         $appxFilePath = (Get-ChildItem -Recurse -Path $expandedContainerPath -Include "*.appx").FullName
@@ -1727,7 +1727,7 @@ function Read-AppxUploadMetadata
                 Report-UnsupportedFile -Path $AppxuploadPath
 
                 $error = $throwFormat -f ".appx"
-                Write-Log $error -Level Error
+                Write-Log -Message $error -Level Error
                 throw $error
             }
             else
@@ -1743,7 +1743,7 @@ function Read-AppxUploadMetadata
             Report-UnsupportedFile -Path $AppxuploadPath
 
             $error = $throwFormat -f ".appx or .appxbundle"
-            Write-Log $error -Level Error
+            Write-Log -Message $error -Level Error
             throw $error
         }
         else
@@ -1755,9 +1755,9 @@ function Read-AppxUploadMetadata
     {
         if (-not [String]::IsNullOrWhiteSpace($expandedContainerPath))
         {
-            Write-Log "Deleting item: $expandedContainerPath" -Level Verbose
+            Write-Log -Message "Deleting item: $expandedContainerPath" -Level Verbose
             Remove-Item -Force -Recurse -Path $expandedContainerPath -ErrorAction SilentlyContinue | Out-Null
-            Write-Log "Deletion complete." -Level Verbose
+            Write-Log -Message "Deletion complete." -Level Verbose
         }
     }
 }
@@ -1821,7 +1821,7 @@ function Read-AppxBundleMetadata
             throw "`"$AppxbundlePath`" is not a proper .appxbundle. Could not find an AppxBundleManifest.xml."
         }
 
-        Write-Log "Opening `"$bundleManifestPath`"." -Level Verbose
+        Write-Log -Message "Opening `"$bundleManifestPath`"." -Level Verbose
         $manifest = [xml] (Get-Content -Path $bundleManifestPath -Encoding UTF8)
 
 
@@ -1886,9 +1886,9 @@ function Read-AppxBundleMetadata
     {
         if (-not [String]::IsNullOrWhiteSpace($expandedContainerPath))
         {
-            Write-Log "Deleting item: $expandedContainerPath" -Level Verbose
+            Write-Log -Message "Deleting item: $expandedContainerPath" -Level Verbose
             Remove-Item -Force -Recurse -Path $expandedContainerPath -ErrorAction SilentlyContinue | Out-Null
-            Write-Log "Deletion complete." -Level Verbose
+            Write-Log -Message "Deletion complete." -Level Verbose
         }
     }
 
@@ -2107,7 +2107,7 @@ function Add-AppPackagesMetadata
         if ($PSCmdlet.ShouldProcess($path))
         {
 
-            Write-Log "Processing [$path]" -Level Verbose
+            Write-Log -Message "Processing [$path]" -Level Verbose
 
             $appxName = Split-Path -Leaf -Path $path
 
@@ -2137,9 +2137,9 @@ function Add-AppPackagesMetadata
             {
                 $destinationPath = Join-Path $script:tempFolderPath $appxName
 
-                Write-Log "Copying (Item: $path) to (Target: $destinationPath)" -Level Verbose
+                Write-Log -Message "Copying (Item: $path) to (Target: $destinationPath)" -Level Verbose
                 Copy-Item -Path $path -Destination $destinationPath
-                Write-Log "Copy complete." -Level Verbose
+                Write-Log -Message "Copy complete." -Level Verbose
             }
 
             $SubmissionObject.applicationPackages += $appPackageObject
@@ -2322,7 +2322,7 @@ function Get-SubmissionRequestBody
                 $out += "Check the values of '$script:s_PDPRootPath' and '$script:s_Release' and try again."
 
                 $newLineOutput = ($out -join [Environment]::NewLine)
-                Write-Log $newLineOutput -Level Error
+                Write-Log -Message $newLineOutput -Level Error
                 throw $newLineOutput
             }
         }
@@ -2451,7 +2451,7 @@ function Get-InAppProductSubmissionRequestBody
                 $out += "Check the values of '$script:s_PDPRootPath' and '$script:s_Release' and try again."
 
                 $newLineOutput = ($out -join [Environment]::NewLine)
-                Write-Log $newLineOutput -Level Error
+                Write-Log -Message $newLineOutput -Level Error
                 throw $newLineOutput
             }
         }
@@ -2539,7 +2539,7 @@ function Resolve-PackageParameters
             if (-not [String]::IsNullOrWhiteSpace($configVal))
             {
                 $ParamMap[$param] = $configVal
-                Write-Log ($fromConfig -f $param, $configVal) -Level Verbose
+                Write-Log -Message ($fromConfig -f $param, $configVal) -Level Verbose
             }
         }
 
@@ -2554,7 +2554,7 @@ function Resolve-PackageParameters
             {
                 $out = "$($param): `"$($ParamMap[$param])`" is not a directory or cannot be found."
 
-                Write-Log $out -Level Error
+                Write-Log -Message $out -Level Error
                 throw $out
             }
         }
@@ -2571,7 +2571,7 @@ function Resolve-PackageParameters
             $out += "If one of these parameters is specified, then both must be specified."
 
             $newLineOutput = ($out -join [Environment]::NewLine)
-            Write-Log $newLineOutput -Level Error
+            Write-Log -Message $newLineOutput -Level Error
             throw $newLineOutput
         }
     }
@@ -2586,13 +2586,13 @@ function Resolve-PackageParameters
             if ([System.String]::IsNullOrWhiteSpace($configVal))
             {
                 $output = ($out -f $script:s_OutPath)
-                Write-Log $output -Level Error
+                Write-Log -Message $output -Level Error
                 throw $output
             }
             else
             {
                 $ParamMap[$script:s_OutPath] = $configVal
-                Write-Log ($fromConfig -f $script:s_OutPath, $configVal) -Level Verbose
+                Write-Log -Message ($fromConfig -f $script:s_OutPath, $configVal) -Level Verbose
             }
         }
 
@@ -2610,13 +2610,13 @@ function Resolve-PackageParameters
             if ([System.String]::IsNullOrWhiteSpace($configVal))
             {
                 $output = ($out -f $script:s_OutName)
-                Write-Log $output -Level Error
+                Write-Log -Message $output -Level Error
                 throw $output
             }
             else
             {
                 $ParamMap[$script:s_OutName] = $configVal
-                Write-Log ($fromConfig -f $script:s_OutName, $configVal) -Level Verbose
+                Write-Log -Message ($fromConfig -f $script:s_OutName, $configVal) -Level Verbose
             }
         }
     }
@@ -2629,7 +2629,7 @@ function Resolve-PackageParameters
         if (-not [String]::IsNullOrWhiteSpace($configVal))
         {
             $ParamMap[$script:s_Release] = $configVal
-            Write-Log ($fromConfig -f $script:s_Release, $configVal) -Level Verbose
+            Write-Log -Message ($fromConfig -f $script:s_Release, $configVal) -Level Verbose
         }
     }
 
@@ -2643,7 +2643,7 @@ function Resolve-PackageParameters
             if ($configVal.Count -gt 0)
             {
                 $ParamMap[$param] = $configVal
-                Write-Log ($fromConfig -f $param, ($configVal -join ', ')) -Level Verbose
+                Write-Log -Message ($fromConfig -f $param, ($configVal -join ', ')) -Level Verbose
             }
         }
 
@@ -2655,7 +2655,7 @@ function Resolve-PackageParameters
     if ($ParamMap[$script:s_PDPInclude].Count -eq 0)
     {
         $ParamMap[$script:s_PDPInclude] = @("*.xml")
-        Write-Log "`tUsing default value: $script:s_PDPInclude = `"*.xml`"" -Level Verbose
+        Write-Log -Message "`tUsing default value: $script:s_PDPInclude = `"*.xml`"" -Level Verbose
     }
 
     if ($SkipValidation -inotcontains $script:s_AppxPath)
@@ -2678,7 +2678,7 @@ function Resolve-PackageParameters
                     $out += "See the `"$script:s_AppxPath`" object in the config file."
 
                     $newLineOutput = ($out -join [Environment]::NewLine)
-                    Write-Log $newLineOutput -Level Error
+                    Write-Log -Message $newLineOutput -Level Error
                     throw $newLineOutput
                 }
                 else
@@ -2706,7 +2706,7 @@ function Resolve-PackageParameters
                         $out += "See the `"$script:s_AppxPath`" object in the config file."
 
                         $newLineOutput = ($out -join [Environment]::NewLine)
-                        Write-Log $newLineOutput -Level Error
+                        Write-Log -Message $newLineOutput -Level Error
                         throw $newLineOutput
                     }
                 }
@@ -2714,7 +2714,7 @@ function Resolve-PackageParameters
 
             $ParamMap[$script:s_AppxPath] = $packagePaths
             $quotedVals = $packagePaths | ForEach-Object { "`"$_`"" }
-            Write-Log ($fromConfig -f $script:s_AppxPath, ($quotedVals -join ', ')) -Level Verbose
+            Write-Log -Message ($fromConfig -f $script:s_AppxPath, ($quotedVals -join ', ')) -Level Verbose
         }
 
         # Resolve AppxPath to a list of full paths.
@@ -2735,7 +2735,7 @@ function Resolve-PackageParameters
             }
 
             $ParamMap[$script:s_DisableAutoPackageNameFormatting] = $configVal
-            Write-Log ($fromConfig -f $script:s_DisableAutoPackageNameFormatting, $configVal) -Level Verbose
+            Write-Log -Message ($fromConfig -f $script:s_DisableAutoPackageNameFormatting, $configVal) -Level Verbose
         }
     }
 
@@ -2747,7 +2747,7 @@ function Resolve-PackageParameters
         if (-not [String]::IsNullOrWhiteSpace($configVal))
         {
             $ParamMap[$script:s_MediaFallbackLanguage] = $configVal
-            Write-Log ($fromConfig -f $script:s_MediaFallbackLanguage, $configVal) -Level Verbose
+            Write-Log -Message ($fromConfig -f $script:s_MediaFallbackLanguage, $configVal) -Level Verbose
         }
     }
 
@@ -2926,17 +2926,17 @@ function Join-SubmissionPackage
     $outUnpackedZipPath = New-TemporaryDirectory
     if ($PSCmdlet.ShouldProcess($masterZipPath, "Unzip"))
     {
-        Write-Log "Unzipping archive [$masterZipPath] to [$outUnpackedZipPath]" -Level Verbose
+        Write-Log -Message "Unzipping archive [$masterZipPath] to [$outUnpackedZipPath]" -Level Verbose
         [System.IO.Compression.ZipFile]::ExtractToDirectory($masterZipPath, $outUnpackedZipPath)
-        Write-Log "Unzip complete." -Level Verbose
+        Write-Log -Message "Unzip complete." -Level Verbose
     }
 
     $additionalUnpackedZipPath = New-TemporaryDirectory
     if ($PSCmdlet.ShouldProcess($additionalZipPath, "Unzip"))
     {
-        Write-Log "Unzipping archive [$additionalZipPath] to [$additionalUnpackedZipPath]" -Level Verbose
+        Write-Log -Message "Unzipping archive [$additionalZipPath] to [$additionalUnpackedZipPath]" -Level Verbose
         [System.IO.Compression.ZipFile]::ExtractToDirectory($additionalZipPath, $additionalUnpackedZipPath)
-        Write-Log "Unzip complete." -Level Verbose
+        Write-Log -Message "Unzip complete." -Level Verbose
     }
 
     # out json content will be based off of master, so we can just consider master's json as "out"
@@ -2947,7 +2947,7 @@ function Join-SubmissionPackage
     {
         # We copy over all package changes from the "AdditionalJson", including package removals,
         # package uploads and specified retention of existing packages.
-        Write-Log "Adding applicationPackages from [$AdditionalJsonPath] to [$OutJsonPath]" -Level Verbose
+        Write-Log -Message "Adding applicationPackages from [$AdditionalJsonPath] to [$OutJsonPath]" -Level Verbose
         $outJsonContent.applicationPackages += $additionalJsonContent.applicationPackages
 
         # Copy packages from Additional over to Master
@@ -2962,14 +2962,14 @@ function Join-SubmissionPackage
                 if (Test-Path $destPath -PathType Leaf)
                 {
                     $output = "A package called [$($package.fileName)] already exists in the Master zip file."
-                    Write-Log $output -Level Error
+                    Write-Log -Message $output -Level Error
                     throw $output
                 }
 
                 $sourcePath = Join-Path $additionalUnpackedZipPath $package.fileName
-                Write-Log "Copying [$sourcePath] to [$destPath]" -Level Verbose
+                Write-Log -Message "Copying [$sourcePath] to [$destPath]" -Level Verbose
                 Copy-Item -Path $sourcePath -Destination $destPath
-                Write-Log "Copy complete." -Level Verbose
+                Write-Log -Message "Copy complete." -Level Verbose
             }
         }
     }
@@ -2980,20 +2980,20 @@ function Join-SubmissionPackage
     # Output the merged json
     if ($PSCmdlet.ShouldProcess($OutJsonPath, "Create json"))
     {
-        Write-Log "Writing merged JSON file: [$OutJsonPath]." -Level Verbose
+        Write-Log -Message "Writing merged JSON file: [$OutJsonPath]." -Level Verbose
 
         $outJsonContent |
             ConvertTo-Json -Depth $script:jsonConversionDepth -Compress |
             Out-File -Encoding utf8 -FilePath $OutJsonPath
 
-        Write-Log "Write complete." -Level Verbose
+        Write-Log -Message "Write complete." -Level Verbose
     }
 
     # Clean up the temp directories
-    Write-Log "Cleaning up temp directories..." -Level Verbose
+    Write-Log -Message "Cleaning up temp directories..." -Level Verbose
     Remove-Item -Path $outUnpackedZipPath -Recurse -Force -ErrorAction SilentlyContinue
     Remove-Item -Path $additionalUnpackedZipPath -Recurse -Force -ErrorAction SilentlyContinue
-    Write-Log "Cleaning up temp directories complete." -Level Verbose
+    Write-Log -Message "Cleaning up temp directories complete." -Level Verbose
 }
 
 function New-SubmissionPackage
@@ -3157,8 +3157,8 @@ function New-SubmissionPackage
         Add-Type -AssemblyName System.IO.Compression.FileSystem
 
         # Preamble before printing invocation parameters
-        Write-Log "New-SubmissionPackage invoked with parameters:" -Level Verbose
-        Write-Log "`t$script:s_ConfigPath = `"$ConfigPath`"" -Level Verbose
+        Write-Log -Message "New-SubmissionPackage invoked with parameters:" -Level Verbose
+        Write-Log -Message "`t$script:s_ConfigPath = `"$ConfigPath`"" -Level Verbose
 
         # Check the value of each parameter and add to parameter hashtable if not null.
         # Resolve-PackageParameters will take care of validating the values, we only need
@@ -3181,7 +3181,7 @@ function New-SubmissionPackage
                 # Treat the value as if it is an array.
                 # If it's not, it will still pretty print fine.
                 $quotedVals = $val | ForEach-Object { "`"$_`"" }
-                Write-Log "`t$param = $($quotedVals -join ', ')" -Level Verbose
+                Write-Log -Message "`t$param = $($quotedVals -join ', ')" -Level Verbose
             }
         }
 
@@ -3261,9 +3261,9 @@ function New-SubmissionPackage
     {
         if ($script:tempFolderExists)
         {
-            Write-Log "Deleting temporary directory: $script:tempFolderPath" -Level Verbose
+            Write-Log -Message "Deleting temporary directory: $script:tempFolderPath" -Level Verbose
             Remove-Item -Force -Recurse $script:tempFolderPath -ErrorAction SilentlyContinue
-            Write-Log "Deleting temporary directory complete." -Level Verbose
+            Write-Log -Message "Deleting temporary directory complete." -Level Verbose
         }
     }
 }
@@ -3397,8 +3397,8 @@ function New-InAppProductSubmissionPackage
         Add-Type -AssemblyName System.IO.Compression.FileSystem
 
         # Preamble before printing invocation parameters
-        Write-Log "New-InAppProductSubmissionPackage invoked with parameters:" -Level Verbose
-        Write-Log "`t$script:s_ConfigPath = `"$ConfigPath`"" -Level Verbose
+        Write-Log -Message "New-InAppProductSubmissionPackage invoked with parameters:" -Level Verbose
+        Write-Log -Message "`t$script:s_ConfigPath = `"$ConfigPath`"" -Level Verbose
 
         # Check the value of each parameter and add to parameter hashtable if not null.
         # Resolve-PackageParameters will take care of validating the values, we only need
@@ -3421,7 +3421,7 @@ function New-InAppProductSubmissionPackage
                 # Treat the value as if it is an array.
                 # If it's not, it will still pretty print fine.
                 $quotedVals = $val | ForEach-Object { "`"$_`"" }
-                Write-Log "`t$param = $($quotedVals -join ', ')" -Level Verbose
+                Write-Log -Message "`t$param = $($quotedVals -join ', ')" -Level Verbose
             }
         }
 
@@ -3480,9 +3480,9 @@ function New-InAppProductSubmissionPackage
     {
         if ($script:tempFolderExists)
         {
-            Write-Log "Deleting temporary directory: $script:tempFolderPath" -Level Verbose
+            Write-Log -Message "Deleting temporary directory: $script:tempFolderPath" -Level Verbose
             Remove-Item -Force -Recurse $script:tempFolderPath -ErrorAction SilentlyContinue
-            Write-Log "Deleting temporary directory complete." -Level Verbose
+            Write-Log -Message "Deleting temporary directory complete." -Level Verbose
         }
     }
 }

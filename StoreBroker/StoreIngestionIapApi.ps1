@@ -82,7 +82,7 @@ function Get-InAppProducts
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
     $params = @{
         "UriFragment" = "inappproducts/"
@@ -141,7 +141,7 @@ function Format-InAppProducts
     {
         Set-TelemetryEvent -EventName Format-InAppProducts
 
-        Write-Log "Displaying IAP's..." -Level Verbose
+        Write-Log -Message "Displaying IAP's..." -Level Verbose
 
         $publishedSubmissionField = @{ label="lastPublishedSubmission"; Expression={ if (([String]::IsNullOrEmpty($_.lastPublishedInAppProductSubmission.id)) -or ($_.lastPublishedInAppProductSubmission.id -eq "0")) { "<None>" } else { $_.lastPublishedInAppProductSubmission.id } }; }
         $pendingSubmissionField = @{ label="pendingSubmission"; Expression={ if (($null -eq $_.pendingInAppProductSubmission) -or ($_.pendingInAppProductSubmission.id -eq "0")) { "<None>" } else { $_.pendingInAppProductSubmission.id } }; }
@@ -157,7 +157,7 @@ function Format-InAppProducts
 
     End
     {
-        Write-Log $($iaps | Sort-Object productId | Format-Table id, productId, productType, $publishedSubmissionField, $pendingSubmissionField, $applicationsField | Out-String)
+        Write-Log -Message $($iaps | Sort-Object productId | Format-Table id, productId, productType, $publishedSubmissionField, $pendingSubmissionField, $applicationsField | Out-String)
     }
 }
 
@@ -218,7 +218,7 @@ function Get-InAppProduct
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
     $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::IapId = $IapId }
 
@@ -276,7 +276,7 @@ function Format-InAppProduct
     {
         Set-TelemetryEvent -EventName Format-InAppProduct
 
-        Write-Log "Displaying IAP..." -Level Verbose
+        Write-Log -Message "Displaying IAP..." -Level Verbose
 
         $indentLength = 5
         $output = @()
@@ -296,7 +296,7 @@ function Format-InAppProduct
 
     End
     {
-        Write-Log $output
+        Write-Log -Message $output
     }
 }
 
@@ -388,7 +388,7 @@ function Get-ApplicationInAppProducts
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
     $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::AppId = $AppId }
 
@@ -450,7 +450,7 @@ function Format-ApplicationInAppProducts
     {
         Set-TelemetryEvent -EventName Format-ApplicationInAppProducts
 
-        Write-Log "Displaying Application IAP's..." -Level Verbose
+        Write-Log -Message "Displaying Application IAP's..." -Level Verbose
 
         $iaps = @()
     }
@@ -462,7 +462,7 @@ function Format-ApplicationInAppProducts
 
     End
     {
-        Write-Log $($iaps | Format-Table inAppProductId | Out-String)
+        Write-Log -Message $($iaps | Format-Table inAppProductId | Out-String)
     }
 }
 
@@ -529,7 +529,7 @@ function New-InAppProduct
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
     # Convert the input into a Json body.
     $hashBody = @{}
@@ -605,7 +605,7 @@ function Remove-InAppProduct
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
     $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::IapId = $IapId }
 
@@ -689,7 +689,7 @@ function Get-InAppProductSubmission
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
     $telemetryProperties = @{
         [StoreBrokerTelemetryProperty]::IapId = $IapId
@@ -750,7 +750,7 @@ function Format-InAppProductSubmission
     {
         Set-TelemetryEvent -EventName Format-InAppProductSubmission
 
-        Write-Log "Displaying IAP Submission..." -Level Verbose
+        Write-Log -Message "Displaying IAP Submission..." -Level Verbose
 
         $indentLength = 5
         $output = @()
@@ -854,7 +854,7 @@ function Format-InAppProductSubmission
 
     End
     {
-        Write-Log $output
+        Write-Log -Message $output
     }
 }
 
@@ -918,7 +918,7 @@ function Get-InAppProductSubmissionStatus
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
     $telemetryProperties = @{
         [StoreBrokerTelemetryProperty]::IapId = $IapId
@@ -995,7 +995,7 @@ function Remove-InAppProductSubmission
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
     $telemetryProperties = @{
         [StoreBrokerTelemetryProperty]::IapId = $IapId
@@ -1083,7 +1083,7 @@ function New-InAppProductSubmission
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
     if ([System.String]::IsNullOrEmpty($AccessToken))
     {
@@ -1095,7 +1095,7 @@ function New-InAppProductSubmission
         # The Force switch tells us that we need to remove any pending submission
         if ($Force)
         {
-            Write-Log "Force creation requested.  Ensuring that there is no existing pending submission." -Level Verbose
+            Write-Log -Message "Force creation requested.  Ensuring that there is no existing pending submission." -Level Verbose
 
             $iap = Get-InAppProduct -IapId $IapId -AccessToken $AccessToken -NoStatus:$NoStatus
             $pendingSubmissionId = $iap.pendingInAppProductSubmission.id
@@ -1299,9 +1299,9 @@ function Update-InAppProductSubmission
 
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
-    Write-Log "Reading in the submission content from: $SubmissionDataPath" -Level Verbose
+    Write-Log -Message "Reading in the submission content from: $SubmissionDataPath" -Level Verbose
     if ($PSCmdlet.ShouldProcess($SubmissionDataPath, "Get-Content"))
     {
         $submission = [string](Get-Content $SubmissionDataPath -Encoding UTF8) | ConvertFrom-Json
@@ -1330,7 +1330,7 @@ function Update-InAppProductSubmission
             $output += "You either entered the wrong IapId at the commandline, or you're referencing the wrong submission content to upload."
 
             $newLineOutput = ($output -join [Environment]::NewLine)
-            Write-Log $newLineOutput -Level Error
+            Write-Log -Message $newLineOutput -Level Error
             throw $newLineOutput
         }
     }
@@ -1372,7 +1372,7 @@ function Update-InAppProductSubmission
                 $output += "The submission that you requested to modify ($SubmissionId) is in '$($submissionToUpdate.status)' state."
 
                 $newLineOutput = ($output -join [Environment]::NewLine)
-                Write-Log $newLineOutput -Level Error
+                Write-Log -Message $newLineOutput -Level Error
                 throw $newLineOutput
             }
         }
@@ -1417,7 +1417,7 @@ function Update-InAppProductSubmission
 
         if (![System.String]::IsNullOrEmpty($PackagePath))
         {
-            Write-Log "Uploading the package [$PackagePath] since it was provided." -Level Verbose
+            Write-Log -Message "Uploading the package [$PackagePath] since it was provided." -Level Verbose
             Set-SubmissionPackage -PackagePath $PackagePath -UploadUrl $uploadUrl -NoStatus:$NoStatus
         }
         elseif (!$AutoCommit)
@@ -1438,7 +1438,7 @@ function Update-InAppProductSubmission
                 $AccessToken = $null
             }
 
-            Write-Log "Commiting the submission since -AutoCommit was requested." -Level Verbose
+            Write-Log -Message "Commiting the submission since -AutoCommit was requested." -Level Verbose
             Complete-InAppProductSubmission -IapId $IapId -SubmissionId $submissionId -AccessToken $AccessToken -NoStatus:$NoStatus
         }
         else
@@ -1586,7 +1586,7 @@ function Patch-InAppProductSubmission
         [switch] $UpdateProperties
     )
 
-    Write-Log "Patching the content of the submission." -Level Verbose
+    Write-Log -Message "Patching the content of the submission." -Level Verbose
 
     # Our method should have zero side-effects -- we don't want to modify any parameter
     # that was passed-in to us.  To that end, we'll create a deep copy of the ClonedSubmisison,
@@ -1647,7 +1647,7 @@ function Patch-InAppProductSubmission
         if (($TargetPublishMode -eq $script:keywordSpecificDate) -and ($null -eq $TargetPublishDate))
         {
             $output = "TargetPublishMode was set to '$script:keywordSpecificDate' but TargetPublishDate was not specified."
-            Write-Log $output -Level Error
+            Write-Log -Message $output -Level Error
             throw $output
         }
 
@@ -1659,7 +1659,7 @@ function Patch-InAppProductSubmission
         if ($TargetPublishMode -ne $script:keywordSpecificDate)
         {
             $output = "A TargetPublishDate was specified, but the TargetPublishMode was [$TargetPublishMode],  not '$script:keywordSpecificDate'."
-            Write-Log $output -Level Error
+            Write-Log -Message $output -Level Error
             throw $output
         }
 
@@ -1687,11 +1687,11 @@ function Patch-InAppProductSubmission
     # To better assist with debugging, we'll store exactly the original and modified JSON submission bodies.
     $tempFile = [System.IO.Path]::GetTempFileName() # New-TemporaryFile requires PS 5.0
     ($ClonedSubmission | ConvertTo-Json -Depth $script:jsonConversionDepth) | Set-Content -Path $tempFile -Encoding UTF8
-    Write-Log "The original cloned JSON content can be found here: [$tempFile]" -Level Verbose
+    Write-Log -Message "The original cloned JSON content can be found here: [$tempFile]" -Level Verbose
 
     $tempFile = [System.IO.Path]::GetTempFileName() # New-TemporaryFile requires PS 5.0
     ($PatchedSubmission | ConvertTo-Json -Depth $script:jsonConversionDepth) | Set-Content -Path $tempFile -Encoding UTF8
-    Write-Log "The patched JSON content can be found here: [$tempFile]" -Level Verbose
+    Write-Log -Message "The patched JSON content can be found here: [$tempFile]" -Level Verbose
 
     return $PatchedSubmission
 }
@@ -1765,7 +1765,7 @@ function Set-InAppProductSubmission
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
     $submissionId = $UpdatedSubmission.id
     $body = [string]($UpdatedSubmission | ConvertTo-Json -Depth $script:jsonConversionDepth)
@@ -1851,7 +1851,7 @@ function Complete-InAppProductSubmission
         [switch] $NoStatus
     )
 
-    Write-Log "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
 
     try
     {

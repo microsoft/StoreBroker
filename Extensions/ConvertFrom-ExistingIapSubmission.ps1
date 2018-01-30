@@ -130,7 +130,7 @@ function Add-ToElement
         else
         {
             $out = "For element $($Element.LocalName), did not create attribute '$key' with value '$($Attribute[$key])' because the attribute already exists."
-            Write-Log $out -Level Warning
+            Write-Log -Message $out -Level Warning
         }
     }
 }
@@ -526,7 +526,7 @@ function Show-ImageFileNames
             $output += " * [$langCode]: " + ($LangImageNames.$langCode -join ", ")
         }
 
-        Write-Log $output
+        Write-Log -Message $output
     }
     else
     {
@@ -555,7 +555,7 @@ function Main
         if ([String]::IsNullOrEmpty($SubmissionId))
         {
             $SubmissionId = $iap.pendingInAppProductSubmission.id
-            Write-Log "No published submission exists for this In-App Product.  Using the current pending submission." -Level Warning
+            Write-Log -Message "No published submission exists for this In-App Product.  Using the current pending submission." -Level Warning
         }
     }
 
@@ -567,7 +567,7 @@ function Main
     $langs |
         ForEach-Object {
             $lang = $_.Name
-            Write-Log "Creating PDP for $lang" -Level Verbose
+            Write-Log -Message "Creating PDP for $lang" -Level Verbose
             Write-Progress -Activity "Generating PDP" -Status $lang -PercentComplete $(($pdpsGenerated / $langs.Count) * 100)
             try
             {
@@ -577,14 +577,14 @@ function Main
             }
             catch
             {
-                Write-Log "Error creating [$lang] PDP:" -Exception $_ -Level Error
+                Write-Log -Message "Error creating [$lang] PDP:" -Exception $_ -Level Error
                 throw
             }
         }
 
     if ($pdpsGenerated -gt 0)
     {
-        Write-Log "PDP's have been created here: $OutPath"
+        Write-Log -Message "PDP's have been created here: $OutPath"
         Show-ImageFileNames -LangImageNames $langImageNames -Release $Release
     }
     else

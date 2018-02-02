@@ -5,15 +5,15 @@
     Release="1611">
 
   <!-- Valid length: 100 character limit -->
-  <Title _locID="Iap_Title">
+  <Title _locID="Iap_Title"><!-- [required] -->
     <!-- _locComment_text="{MaxLength=100} IAP Title"-->
-    <!-- [required] -->My Localized App Add-on IAP
+    My Localized App Add-on IAP
   </Title>
 
    <!-- Valid length: 200 character limit -->
-   <Description _locID="Iap_Description">
+   <Description _locID="Iap_Description"><!-- [optional] -->
      <!-- _locComment_text="{MaxLength=200} IAP Description" -->
-     <!-- [optional] -->This add-on will provide you with 200 extra coins.
+     This add-on will provide you with 200 extra coins.
    </Description>
 
   <!-- [optional] Specifying an icon is optional. If provided, the icon must be a 300 x 300 png file. -->

@@ -206,7 +206,9 @@ function Add-Title
     $paramSet = @{
         "Element" = $elementNode;
         "Attribute" = @{ $script:LocIdAttribute = $script:LocIdFormat -f $elementName };
-        "Comment" = @($script:CommentFormat -f $maxChars, "IAP $elementName"; " [required] ")
+        "Comment" = @(
+            " [required] ",
+            ($script:CommentFormat -f $maxChars, "IAP $elementName"))
     }
 
     Add-ToElement @paramSet
@@ -241,7 +243,9 @@ function Add-Description
     $paramSet = @{
         "Element" = $elementNode;
         "Attribute" = @{ $script:LocIdAttribute = $script:LocIdFormat -f $elementName };
-        "Comment" = @("$script:CommentFormat" -f $maxChars, "IAP $elementName"; " [optional] ")
+        "Comment" = @(
+            " [optional] ",
+            ($script:CommentFormat -f $maxChars, "IAP $elementName"))
     }
 
     Add-ToElement @paramSet
@@ -471,7 +475,7 @@ function Show-ImageFileNames
     }
 
     # If there are no images being used at all, then we can also early return
-    $imageCount = 0;
+    $imageCount = 0
     foreach ($lang in $LangImageNames.GetEnumerator())
     {
         $imageCount += $lang.Value.Count

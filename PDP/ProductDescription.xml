@@ -7,7 +7,7 @@
   <!-- Valid length: 200 character limit -->
   <AppStoreName _locID="App_StoreName">
     <!-- This is optional.  AppStoreName is typically extracted from your package's AppxManifest DisplayName property. -->
-    <!-- _locComment_text="{MaxLength=200} App StoreName"-->My Localized AppName
+    <!-- _locComment_text="{MaxLength=200} App StoreName" -->My Localized AppName
   </AppStoreName>
 
   <Keywords>
@@ -19,12 +19,12 @@
     <Keyword _locID="App_keyword5"><!-- _locComment_text="{MaxLength=30} App keyword 5" -->Video sharing</Keyword>
   </Keywords>
    <!-- Valid length: 10000 character limit -->
-   <Description _locID="App_Description"><!-- _locComment_text="{MaxLength=10000} App Description" --> 
-     Turn any video into a memorable moment you’ll love to share. With this app, you can trim your video to your favorite parts, highlight key moments with captions and effects, and set the mood with music. 
+   <Description _locID="App_Description"><!-- _locComment_text="{MaxLength=10000} App Description" -->
+     Turn any video into a memorable moment you’ll love to share. With this app, you can trim your video to your favorite parts, highlight key moments with captions and effects, and set the mood with music.
    </Description>
 
    <!-- Valid length: 1500 character limit, optional -->
-   <ReleaseNotes _locID="App_ReleaseNotes"><!-- _locComment_text="{MaxLength=1500} App Release Note" --> 
+   <ReleaseNotes _locID="App_ReleaseNotes"><!-- _locComment_text="{MaxLength=1500} App Release Note" -->
       Various performance optimiazations, this app is wicked-fast now.
    </ReleaseNotes>
 
@@ -68,11 +68,11 @@
    <CopyrightAndTrademark _locID="App_CopyrightandTrademark"><!-- _locComment_text="{MaxLength=200} Copyright and Trademark" -->
      (c) Contoso LLC.
    </CopyrightAndTrademark>
-  
+
    <!-- Valid length: 10000 character limit -->
    <AdditionalLicenseTerms _locID="App_AddtionalLiceseTerms"><!-- _locComment_text="{MaxLength=10000} Additional License Terms" -->
    </AdditionalLicenseTerms>
-  
+
    <!-- Valid length: 2048 character limit -->
    <WebsiteURL _locID="App_WebsiteURL"><!-- _locComment_text="{MaxLength=2048} WebsiteURL" -->
      http://www.contoso.com/App

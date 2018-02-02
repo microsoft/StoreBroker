@@ -302,21 +302,21 @@ function Add-AppStoreName
     $comment = $elementNode.OwnerDocument.CreateComment(" $($Listing.title) ")
     $elementNode.PrependChild($comment) | Out-Null
 
-    $comment = $elementNode.OwnerDocument.CreateComment(' Uncomment this next line if you wish to specify one explicitly instead. ')
+    # Add loc comment to parent (we need loc comments to be directly before the content)
+    $maxChars = 200
+    $paramSet = @{
+        "Element"   = $elementNode;
+        "Attribute" = @{ $script:LocIdAttribute = $script:LocIdFormat -f $elementName };
+        "Comment"   = ($script:CommentFormat -f $maxChars, "App $elementName");
+    }
+
+    Add-ToElement @paramSet
+
+    $comment = $elementNode.OwnerDocument.CreateComment(' Uncomment the Store name if you wish to specify one explicitly instead. ')
     $elementNode.PrependChild($comment) | Out-Null
 
     $comment = $elementNode.OwnerDocument.CreateComment(' This is optional.  AppStoreName is typically extracted from your package''s AppxManifest DisplayName property. ')
     $elementNode.PrependChild($comment) | Out-Null
-
-    # Add comment to parent
-    $maxChars = 200
-    $paramSet = @{
-        "Element" = $elementNode;
-        "Attribute" = @{ $script:LocIdAttribute = $script:LocIdFormat -f $elementName };
-        "Comment" = $script:CommentFormat -f $maxChars, "App $elementName";
-    }
-
-    Add-ToElement @paramSet
 }
 
 function Add-Keywords
@@ -354,7 +354,7 @@ function Add-Keywords
     $maxChildren = 7
     $paramSet = @{
         "Element" = $elementNode;
-        "Comment" = $script:SectionCommentFormat -f $maxChars, $maxChildren;
+        "Comment" = ($script:SectionCommentFormat -f $maxChars, $maxChildren);
     }
 
     Add-ToElement @paramSet
@@ -399,7 +399,7 @@ function Add-Description
     $paramSet = @{
         "Element" = $elementNode;
         "Attribute" = @{ $script:LocIdAttribute = $script:LocIdFormat -f $elementName };
-        "Comment" = $script:CommentFormat -f $maxChars, "App $elementName";
+        "Comment" = ($script:CommentFormat -f $maxChars, "App $elementName");
     }
 
     Add-ToElement @paramSet
@@ -435,7 +435,7 @@ function Add-ReleaseNotes
     $paramSet = @{
         "Element" = $elementNode;
         "Attribute" = @{ $script:LocIdAttribute = $script:LocIdFormat -f $elementName };
-        "Comment" = $script:CommentFormat -f $maxChars, "App Release Note";
+        "Comment" = ($script:CommentFormat -f $maxChars, "App Release Note");
     }
 
     Add-ToElement @paramSet
@@ -699,7 +699,7 @@ function Add-CopyrightAndTrademark
     $paramSet = @{
         "Element" = $elementNode;
         "Attribute" = @{ $script:LocIdAttribute = $script:LocIdFormat -f "CopyrightandTrademark" };
-        "Comment" = $script:CommentFormat -f $maxChars, "Copyright and Trademark";
+        "Comment" = ($script:CommentFormat -f $maxChars, "Copyright and Trademark");
     }
 
     Add-ToElement @paramSet
@@ -735,7 +735,7 @@ function Add-AdditionalLicenseTerms
     $paramSet = @{
         "Element" = $elementNode;
         "Attribute" = @{ $script:LocIdAttribute = $script:LocIdFormat -f $elementName };
-        "Comment" = $script:CommentFormat -f $maxChars, "Additional License Terms";
+        "Comment" = ($script:CommentFormat -f $maxChars, "Additional License Terms");
     }
 
     Add-ToElement @paramSet
@@ -770,7 +770,7 @@ function Add-WebsiteUrl
     $paramSet = @{
         "Element" = $elementNode;
         "Attribute" = @{ $script:LocIdAttribute = $script:LocIdFormat -f $elementName };
-        "Comment" = $script:CommentFormat -f $maxChars, $elementName;
+        "Comment" = ($script:CommentFormat -f $maxChars, $elementName);
     }
 
     Add-ToElement @paramSet
@@ -805,7 +805,7 @@ function Add-SupportContact
     $paramSet = @{
         "Element" = $elementNode;
         "Attribute" = @{ $script:LocIdAttribute = $script:LocIdFormat -f $elementName };
-        "Comment" = $script:CommentFormat -f $maxChars, "Support Contact Info";
+        "Comment" = ($script:CommentFormat -f $maxChars, "Support Contact Info");
     }
 
     Add-ToElement @paramSet
@@ -840,7 +840,7 @@ function Add-PrivacyPolicy
     $paramSet = @{
         "Element" = $elementNode;
         "Attribute" = @{ $script:LocIdAttribute = $script:LocIdFormat -f "PrivacyURL" };
-        "Comment" = $script:CommentFormat -f $maxChars, "Privacy Policy URL";
+        "Comment" = ($script:CommentFormat -f $maxChars, "Privacy Policy URL");
     }
 
     Add-ToElement @paramSet

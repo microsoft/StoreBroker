@@ -24,6 +24,9 @@ Looking for information on how to use this module?  Head on over to [README.md](
 *   [Code Comments](#code-comments)
 *   [Testing](#testing)
 *   [Releasing](#releasing)
+    *   [Updating the CHANGELOG](#updating-the-changelog)
+    *   [Adding a New Tag](#adding-a-new-tag)
+*   [Contributors](#contributors)
 *   [Legal and Licensing](#legal-and-licensing)
 
 ----------
@@ -255,7 +258,7 @@ This module supports testing using the Pester UT framework.
 
 If you do not have Pester, download it [here](https://github.com/pester/Pester).
 Create a `Pester` folder under any path in `$env:PSModulePath`.
-Unzip the contents of the download to the `Pester` folder. 
+Unzip the contents of the download to the `Pester` folder.
 Pester should now automatically import whenever you run a function from its module.
 
 In the StoreBroker module, the source tree and test tree are children of the project root path.
@@ -271,7 +274,7 @@ Navigate to the correct folder and simply run `Invoke-Pester`.
 Pester can also be used to test code-coverage, like so:
 
     Invoke-Pester -CodeCoverage "$root\StoreBroker\PackageTool.ps1" -TestName "*PackageTool*"
-    
+
 This command tells Pester to check the `PackageTool.ps1` file for code-coverage.
 The `-TestName` parameter tells Pester to run any `Describe` blocks with a `Name` like
 `"*PackageTool*"`.
@@ -279,7 +282,7 @@ The `-TestName` parameter tells Pester to run any `Describe` blocks with a `Name
 The code-coverage object can be captured and interacted with, like so:
 
     $cc = (Invoke-Pester -CodeCoverage "$root\StoreBroker\PackageTool.ps1" -TestName "*PackageTool*" -PassThru -Quiet).CodeCoverage
-    
+
 There are many more nuances to code-coverage, see
 [its documentation](https://github.com/pester/Pester/wiki/Code-Coverage) for more details.
 
@@ -304,6 +307,49 @@ Where:
 When new code changes are checked in to the repo, a new NuGet package must be published by Microsoft.
 This process is documented in Microsoft's internal StoreBroker repo.
 Refer to the CONTRIBUTING.md in that repo for more information on creating a signed NuGet package.
+
+Once the new version has been pulled into master, there are two additional tasks to perform:
+  * Update [CHANGELOG.md](./CHANGELOG.md)
+  * Add a tag for that version to the repo
+
+#### Updating the CHANGELOG
+To update [CHANGELOG.md](./CHANGELOG.md), just duplicate the previous section and update it to be
+relevant for the new release.  Be sure to update all of the sections:
+  * The version number
+  * The SB tree (we'll get that path working in a moment)
+  * The release date
+  * A brief list of all the changes (use a `-` for the bullet point if it's fixing a bug, or a `+` for a feature)
+  * The link to the pull request (pr) (so that the discussion on the change can be easily reviewed) and the changelist (cl)
+  * The author (and a link to their profile)
+  * If it's a new contributor, also add them to the [Contributors](#contributors) list below.
+
+Then get a new pull request out for that change to CHANGELOG.
+
+#### Adding a New Tag
+To add a new tag:
+   1. Make sure that you're in a clone of the actual repo and not your own private fork.
+   2. Make sure that you have checked out `master` and that it's fully up-to-date
+   3. Run `git tag -a '<version number>'
+   4. In the pop-up editor, give a one-line summary of the change (that you possibly already wrote for the CHANGELOG)
+   5. Save and close the editor
+   6. Run `git push --tags` to upload the new tag you just created
+
+If you want to make sure you get these tags on any other forks/clients, you can run
+`git fetch origin --tags` or `git fetch upstream --tags`, or whatever you've named the source to be.
+
+----------
+
+### Contributors
+
+Thank you to all of our contributors, no matter how big or small the contribution:
+
+- **[Howard Wolosky (@HowardWolosky)](http://github.com/HowardWolosky)**
+- **[Daniel Belcher (@DanBelcher-MSFT)](http://github.com/danbelcher-MSFT)**
+- **[Lisa Ong (@lisaong)](http://github.com/LisaOng)**
+- **[Alex Dobin (@adobin)](http://github.com/ADobin)**
+- **[Petr Bartoň (@Pebin)](http://github.com/Pebin)**
+- **[Matt Perzel (@mattperzel)](http://github.com/mattperzel)**
+- **[Josh Wisniewski (@jowis41)](http://github.com/jowis41)**
 
 ----------
 

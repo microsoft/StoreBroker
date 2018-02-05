@@ -1192,7 +1192,7 @@ function Update-ApplicationSubmission
             "or by running this command:",
             "    Get-ApplicationSubmission -AppId $AppId -SubmissionId $submissionId | Format-ApplicationSubmission",
             "",
-            $script:manualPublishWarning -f 'Update-ApplicationSubmission')
+            ($script:manualPublishWarning -f 'Update-ApplicationSubmission'))
 
         if (![System.String]::IsNullOrEmpty($PackagePath))
         {
@@ -1822,7 +1822,7 @@ function Complete-ApplicationSubmission
             "You can automatically monitor this submission with this command:",
             "    Start-ApplicationSubmissionMonitor -AppId $AppId -SubmissionId $submissionId -EmailNotifyTo $env:username",
             "",
-            $script:manualPublishWarning -f 'Update-ApplicationSubmission')
+            ($script:manualPublishWarning -f 'Update-ApplicationSubmission'))
     }
     catch [System.InvalidOperationException]
     {

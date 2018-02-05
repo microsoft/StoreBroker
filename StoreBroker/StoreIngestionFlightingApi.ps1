@@ -1390,7 +1390,7 @@ function Update-ApplicationFlightSubmission
             "or by running this command:",
             "    Get-ApplicationFlightSubmission -AppId $AppId -FlightId $FlightId -SubmissionId $submissionId | Format-ApplicationFlightSubmission",
             "",
-            $script:manualPublishWarning -f 'Update-ApplicationFlightSubmission')
+            ($script:manualPublishWarning -f 'Update-ApplicationFlightSubmission'))
 
         if (![System.String]::IsNullOrEmpty($PackagePath))
         {
@@ -1892,7 +1892,7 @@ function Complete-ApplicationFlightSubmission
             "You can automatically monitor this submission with this command:",
             "    Start-ApplicationFlightSubmissionMonitor -AppId $AppId -Flight $FlightId -SubmissionId $submissionId -EmailNotifyTo $env:username",
             "",
-            $script:manualPublishWarning -f 'Update-ApplicationFlightSubmission')
+            ($script:manualPublishWarning -f 'Update-ApplicationFlightSubmission'))
     }
     catch [System.InvalidOperationException]
     {

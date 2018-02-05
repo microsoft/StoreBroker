@@ -1413,7 +1413,7 @@ function Update-InAppProductSubmission
             "or by running this command:",
             "    Get-InAppProductSubmission -IapId $IapId -SubmissionId $submissionId | Format-InAppProductSubmission",
             "",
-            $script:manualPublishWarning -f 'Update-InAppProductSubmission')
+            ($script:manualPublishWarning -f 'Update-InAppProductSubmission'))
 
         if (![System.String]::IsNullOrEmpty($PackagePath))
         {
@@ -1883,7 +1883,7 @@ function Complete-InAppProductSubmission
             "You can automatically monitor this submission with this command:",
             "    Start-InAppProductSubmissionMonitor -IapId $IapId -SubmissionId $submissionId -EmailNotifyTo $env:username",
             "",
-            $script:manualPublishWarning -f 'Update-InAppProductSubmission')
+            ($script:manualPublishWarning -f 'Update-InAppProductSubmission'))
     }
     catch [System.InvalidOperationException]
     {

@@ -2023,13 +2023,19 @@ function Invoke-SBRestMethod
                     {
                         $output += $innerMessageJson.Trim()
                     }
-                    else
+                    elseif (-not [String]::IsNullOrWhiteSpace($innerMessageJson.message))
                     {
                         $output += "$($innerMessageJson.code) : $($innerMessageJson.message.Trim())"
                         if ($innerMessageJson.details)
                         {
                             $output += "$($innerMessageJson.details | Format-Table | Out-String)"
                         }
+                    }
+                    else
+                    {
+                        # In this case, it's probably not a normal message from the API
+                        # (possibly it's an invalid client secret error)
+                        $output += ($innerMessageJson | Out-String)
                     }
                 }
                 catch [System.ArgumentException]
@@ -2095,6 +2101,7 @@ function Invoke-SBRestMethod
                     Write-Log -Message "This status code ($statusCode) is configured to auto-retry (via `$global:SBAutoRetryErrorCodes).  StoreBroker will auto-retry (attempt #$numRetries) in $retryDelayMin minute(s). Sleeping..." -Level Warning
                     Start-Sleep -Seconds ($retryDelayMin * 60)
                     $retryDelayMin = $retryDelayMin * 2 # Exponential sleep increase for next retry
+                    continue # let's get back to the start of the loop again, no need to process anything further in this catch
                 }
             }
             else
@@ -2103,6 +2110,8 @@ function Invoke-SBRestMethod
                 Set-TelemetryException -Exception $ex -ErrorBucket $errorBucket -Properties $localTelemetryProperties
                 throw $newLineOutput
             }
+
+            throw # ensure that any inner exception that was thrown continues to propagate
         }
     }
     while ($true) # infinite loop for retrying is ok, since we early return in the postive case, and throw an exception in the failure case.

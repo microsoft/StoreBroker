@@ -779,6 +779,11 @@ function Convert-ListingToObject
                         "websiteUrl"                = $ProductDescriptionNode.WebsiteURL;
                         "title"                     = $ProductDescriptionNode.AppStoreName;
                         "description"               = $ProductDescriptionNode.Description;
+                        "shortDescription"          = $ProductDescriptionNode.ShortDescription;
+                        "shortTitle"                = $ProductDescriptionNode.ShortTitle;
+                        "sortTitle"                 = $ProductDescriptionNode.SortTitle;
+                        "voiceTitle"                = $ProductDescriptionNode.VoiceTitle;
+                        "devStudio"                 = $ProductDescriptionNode.DevStudio;
                         "releaseNotes"              = $ProductDescriptionNode.ReleaseNotes;
                     }
 
@@ -811,6 +816,7 @@ function Convert-ListingToObject
                         "features"            = $ProductDescriptionNode.AppFeatures;
                         "keywords"            = $ProductDescriptionNode.Keywords;
                         "recommendedHardware" = $ProductDescriptionNode.RecommendedHardware;
+                        "minimumHardware"     = $ProductDescriptionNode.MinimumHardware;
                     }.GetEnumerator() | ForEach-Object {
                         $baseListing[$_.Name] = @($_.Value.ChildNodes |
                                                     Where-Object NodeType -eq Element |

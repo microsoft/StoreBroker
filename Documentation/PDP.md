@@ -7,6 +7,7 @@
 
 *   [Overview](#overview)
 *   [Sections](#sections)
+    *   [AppStoreName](#appstorename)
     *   [Screenshots and Captions](#screenshots-and-captions)
         *   [Folder Structure](#folder-structure)
     *   [Additional Assets](#additional-assets)
@@ -51,15 +52,25 @@ are as follows:
  * AppStoreName
  * Keywords
  * Description
+ * ShortDescription
+ * ShortTitle
+ * SortTitle
+ * VoiceTitle
+ * DevStudio
  * ReleaseNotes
  * ScreenshotCaptions
+ * AdditionalAssets
  * AppFeatures
  * RecommendedHardware
+ * MinimumHardware
  * CopyrightAndTrademark
  * AdditionalLicenseTerms
  * WebsiteURL
  * SupportContactInfo
  * PrivacyPolicyURL
+
+**Additional Sections if your app has Advanced Listing support**
+ * Trailers
 
 **For In-App Product (IAP) ("add-on") Submissions**
  * Title
@@ -69,6 +80,31 @@ are as follows:
 These should map fairly clearly to the sections you're already familiar with in the DevPortal.
 For additional requirements on number of elements or length of individual elements, refer to
 the schema (or sample file).
+
+### AppStoreName
+
+> The `AppStoreName` property in the PDP file is often a source of confusion for users, so it's recommended
+> that you pay close attention this expanded explanation below.
+
+`AppStoreName` maps to the
+[`DisplayName`](https://docs.microsoft.com/en-us/uwp/schemas/appxpackage/uapmanifestschema/element-displayname)
+property from your application's AppxManifest.xml file.  The Store will automatically grab this for every language
+that your application has a listing for, meaining that in most scenarios, you never need to provide a value within
+the PDP.  The only time you should ever specify a value for this in the PDP, is if you will be providing a listing
+for a language that your application isn't explicitly being localized to.
+
+If you provide this value in a PDP for a language that your application already has a `DisplayName` value for,
+your submission will eventually fail after it has been committed because of this name conflict.
+
+**Re-stated again**, you can _only_ successfully provide the `AppStoreName` if _that PDP language_ does not have
+a corresponding `DisplayName` entry within your application package.
+
+If you're in the scenario where you _do_ need to do this for _some_ languages, you'll likely want to follow the
+[FAQ](./USAGE.md#faq) ("Does StoreBroker support adding region-specific listings for languages that the app itself
+doesn't directly support?") which explains how to use mulitple PDP's within your project, each localized to a
+different set of languages.  In that scenario, you'd have a PDP with the `AppStoreName` uncommented and localized,
+but only for the set of languages that needs it; a different PDP would be used for the other languages, and in that
+other PDP, the `AppStoreName` would remain empty/commented-out.
 
 ### Screenshots and Captions
 

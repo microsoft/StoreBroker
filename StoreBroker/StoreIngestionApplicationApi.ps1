@@ -512,20 +512,33 @@ function Format-ApplicationSubmission
         foreach ($listing in ($listings | Get-Member -type NoteProperty))
         {
             $lang = $listing.Name
+            $baseListing = $listings.$lang.baseListing
             $output += ""
             $output += "$(" " * $indentLength)$lang"
             $output += "$(" " * $indentLength)----------"
-            $output += "$(" " * $indentLength)Description         : $($listings.$lang.baseListing.description)"
-            $output += "$(" " * $indentLength)Copyright/Trademark : $($listings.$lang.baseListing.copyrightAndTrademarkInfo)"
-            $output += "$(" " * $indentLength)Keywords            : $($listings.$lang.baseListing.keywords -join "; ")"
-            $output += "$(" " * $indentLength)License Terms       : $($listings.$lang.baseListing.licenseTerms)"
-            $output += "$(" " * $indentLength)Privacy Policy      : $($listings.$langbaseListing.privacyPolicy)"
-            $output += "$(" " * $indentLength)Support Contact     : $($listings.$lang.baseListing.supportContact)"
-            $output += "$(" " * $indentLength)Website Url         : $($listings.$lang.baseListing.websiteUrl)"
-            $output += "$(" " * $indentLength)Features            : $($listings.$lang.baseListing.features -join "; ")"
-            $output += "$(" " * $indentLength)Release Notes       : $($listings.$lang.baseListing.releaseNotes)"
-            $output += "$(" " * $indentLength)Images              : {0}" -f $(if ($listings.$lang.baseListing.images.count -eq 0) { "<None>" } else { "" })
-            $output += $listings.$lang.baseListing.images | Format-SimpleTableString -IndentationLevel $($indentLength * 2)
+            $output += "$(" " * $indentLength)Title               : $($baseListing.title)"
+            $output += "$(" " * $indentLength)ShortTitle          : $($baseListing.shortTitle)"
+            $output += "$(" " * $indentLength)SortTitle           : $($baseListing.sortTitle)"
+            $output += "$(" " * $indentLength)Voice Title         : $($baseListing.voiceTitle)"
+            $output += "$(" " * $indentLength)Dev Studio          : $($baseListing.devStudio)"
+            $output += "$(" " * $indentLength)Description         : $($baseListing.description)"
+            $output += "$(" " * $indentLength)Short Description   : $($baseListing.shortDescription)"
+            $output += "$(" " * $indentLength)Copyright/Trademark : $($baseListing.copyrightAndTrademarkInfo)"
+            $output += "$(" " * $indentLength)Keywords            : $($baseListing.keywords -join "; ")"
+            $output += "$(" " * $indentLength)License Terms       : $($baseListing.licenseTerms)"
+            $output += "$(" " * $indentLength)Privacy Policy      : $($baseListing.privacyPolicy)"
+            $output += "$(" " * $indentLength)Support Contact     : $($baseListing.supportContact)"
+            $output += "$(" " * $indentLength)Website Url         : $($baseListing.websiteUrl)"
+            $output += "$(" " * $indentLength)Features            : $($baseListing.features -join "; ")"
+            $output += "$(" " * $indentLength)Release Notes       : $($baseListing.releaseNotes)"
+            $output += "$(" " * $indentLength)Minimum Hardware    : {0}" -f $(if ($baseListing.minimumHardware.count -eq 0) { "<None>" } else { "" })
+            $output += $baseListing.minimumHardware | Format-SimpleTableString -IndentationLevel $($indentLength * 2)
+            $output += ""
+            $output += "$(" " * $indentLength)Recommended Hardware: {0}" -f $(if ($baseListing.recommendedHardware.count -eq 0) { "<None>" } else { "" })
+            $output += $baseListing.recommendedHardware | Format-SimpleTableString -IndentationLevel $($indentLength * 2)
+            $output += ""
+            $output += "$(" " * $indentLength)Images              : {0}" -f $(if ($baseListing.images.count -eq 0) { "<None>" } else { "" })
+            $output += $baseListing.images | Format-SimpleTableString -IndentationLevel $($indentLength * 2)
             $output += ""
 
             # Only show the Trailers section if the application has advanced listing support
@@ -547,19 +560,20 @@ function Format-ApplicationSubmission
         # (the section will be null / won't exist if the app doesn't have that support)
         if ($null -ne $ApplicationSubmissionData.gamingOptions)
         {
+            $gamingOptions = $ApplicationSubmissionData.gamingOptions
             $output += "Gaming Options"
-            $output += "$(" " * $indentLength)Genres                          : $($ApplicationSubmissionData.gamingOptions.genres -join ', ')"
-            $output += "$(" " * $indentLength)isLocalMultiplayer              : $($ApplicationSubmissionData.gamingOptions.isLocalMultiplayer)"
-            $output += "$(" " * $indentLength)isLocalCooperative              : $($ApplicationSubmissionData.gamingOptions.isLocalCooperative)"
-            $output += "$(" " * $indentLength)isOnlineMultiplayer             : $($ApplicationSubmissionData.gamingOptions.isOnlineMultiplayer)"
-            $output += "$(" " * $indentLength)isOnlineCooperative             : $($ApplicationSubmissionData.gamingOptions.isOnlineCooperative)"
-            $output += "$(" " * $indentLength)localMultiplayerMinPlayers      : $($ApplicationSubmissionData.gamingOptions.localMultiplayerMinPlayers)"
-            $output += "$(" " * $indentLength)localMultiplayerMaxPlayers      : $($ApplicationSubmissionData.gamingOptions.localMultiplayerMaxPlayers)"
-            $output += "$(" " * $indentLength)localCooperativeMinPlayers      : $($ApplicationSubmissionData.gamingOptions.localCooperativeMinPlayers)"
-            $output += "$(" " * $indentLength)localCooperativeMaxPlayers      : $($ApplicationSubmissionData.gamingOptions.localCooperativeMaxPlayers)"
-            $output += "$(" " * $indentLength)isBroadcastingPrivilegeGranted  : $($ApplicationSubmissionData.gamingOptions.isBroadcastingPrivilegeGranted)"
-            $output += "$(" " * $indentLength)isCrossPlayEnabled              : $($ApplicationSubmissionData.gamingOptions.isCrossPlayEnabled)"
-            $output += "$(" " * $indentLength)kinectDataForExternal           : $($ApplicationSubmissionData.gamingOptions.kinectDataForExternal)"
+            $output += "$(" " * $indentLength)Genres                          : $($gamingOptions.genres -join ', ')"
+            $output += "$(" " * $indentLength)isLocalMultiplayer              : $($gamingOptions.isLocalMultiplayer)"
+            $output += "$(" " * $indentLength)isLocalCooperative              : $($gamingOptions.isLocalCooperative)"
+            $output += "$(" " * $indentLength)isOnlineMultiplayer             : $($gamingOptions.isOnlineMultiplayer)"
+            $output += "$(" " * $indentLength)isOnlineCooperative             : $($gamingOptions.isOnlineCooperative)"
+            $output += "$(" " * $indentLength)localMultiplayerMinPlayers      : $($gamingOptions.localMultiplayerMinPlayers)"
+            $output += "$(" " * $indentLength)localMultiplayerMaxPlayers      : $($gamingOptions.localMultiplayerMaxPlayers)"
+            $output += "$(" " * $indentLength)localCooperativeMinPlayers      : $($gamingOptions.localCooperativeMinPlayers)"
+            $output += "$(" " * $indentLength)localCooperativeMaxPlayers      : $($gamingOptions.localCooperativeMaxPlayers)"
+            $output += "$(" " * $indentLength)isBroadcastingPrivilegeGranted  : $($gamingOptions.isBroadcastingPrivilegeGranted)"
+            $output += "$(" " * $indentLength)isCrossPlayEnabled              : $($gamingOptions.isCrossPlayEnabled)"
+            $output += "$(" " * $indentLength)kinectDataForExternal           : $($gamingOptions.kinectDataForExternal)"
             $output += ""
         }
 

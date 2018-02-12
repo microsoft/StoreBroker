@@ -18,10 +18,36 @@
     <Keyword _locID="App_keyword4"><!-- _locComment_text="{MaxLength=30} App keyword 4" -->Soundtrack</Keyword>
     <Keyword _locID="App_keyword5"><!-- _locComment_text="{MaxLength=30} App keyword 5" -->Video sharing</Keyword>
   </Keywords>
+
    <!-- Valid length: 10000 character limit -->
    <Description _locID="App_Description"><!-- _locComment_text="{MaxLength=10000} App Description" -->
-     Turn any video into a memorable moment you’ll love to share. With this app, you can trim your video to your favorite parts, highlight key moments with captions and effects, and set the mood with music.
+     Turn any video into a memorable moment you'll love to share. With this app, you can trim your video to your favorite parts, highlight key moments with captions and effects, and set the mood with music.
    </Description>
+
+   <!-- Valid length: 500 character limit -->
+   <!-- Only used for games. This description appears in the Information section of the Game Hub on Xbox One, and helps customers understand more about your game. -->
+   <ShortDescription _locID="App_ShortDescription"><!-- _locComment_text="{MaxLength=500} App Short Description" -->
+   </ShortDescription>
+
+   <!-- Valid length: 50 character limit -->
+   <!-- A shorter version of your product's name. If provided, this shorter name may appear in various places on Xbox One (during installation, in Achievements, etc.) in place of the full title of your product. -->
+   <ShortTitle _locID="App_ShortTitle"><!-- _locComment_text="{MaxLength=50} App Short Title" -->
+   </ShortTitle>
+
+   <!-- Valid length: 255 character limit -->
+   <!-- If your product could be alphabetized in different ways, you can enter another version here. This may help customers find the product more quickly when searching. -->
+   <SortTitle _locID="App_SortTitle"><!-- _locComment_text="{MaxLength=255} App Sort Title" -->
+   </SortTitle>
+
+   <!-- Valid length: 255 character limit -->
+   <!-- An alternate name for your product that, if provided, may be used in the audio experience on Xbox One when using Kinect or a headset. -->
+   <VoiceTitle _locID="App_VoiceTitle"><!-- _locComment_text="{MaxLength=255} App Voice Title" -->
+   </VoiceTitle>
+
+   <!-- Valid length: 255 character limit -->
+   <!-- Specify this value if you want to include a "Developed by" field in the listing. (The "Published by" field will list the publisher display name associated with your account, whether or not you provide a devStudio value.) -->
+   <DevStudio _locID="App_DevStudio"><!-- _locComment_text="{MaxLength=255} App Dev Studio" -->
+   </DevStudio>
 
    <!-- Valid length: 1500 character limit, optional -->
    <ReleaseNotes _locID="App_ReleaseNotes"><!-- _locComment_text="{MaxLength=1500} App Release Note" -->
@@ -62,7 +88,7 @@
 
    <Trailers>
      <Trailer FileName="trailer1.mp4">
-        <Title _locID="App_trailerTitle1"><!-- _locComment_text="{MaxLength=200} Trailer title 1" -->This is Trailer 1's title.</Title>
+        <Title _locID="App_trailerTitle1"><!-- _locComment_text="{MaxLength=255} Trailer title 1" -->This is Trailer 1's title.</Title>
         <Images> <!-- Current maximum of 1 image per trailer allowed -->
           <Image FileName="trailer1screenshot.png"><!-- _locComment_text="{Locked} Trailer Image 1 description" -->Description of trailer 1's screenshot that no user will ever see.</Image>
         </Images>
@@ -73,9 +99,15 @@
      <!-- Valid length: 200 character limit, up to 20 -->
      <AppFeature _locID="App_feature1"><!-- _locComment_text="{MaxLength=200} App Feature 1" -->Pick your favorite 60 seconds. You can trim from the beginning, middle, or end.</AppFeature>
      <AppFeature _locID="App_feature2"><!-- _locComment_text="{MaxLength=200} App Feature 2" -->Highlight your favorite moments with fun, colorful captions in a range of styles.</AppFeature>
-     <AppFeature _locID="App_feature3"><!-- _locComment_text="{MaxLength=200} App Feature 3" -->Add music that matches the moment. We’ve included a few songs for different moods, or you can use songs from your collection.</AppFeature>
+     <AppFeature _locID="App_feature3"><!-- _locComment_text="{MaxLength=200} App Feature 3" -->Add music that matches the moment. We've included a few songs for different moods, or you can use songs from your collection.</AppFeature>
      <AppFeature _locID="App_feature4"><!-- _locComment_text="{MaxLength=200} App Feature 4" -->When your movie is exactly how you want it, share it with family and friends right from the app.</AppFeature>
    </AppFeatures>
+
+   <MinimumHardware>
+      <!-- Valid length: 200 character limit, up to 11 -->
+      <MinimumRequirement _locID="App_MinimumRequirementHW1"><!-- _locComment_text="{MaxLength=200} App Minimum Required Hardware 1" -->Computer</MinimumRequirement>
+      <MinimumRequirement _locID="App_MinimumRequirementHW2"><!-- _locComment_text="{MaxLength=200} App Minimum Required Hardware 2" -->Keyboard</MinimumRequirement>
+   </MinimumHardware>
 
    <RecommendedHardware>
       <!-- Valid length: 200 character limit, up to 11 -->

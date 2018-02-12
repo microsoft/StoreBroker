@@ -129,7 +129,7 @@
 
   <xs:simpleType name="TrailerTitleString">
     <xs:restriction base="tns:NonNullNormalizedString">
-      <xs:pattern value="\s*(\S(\r|\n|.){0,199}\s*)?"/>
+      <xs:pattern value="\s*(\S(\r|\n|.){0,254}\s*)?"/>
     </xs:restriction>
   </xs:simpleType>
 
@@ -140,6 +140,42 @@
       </xs:extension>
     </xs:simpleContent>
   </xs:complexType>
+
+  <xs:simpleType name="ShortDescriptionString">
+    <xs:restriction base="xs:normalizedString">
+      <xs:pattern value="\s*(\S(\r|\n|.){0,499}\s*)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="ShortTitleString">
+    <xs:restriction base="xs:normalizedString">
+      <xs:pattern value="\s*(\S(\r|\n|.){0,49}\s*)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="SortTitleString">
+    <xs:restriction base="xs:normalizedString">
+      <xs:pattern value="\s*(\S(\r|\n|.){0,254}\s*)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="VoiceTitleString">
+    <xs:restriction base="xs:normalizedString">
+      <xs:pattern value="\s*(\S(\r|\n|.){0,254}\s*)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="DevStudioString">
+    <xs:restriction base="xs:normalizedString">
+      <xs:pattern value="\s*(\S(\r|\n|.){0,254}\s*)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="RequirementString">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="\s*(\S(\r|\n|.){0,199}\s*)?"/>
+    </xs:restriction>
+  </xs:simpleType>
 
   <xs:simpleType name="RecommendationString">
     <xs:restriction base="xs:string">
@@ -357,6 +393,81 @@
           </xs:complexType>
         </xs:element>
 
+        <xs:element name="ShortDescription" minOccurs="0">
+          <xs:complexType>
+            <xs:annotation>
+              <xs:documentation>
+                Optional, Only used for games. This description appears in the Information section of the Game Hub on Xbox One, and helps customers understand more about your game. May not exceed 500 characters.
+              </xs:documentation>
+            </xs:annotation>
+            <xs:simpleContent>
+              <xs:extension base="tns:ShortDescriptionString">
+                <xs:attributeGroup ref="tns:LocIdAttribute"/>
+              </xs:extension>
+            </xs:simpleContent>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="ShortTitle" minOccurs="0">
+          <xs:complexType>
+            <xs:annotation>
+              <xs:documentation>
+                Optional,  A shorter version of your product's name. If provided, this shorter name may appear in various places on Xbox One (during installation, in Achievements, etc.) in place of the full title of your product.  May not exceed 50 characters.
+              </xs:documentation>
+            </xs:annotation>
+            <xs:simpleContent>
+              <xs:extension base="tns:ShortTitleString">
+                <xs:attributeGroup ref="tns:LocIdAttribute"/>
+              </xs:extension>
+            </xs:simpleContent>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="SortTitle" minOccurs="0">
+          <xs:complexType>
+            <xs:annotation>
+              <xs:documentation>
+                Optional,  If your product could be alphabetized in different ways, you can enter another version here. This may help customers find the product more quickly when searching.  May not exceed 255 characters.
+              </xs:documentation>
+            </xs:annotation>
+            <xs:simpleContent>
+              <xs:extension base="tns:SortTitleString">
+                <xs:attributeGroup ref="tns:LocIdAttribute"/>
+              </xs:extension>
+            </xs:simpleContent>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="VoiceTitle" minOccurs="0">
+          <xs:complexType>
+            <xs:annotation>
+              <xs:documentation>
+                Optional,  An alternate name for your product that, if provided, may be used in the audio experience on Xbox One when using Kinect or a headset.   May not exceed 255 characters.
+              </xs:documentation>
+            </xs:annotation>
+            <xs:simpleContent>
+              <xs:extension base="tns:VoiceTitleString">
+                <xs:attributeGroup ref="tns:LocIdAttribute"/>
+              </xs:extension>
+            </xs:simpleContent>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="DevStudio" minOccurs="0">
+          <xs:complexType>
+            <xs:annotation>
+              <xs:documentation>
+                Optional,  Specify this value if you want to include a "Developed by" field in the listing. (The "Published by" field will list the publisher display name associated with your account, whether or not you provide a DevStudio value.)  May not exceed 255 characters.
+              </xs:documentation>
+            </xs:annotation>
+            <xs:simpleContent>
+              <xs:extension base="tns:DevStudioString">
+                <xs:attributeGroup ref="tns:LocIdAttribute"/>
+              </xs:extension>
+            </xs:simpleContent>
+          </xs:complexType>
+        </xs:element>
+
         <!-- Windows client only section-->
 
         <xs:element name="AppFeatures" minOccurs="0">
@@ -385,16 +496,15 @@
           </xs:complexType>
         </xs:element>
 
-
         <xs:element name="RecommendedHardware" minOccurs="0">
           <xs:annotation>
             <xs:documentation>
-              Optional, may contain up to 20 feature elements
+              Optional, may contain up to 11 elements
             </xs:documentation>
           </xs:annotation>
           <xs:complexType>
             <xs:sequence>
-              <xs:element name="Recommendation" minOccurs="0" maxOccurs="10">
+              <xs:element name="Recommendation" minOccurs="0" maxOccurs="11">
                 <xs:complexType>
                   <xs:annotation>
                     <xs:documentation>
@@ -403,6 +513,32 @@
                   </xs:annotation>
                   <xs:simpleContent>
                     <xs:extension base="tns:RecommendationString">
+                      <xs:attributeGroup ref="tns:LocIdAttribute"/>
+                    </xs:extension>
+                  </xs:simpleContent>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="MinimumHardware" minOccurs="0">
+          <xs:annotation>
+            <xs:documentation>
+              Optional, may contain up to 11 elements
+            </xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="MinimumRequirement" minOccurs="0" maxOccurs="11">
+                <xs:complexType>
+                  <xs:annotation>
+                    <xs:documentation>
+                      Each requirement may not exceed 200 characters
+                    </xs:documentation>
+                  </xs:annotation>
+                  <xs:simpleContent>
+                    <xs:extension base="tns:RequirementString">
                       <xs:attributeGroup ref="tns:LocIdAttribute"/>
                     </xs:extension>
                   </xs:simpleContent>

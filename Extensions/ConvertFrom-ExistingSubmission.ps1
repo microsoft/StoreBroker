@@ -365,16 +365,14 @@ function Add-AppStoreName
     $paramSet = @{
         "Element"   = $elementNode;
         "Attribute" = @{ $script:LocIdAttribute = ($script:LocIdFormat -f $elementName) };
-        "Comment"   = ($script:CommentFormat -f $maxChars, "App $elementName");
+        "Comment"   = @(
+            ' This is optional.  AppStoreName is typically extracted from your package''s AppxManifest DisplayName property. ',
+            ' Uncomment (and localize) this Store name if your application package does not contain a localization for the DisplayName in this language. ',
+            ' Leaving this uncommented for a language that your application package DOES contain a DisplayName for will result in a submission failure with the API. ',
+            ($script:CommentFormat -f $maxChars, "App $elementName"));
     }
 
     Add-ToElement @paramSet
-
-    $comment = $elementNode.OwnerDocument.CreateComment(' Uncomment the Store name if you wish to specify one explicitly instead. ')
-    $elementNode.PrependChild($comment) | Out-Null
-
-    $comment = $elementNode.OwnerDocument.CreateComment(' This is optional.  AppStoreName is typically extracted from your package''s AppxManifest DisplayName property. ')
-    $elementNode.PrependChild($comment) | Out-Null
 }
 
 function Add-Keywords
@@ -458,6 +456,191 @@ function Add-Description
         "Element" = $elementNode;
         "Attribute" = @{ $script:LocIdAttribute = ($script:LocIdFormat -f $elementName) };
         "Comment" = ($script:CommentFormat -f $maxChars, "App $elementName");
+    }
+
+    Add-ToElement @paramSet
+}
+
+function Add-ShortDescription
+{
+<#
+    .SYNOPSIS
+        Creates the ShortDescription node
+
+    .PARAMETER Xml
+        The XmlDocument to modify.
+
+    .PARAMETER Listing
+        The base listing from the submission for a specific Lang.
+#>
+    param(
+        [Parameter(Mandatory)]
+        [System.Xml.XmlDocument] $Xml,
+
+        [Parameter(Mandatory)]
+        [PSCustomObject] $Listing
+    )
+
+    $elementName = "ShortDescription"
+    $elementNode = Ensure-RootChild -Xml $Xml -Element $elementName
+    $elementNode.InnerText = $Listing.shortDescription
+
+    # Add comment to parent
+    $maxChars = 500
+    $paramSet = @{
+        "Element" = $elementNode;
+        "Attribute" = @{ $script:LocIdAttribute = ($script:LocIdFormat -f $elementName) };
+        "Comment" = @(
+            ' Only used for games. This description appears in the Information section of the Game Hub on Xbox One, and helps customers understand more about your game. ',
+            ($script:CommentFormat -f $maxChars, "App $elementName"));
+    }
+
+    Add-ToElement @paramSet
+}
+
+function Add-ShortTitle
+{
+<#
+    .SYNOPSIS
+        Creates the ShortTitle node
+
+    .PARAMETER Xml
+        The XmlDocument to modify.
+
+    .PARAMETER Listing
+        The base listing from the submission for a specific Lang.
+#>
+    param(
+        [Parameter(Mandatory)]
+        [System.Xml.XmlDocument] $Xml,
+
+        [Parameter(Mandatory)]
+        [PSCustomObject] $Listing
+    )
+
+    $elementName = "ShortTitle"
+    $elementNode = Ensure-RootChild -Xml $Xml -Element $elementName
+    $elementNode.InnerText = $Listing.shortTitle
+
+    # Add comment to parent
+    $maxChars = 50
+    $paramSet = @{
+        "Element" = $elementNode;
+        "Attribute" = @{ $script:LocIdAttribute = ($script:LocIdFormat -f $elementName) };
+        "Comment" = @(
+            ' A shorter version of your product''s name. If provided, this shorter name may appear in various places on Xbox One (during installation, in Achievements, etc.) in place of the full title of your product. ',
+            ($script:CommentFormat -f $maxChars, "App $elementName"));
+    }
+
+    Add-ToElement @paramSet
+}
+
+function Add-SortTitle
+{
+<#
+    .SYNOPSIS
+        Creates the SortTitle node
+
+    .PARAMETER Xml
+        The XmlDocument to modify.
+
+    .PARAMETER Listing
+        The base listing from the submission for a specific Lang.
+#>
+    param(
+        [Parameter(Mandatory)]
+        [System.Xml.XmlDocument] $Xml,
+
+        [Parameter(Mandatory)]
+        [PSCustomObject] $Listing
+    )
+
+    $elementName = "SortTitle"
+    $elementNode = Ensure-RootChild -Xml $Xml -Element $elementName
+    $elementNode.InnerText = $Listing.sortTitle
+
+    # Add comment to parent
+    $maxChars = 255
+    $paramSet = @{
+        "Element" = $elementNode;
+        "Attribute" = @{ $script:LocIdAttribute = ($script:LocIdFormat -f $elementName) };
+        "Comment" = @(
+            ' If your product could be alphabetized in different ways, you can enter another version here. This may help customers find the product more quickly when searching. ',
+            ($script:CommentFormat -f $maxChars, "App $elementName"));
+    }
+
+    Add-ToElement @paramSet
+}
+
+function Add-VoiceTitle
+{
+<#
+    .SYNOPSIS
+        Creates the VoiceTitle node
+
+    .PARAMETER Xml
+        The XmlDocument to modify.
+
+    .PARAMETER Listing
+        The base listing from the submission for a specific Lang.
+#>
+    param(
+        [Parameter(Mandatory)]
+        [System.Xml.XmlDocument] $Xml,
+
+        [Parameter(Mandatory)]
+        [PSCustomObject] $Listing
+    )
+
+    $elementName = "VoiceTitle"
+    $elementNode = Ensure-RootChild -Xml $Xml -Element $elementName
+    $elementNode.InnerText = $Listing.voiceTitle
+
+    # Add comment to parent
+    $maxChars = 255
+    $paramSet = @{
+        "Element" = $elementNode;
+        "Attribute" = @{ $script:LocIdAttribute = ($script:LocIdFormat -f $elementName) };
+        "Comment" = @(
+            ' An alternate name for your product that, if provided, may be used in the audio experience on Xbox One when using Kinect or a headset. ',
+            ($script:CommentFormat -f $maxChars, "App $elementName"));
+    }
+
+    Add-ToElement @paramSet
+}
+
+function Add-DevStudio
+{
+<#
+    .SYNOPSIS
+        Creates the DevStudio node
+
+    .PARAMETER Xml
+        The XmlDocument to modify.
+
+    .PARAMETER Listing
+        The base listing from the submission for a specific Lang.
+#>
+    param(
+        [Parameter(Mandatory)]
+        [System.Xml.XmlDocument] $Xml,
+
+        [Parameter(Mandatory)]
+        [PSCustomObject] $Listing
+    )
+
+    $elementName = "DevStudio"
+    $elementNode = Ensure-RootChild -Xml $Xml -Element $elementName
+    $elementNode.InnerText = $Listing.devStudio
+
+    # Add comment to parent
+    $maxChars = 255
+    $paramSet = @{
+        "Element" = $elementNode;
+        "Attribute" = @{ $script:LocIdAttribute = ($script:LocIdFormat -f $elementName) };
+        "Comment" = @(
+            ' Specify this value if you want to include a "Developed by" field in the listing. (The "Published by" field will list the publisher display name associated with your account, whether or not you provide a devStudio value.) ',
+            ($script:CommentFormat -f $maxChars, "App $elementName"));
     }
 
     Add-ToElement @paramSet
@@ -784,7 +967,7 @@ function Add-Trailers
                 $titleElement.InnerText = $title
                 $trailerElement.AppendChild($titleElement) | Out-Null
 
-                $maxChars = 200
+                $maxChars = 255
                 $paramSet = @{
                     "Element"   = $titleElement;
                     "Attribute" = @{ $script:LocIdAttribute = ($script:LocIdFormat -f "trailerTitle") + $trailerCount };
@@ -916,6 +1099,56 @@ function Add-RecommendedHardware
         "Parent" = $elementNode;
         "Attribute" = @{ $script:LocIdAttribute = ($script:LocIdFormat -f "RecommendedHW") + "{0}" };
         "Comment" = ($script:CommentFormatN -f $maxChars, "App Recommended Hardware") + $script:CommentFormatNClose;
+    }
+
+    Add-ToChildren @paramSet
+}
+
+function Add-MinimumHardware
+{
+<#
+    .SYNOPSIS
+        Creates the minimum hardware nodes
+
+    .PARAMETER Xml
+        The XmlDocument to modify.
+
+    .PARAMETER Listing
+        The base listing from the submission for a specific Lang.
+#>
+    param(
+        [Parameter(Mandatory)]
+        [System.Xml.XmlDocument] $Xml,
+
+        [Parameter(Mandatory)]
+        [PSCustomObject] $Listing
+    )
+
+    $elementName = "MinimumHardware"
+    $elementNode = Ensure-RootChild -Xml $Xml -Element $elementName
+    foreach ($minimumRequirement in $Listing.minimumHardware)
+    {
+        $child = $Xml.CreateElement("MinimumRequirement", $xml.productDescription.NamespaceURI)
+        $child.InnerText = $minimumRequirement
+        $elementNode.AppendChild($child) | Out-Null
+    }
+
+    # Add comment to parent
+    $maxChars = 200
+    $maxChildren = 11
+    $paramSet = @{
+        "Element" = $elementNode;
+        "Comment" = $script:SectionCommentFormat -f $maxChars, $maxChildren;
+    }
+
+    Add-ToElement @paramSet
+
+    # Add comment to children
+    $maxChars = 200
+    $paramSet = @{
+        "Parent" = $elementNode;
+        "Attribute" = @{ $script:LocIdAttribute = ($script:LocIdFormat -f "MinimumRequirementHW") + "{0}" };
+        "Comment" = ($script:CommentFormatN -f $maxChars, "App Minimum Required Hardware") + $script:CommentFormatNClose;
     }
 
     Add-ToChildren @paramSet
@@ -1163,12 +1396,18 @@ function ConvertFrom-Listing
     Add-AppStoreName -Xml $Xml -Listing $Listing
     Add-Keywords -Xml $Xml -Listing $Listing
     Add-Description -Xml $Xml -Listing $Listing
+    Add-ShortDescription -Xml $Xml -Listing $Listing
+    Add-ShortTitle -Xml $Xml -Listing $Listing
+    Add-SortTitle -Xml $Xml -Listing $Listing
+    Add-VoiceTitle -Xml $Xml -Listing $Listing
+    Add-DevStudio -Xml $Xml -Listing $Listing
     Add-ReleaseNotes -Xml $Xml -Listing $Listing
     $screenshotFileNames = Add-ScreenshotCaptions -Xml $xml -Listing $Listing
     $additionalAssetFileNames = Add-AdditionalAssets -Xml $xml -Listing $Listing
     $trailerFileNames = Add-Trailers -Xml $xml -Submission $Submission -Lang $Lang
     Add-AppFeatures -Xml $Xml -Listing $Listing
     Add-RecommendedHardware -Xml $Xml -Listing $Listing
+    Add-MinimumHardware -Xml $Xml -Listing $Listing
     Add-CopyrightAndTrademark -Xml $Xml -Listing $Listing
     Add-AdditionalLicenseTerms -Xml $Xml -Listing $Listing
     Add-WebsiteUrl -Xml $Xml -Listing $Listing

@@ -933,72 +933,72 @@ function Add-Trailers
     Add-ToElement @paramSet
 
     $trailerCount = 0
-    $Submission.trailers |
-        ForEach-Object {
-            foreach ($language in ($_.trailerAssets | Get-Member -Type NoteProperty))
+    foreach ($trailer in $Submission.trailers)
+    {
+        foreach ($language in ($trailer.trailerAssets | Get-Member -Type NoteProperty))
+        {
+            $langCode = $language.Name
+            if ($langCode -ne $Lang)
             {
-                $langCode = $language.Name
-                if ($langCode -ne $Lang)
-                {
-                    continue
-                }
-
-                $trailerCount++
-
-                # There's an entry for this trailer, for this language, so add it to the PDP
-                $trailerFileName = Split-Path -Path ($_.videoFileName) -Leaf
-                $assetFileNames += $trailerFileName
-                $title = $_.trailerAssets.$langCode.title
-                $screenshotDescription = $_.trailerAssets.$langCode.imageList[0].description
-                $screenshotFileName = Split-Path -Path ($_.trailerAssets.$langCode.imageList[0].fileName) -Leaf
-                if (-not [String]::IsNullOrWhiteSpace($screenshotFileName))
-                {
-                    # The API doesn't seem to always return the screenshot filename.
-                    # We'll guard against that by only adding the value to our asset array
-                    # if there's a value.
-                    $assetFileNames += $screenshotFileName
-                }
-
-                $trailerElement = $Xml.CreateElement("Trailer", $xml.productDescription.NamespaceURI)
-                $trailerElement.SetAttribute('FileName', $trailerFileName)
-                $elementNode.AppendChild($trailerElement) | Out-Null
-
-                $titleElement = $Xml.CreateElement("Title", $xml.productDescription.NamespaceURI)
-                $titleElement.InnerText = $title
-                $trailerElement.AppendChild($titleElement) | Out-Null
-
-                $maxChars = 255
-                $paramSet = @{
-                    "Element"   = $titleElement;
-                    "Attribute" = @{ $script:LocIdAttribute = ($script:LocIdFormat -f "trailerTitle") + $trailerCount };
-                    "Comment"   = ($script:CommentFormat -f $maxChars, "Trailer title $trailerCount");
-                }
-
-                Add-ToElement @paramSet
-
-                $imagesElement = $Xml.CreateElement("Images", $xml.productDescription.NamespaceURI)
-                $trailerElement.AppendChild($imagesElement) | Out-Null
-
-                $paramSet = @{
-                    "Element"   = $imagesElement;
-                    "Comment"   = ' Current maximum of 1 image per trailer permitted. ';
-                }
-
-                Add-ToElement @paramSet
-
-                $imageElement = $Xml.CreateElement("Image", $xml.productDescription.NamespaceURI)
-                $imageElement.SetAttribute('FileName', $screenshotFileName)
-                $imageElement.InnerText = $screenshotDescription
-                $imagesElement.AppendChild($imageElement) | Out-Null
-
-                $paramSet = @{
-                    "Element"   = $imageElement;
-                    "Comment"   = ($script:CommentLockedFormat -f "Trailer screenshot $trailerCount description");
-                }
-
-                Add-ToElement @paramSet
+                continue
             }
+
+            $trailerCount++
+
+            # There's an entry for this trailer, for this language, so add it to the PDP
+            $trailerFileName = Split-Path -Path ($trailer.videoFileName) -Leaf
+            $assetFileNames += $trailerFileName
+            $title = $trailer.trailerAssets.$langCode.title
+            $screenshotDescription = $trailer.trailerAssets.$langCode.imageList[0].description
+            $screenshotFileName = Split-Path -Path ($trailer.trailerAssets.$langCode.imageList[0].fileName) -Leaf
+            if (-not [String]::IsNullOrWhiteSpace($screenshotFileName))
+            {
+                # The API doesn't seem to always return the screenshot filename.
+                # We'll guard against that by only adding the value to our asset array
+                # if there's a value.
+                $assetFileNames += $screenshotFileName
+            }
+
+            $trailerElement = $Xml.CreateElement("Trailer", $xml.productDescription.NamespaceURI)
+            $trailerElement.SetAttribute('FileName', $trailerFileName)
+            $elementNode.AppendChild($trailerElement) | Out-Null
+
+            $titleElement = $Xml.CreateElement("Title", $xml.productDescription.NamespaceURI)
+            $titleElement.InnerText = $title
+            $trailerElement.AppendChild($titleElement) | Out-Null
+
+            $maxChars = 255
+            $paramSet = @{
+                "Element"   = $titleElement;
+                "Attribute" = @{ $script:LocIdAttribute = ($script:LocIdFormat -f "trailerTitle") + $trailerCount };
+                "Comment"   = ($script:CommentFormat -f $maxChars, "Trailer title $trailerCount");
+            }
+
+            Add-ToElement @paramSet
+
+            $imagesElement = $Xml.CreateElement("Images", $xml.productDescription.NamespaceURI)
+            $trailerElement.AppendChild($imagesElement) | Out-Null
+
+            $paramSet = @{
+                "Element"   = $imagesElement;
+                "Comment"   = ' Current maximum of 1 image per trailer permitted. ';
+            }
+
+            Add-ToElement @paramSet
+
+            $imageElement = $Xml.CreateElement("Image", $xml.productDescription.NamespaceURI)
+            $imageElement.SetAttribute('FileName', $screenshotFileName)
+            $imageElement.InnerText = $screenshotDescription
+            $imagesElement.AppendChild($imageElement) | Out-Null
+
+            $paramSet = @{
+                "Element"   = $imageElement;
+                "Comment"   = ($script:CommentLockedFormat -f "Trailer screenshot $trailerCount description");
+            }
+
+            Add-ToElement @paramSet
         }
+    }
 
     return $assetFileNames
 }

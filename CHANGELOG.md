@@ -3,6 +3,18 @@
 
 ------
 
+## [1.16.1](https://github.com/Microsoft/StoreBroker/tree/1.16.1) - (2018/02/15)
+### Fixes:
+
+- Fix (ignorable) exception seen in `ConvertFrom-ExistingSubmission` when trying to
+  convert non-existant trailer data for a submission without Advanced Listing support.
+
+More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/110) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/e9b8b2be101b8c3d2140798d6be5aeca1b0a0474)
+
+Author: [**@HowardWolosky**](https://github.com/HowardWolosky)
+
+------
+
 ## [1.16.0](https://github.com/Microsoft/StoreBroker/tree/1.16.0) - (2018/02/14)
 ### Features:
 

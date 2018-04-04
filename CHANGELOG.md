@@ -3,6 +3,19 @@
 
 ------
 
+## [1.16.2](https://github.com/Microsoft/StoreBroker/tree/1.16.2) - (2018/04/06)
+### Fixes:
+
+- Fixed error (`You cannot call a method on a null-valued expression.`) seen during packaging
+  if a trailer element didn't have loc comments/attributes in it.  Packaging should now be
+  completely agnostic to whether loc comments/attributes exist or not.
+
+More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/112) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/TODO)
+
+Author: [**@HowardWolosky**](https://github.com/HowardWolosky)
+
+------
+
 ## [1.16.1](https://github.com/Microsoft/StoreBroker/tree/1.16.1) - (2018/02/15)
 ### Fixes:
 

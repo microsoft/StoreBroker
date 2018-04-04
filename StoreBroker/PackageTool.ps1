@@ -672,6 +672,62 @@ function Test-Xml
     }
 }
 
+function Get-TextFromXmlElement
+{
+    <#
+    .SYNOPSIS
+        Finds the actual text contained within an XMLElement, trims it and returns it.
+
+    .DESCRIPTION
+        Finds the actual text contained within an XMLElement, trims it and returns it.
+
+        When an XMLElement has attributes and/or inner comments, you cannot simply
+        access the text directly.  This function encapsulates the necessary logic
+        so that you can consistently and reliably get access to the actual element's
+        text.
+
+    .PARAMETER Element
+        This is the actual property from the XML DOM that you are intested in getting
+        the text of.  This might just be a String if it's a simple text element,
+        or it might end up being an XMLElement itself if has attributes and/or
+        comments.
+
+    .OUTPUTS
+        System.String.  The trimmed text contained within the XML element.
+
+    .EXAMPLE
+        Get-TextFromXmlElement -Element $xml.ProductDescription.Description
+
+        Returns back the trimmed text content contained within the Description element.
+#>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [AllowNull()]
+        [AllowEmptyString()]
+        $Element
+    )
+
+    $text = $Element
+
+    # The text is only available to be accessed raw like this if there
+    # is no attribute or inner comment on the containing element.
+    # If there is, then this property will actually be an XmlElement
+    # itself and not a string, meaning that we have to access the
+    # InnerText to get its text value.
+    if ($text -is [System.Xml.XmlElement])
+    {
+        $text = $text.InnerText
+    }
+
+    if ($null -ne $text)
+    {
+        $text = $text.Trim()
+    }
+
+    return $text
+}
+
 function Convert-ListingToObject
 {
 <#
@@ -787,19 +843,14 @@ function Convert-ListingToObject
                         "releaseNotes"              = $ProductDescriptionNode.ReleaseNotes;
                     }
 
-                    # Identify the keys whose values are non-null and trim the values.
+                    # Identify the keys whose values are non-null.
                     # Must be done in two steps because $baseListings can't be modified
                     # while enumerating its keys.
                     $trimKeys = $baseListing.Keys |
-                        Where-Object { ($null -ne $baseListing[$_].InnerText) -or ($baseListing[$_] -is [String]) }
+                        Where-Object { ($null -ne (Get-TextFromXmlElement -Element $baseListing[$_])) }
 
                     $trimKeys | ForEach-Object {
-                        if ($null -ne $baseListing[$_].InnerText)
-                        {
-                            $baseListing[$_] = $baseListing[$_].InnerText
-                        }
-
-                        $baseListing[$_] = $baseListing[$_].Trim()
+                        $baseListing[$_] = Get-TextFromXmlElement -Element $baseListing[$_]
                     }
 
                     # For title specifically, we need to ensure that it's set to $null if there's
@@ -810,8 +861,6 @@ function Convert-ListingToObject
                     }
 
                     # Nodes with children need to have each value extracted into an array.
-                    # When using -Confirm, PS will ask user to confirm selecting 'InnerText'.
-                    # Explicitly set -Confirm:$false to prevent this dialog from reaching the user.
                     @{
                         "features"            = $ProductDescriptionNode.AppFeatures;
                         "keywords"            = $ProductDescriptionNode.Keywords;
@@ -820,9 +869,8 @@ function Convert-ListingToObject
                     }.GetEnumerator() | ForEach-Object {
                         $baseListing[$_.Name] = @($_.Value.ChildNodes |
                                                     Where-Object NodeType -eq Element |
-                                                    ForEach-Object -WhatIf:$false -Confirm:$false InnerText |
-                                                    Where-Object { $_ -ne $null } |
-                                                    ForEach-Object { $_.Trim() })
+                                                    ForEach-Object { Get-TextFromXmlElement -Element $_ } |
+                                                    Where-Object { $_ -ne $null })
                     }
 
                     # Handle screenshots and their captions.
@@ -872,7 +920,7 @@ function Convert-ListingToObject
                                 $imageListings += @{
                                     "fileName" = $fileRelativePackagePath;
                                     "fileStatus" = "PendingUpload";
-                                    "description" = $caption.InnerText.Trim();
+                                    "description" = (Get-TextFromXmlElement -Element $caption);
                                     "imageType" = $imageType;
                                 }
                             }
@@ -1048,7 +1096,7 @@ function Convert-TrailersToObject
                     $trailerListings = @{}
                     foreach ($trailer in $trailers)
                     {
-                        $trailerTitle = $trailer.Title.InnerText.Trim()
+                        $trailerTitle = Get-TextFromXmlElement -Element $trailer.Title
                         $trailerFileName = $trailer.FileName
 
                         # We start with the fallback language specified on the trailer.
@@ -1092,7 +1140,7 @@ function Convert-TrailersToObject
                         }
 
                         $screenshotRelativePackagePath = Get-LocalizedMediaFile @params
-                        $screenshotDescription = $trailer.Images.Image.InnerText.Trim()
+                        $screenshotDescription = Get-TextFromXmlElement -Element $trailer.Images.Image
 
                         $trailerLangCodeListing = [ordered]@{
                             'title' = $trailerTitle
@@ -1582,19 +1630,14 @@ function Convert-InAppProductListingToObject
                         "description"               = $InAppProductDescriptionNode.Description;
                     }
 
-                    # Identify the keys whose values are non-null and trim the values.
-                    # Must be done in two steps because $listings can't be modified
+                    # Identify the keys whose values are non-null.
+                    # Must be done in two steps because $listing can't be modified
                     # while enumerating its keys.
                     $trimKeys = $listing.Keys |
-                        Where-Object { ($null -ne $listing[$_].InnerText) -or ($listing[$_] -is [String]) }
+                        Where-Object { ($null -ne (Get-TextFromXmlElement -Element $listing[$_])) }
 
                     $trimKeys | ForEach-Object {
-                        if ($null -ne $listing[$_].InnerText)
-                        {
-                            $listing[$_] = $listing[$_].InnerText
-                        }
-
-                        $listing[$_] = $listing[$_].Trim()
+                        $listing[$_] = Get-TextFromXmlElement -Element $listing[$_]
                     }
 
                     # For title specifically, we need to ensure that it's set to $null if there's

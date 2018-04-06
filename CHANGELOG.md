@@ -10,7 +10,7 @@
   if a trailer element didn't have loc comments/attributes in it.  Packaging should now be
   completely agnostic to whether loc comments/attributes exist or not.
 
-More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/112) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/TODO)
+More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/112) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/1f051e4e102cd8bacf18503f10900af9090ee326)
 
 Author: [**@HowardWolosky**](https://github.com/HowardWolosky)
 

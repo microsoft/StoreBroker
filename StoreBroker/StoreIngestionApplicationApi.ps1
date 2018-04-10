@@ -1762,7 +1762,7 @@ function Patch-ApplicationSubmission
         $PatchedSubmission.gamingOptions = DeepCopy-Object -Object (, $NewSubmission.gamingOptions)
     }
 
-    if ($UpdateGamingOptions)
+    if ($UpdateTrailers)
     {
         # Making the assumption that hasAdvancedListingsPermission is false here since the
         # current submission object doesn't contain a trailers node.

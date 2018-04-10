@@ -6,12 +6,12 @@
 ## [1.16.3](https://github.com/Microsoft/StoreBroker/tree/1.16.3) - (2018/04/10)
 ### Fixes:
 
-- There was an error in `Update-ApplicationSubmission`) where it checked for
+- There was an error in `Update-ApplicationSubmission` where it checked for
   `-UpdateGamingOptions` for both updating gaming options as well as for
   updating trailers, where it should have been checking `-UpdateTrailers`
   for the trailers portion.
 
-More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/115) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/TODO)
+More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/115) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/01dbbd14b313fe9472e2cfc74bb084b4b8a4a7cf)
 
 Author: [**@HowardWolosky**](https://github.com/HowardWolosky)
 

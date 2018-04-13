@@ -359,7 +359,6 @@
         //                 //
         /////////////////////
 
-        // This section is only applicable if your application has "Advanced Listings Support" enabled on it.
         // Up-to-date documentation for all possible option values can be found here:
         // https://docs.microsoft.com/en-us/windows/uwp/monetize/manage-app-submissions#gaming-options-object
         "gamingOptions": [{

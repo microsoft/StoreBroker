@@ -541,8 +541,7 @@ function Format-ApplicationSubmission
             $output += $baseListing.images | Format-SimpleTableString -IndentationLevel $($indentLength * 2)
             $output += ""
 
-            # Only show the Trailers section if the application has advanced listing support
-            # (the section will be null / won't exist if the app doesn't have that support)
+            # Only show the Trailers section if it exists
             if ($null -ne $trailers)
             {
                 $langTrailers = $trailerByLang[$lang]
@@ -556,8 +555,7 @@ function Format-ApplicationSubmission
             $output += ""
         }
 
-        # Only show the Gaming Options section if the application has advanced listing support
-        # (the section will be null / won't exist if the app doesn't have that support)
+        # Only show the Gaming Options section if ot exists
         if ($null -ne $ApplicationSubmissionData.gamingOptions)
         {
             $gamingOptions = $ApplicationSubmissionData.gamingOptions
@@ -1021,7 +1019,6 @@ function Update-ApplicationSubmission
 
     .PARAMETER UpdateGamingOptions
         Updates fields under the "Ganming Options" category in the PackageTool config file.
-        This option can only be used if your application has  "Advanced Listings Support" enabled on it.
         Updates the following fields using values from SubmissionDataPath under gamingOptions:
         genres, isLocalMultiplayer, isLocalCooperative, isOnlineMultiplayer, isOnlineCooperative,
         localMultiplayerMinPlayers, localMultiplayerMaxPlayers, localCooperativeMinPlayers,
@@ -1441,7 +1438,6 @@ function Patch-ApplicationSubmission
 
     .PARAMETER UpdateGamingOptions
         Updates fields under the "Ganming Options" category in the PackageTool config file.
-        This option can only be used if your application has  "Advanced Listings Support" enabled on it.
         Updates the following fields using values from SubmissionDataPath under gamingOptions:
         genres, isLocalMultiplayer, isLocalCooperative, isOnlineMultiplayer, isOnlineCooperative,
         localMultiplayerMinPlayers, localMultiplayerMaxPlayers, localCooperativeMinPlayers,
@@ -1732,16 +1728,11 @@ function Patch-ApplicationSubmission
 
     if ($UpdateGamingOptions)
     {
-        # Making the assumption that hasAdvancedListingsPermission is false here since the
-        # current submission object doesn't contain a gamingOptions node.
+        # It's possible that an existing submission object may not have this property at all.
+        # Make sure it's there before continuing.
         if ($null -eq $PatchedSubmission.gamingOptions)
         {
-            $output = @()
-            $output += "You selected to update the Gaming Options for this submission, but it appears that the app"
-            $output += "does not have `"Advanced Listings Support`" enabled. Unable to continue."
-            $output = $output -join [Environment]::NewLine
-            Write-Log -Message $output -Level Error
-            throw $output
+            $PatchedSubmission | Add-Member -Type NoteProperty -Name 'gamingOptions' -Value $null
         }
 
         if ($null -eq $NewSubmission.gamingOptions)
@@ -1764,16 +1755,11 @@ function Patch-ApplicationSubmission
 
     if ($UpdateTrailers)
     {
-        # Making the assumption that hasAdvancedListingsPermission is false here since the
-        # current submission object doesn't contain a trailers node.
+        # It's possible that an existing submission object may not have this property at all.
+        # Make sure it's there before continuing.
         if ($null -eq $PatchedSubmission.trailers)
         {
-            $output = @()
-            $output += "You selected to update the Trailers for this submission, but it appears that the app"
-            $output += "does not have `"Advanced Listings Support`" enabled. Unable to continue."
-            $output = $output -join [Environment]::NewLine
-            Write-Log -Message $output -Level Error
-            throw $output
+            $PatchedSubmission | Add-Member -Type NoteProperty -Name 'trailers' -Value $null
         }
 
         # Trailers has to be an array, so it's important that in the cases when we have 0 or 1

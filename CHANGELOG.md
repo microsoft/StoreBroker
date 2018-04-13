@@ -3,6 +3,19 @@
 
 ------
 
+## [1.16.4](https://github.com/Microsoft/StoreBroker/tree/1.16.4) - (2018/04/23)
+### Fixes:
+
+- Removed checks validation checks preventing some apps from updating
+  gaming options or trailers.  The API now enables all apps to use
+  trailers and gaming options, even if their submission object doesn't
+  provide those nodes.
+
+More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/116) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/TODO)
+
+Author: [**@HowardWolosky**](https://github.com/HowardWolosky)
+
+------
 ## [1.16.3](https://github.com/Microsoft/StoreBroker/tree/1.16.3) - (2018/04/10)
 ### Fixes:
 

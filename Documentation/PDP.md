@@ -68,8 +68,6 @@ are as follows:
  * WebsiteURL
  * SupportContactInfo
  * PrivacyPolicyURL
-
-**Additional Sections if your app has Advanced Listing support**
  * Trailers
 
 **For In-App Product (IAP) ("add-on") Submissions**
@@ -195,9 +193,6 @@ image type, or you can add it to `AdditionalAssets` to affect them all (or to
 #### Trailers
 
 > Only relevant for Application submissions
-
-> Can only be set on applications that have
-> [`Advanced Listing Permission`](https://docs.microsoft.com/en-us/windows/uwp/monetize/manage-app-submissions#advanced-listings).
 
 You can learn more about the specifics of trailers and how they're used by referring to the
 [dev portal's online documentation](https://docs.microsoft.com/en-us/windows/uwp/publish/app-screenshots-and-images#trailers).

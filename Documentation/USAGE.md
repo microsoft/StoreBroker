@@ -264,15 +264,11 @@ cloned submission:
    the cloned submission to that which is specified in your json.
 
  * **`-UpdateGamingOptions`** - This will update all values under the `gamingOptions`
-   node specified in your json.  Please note that your application must have
-   ["Advanced Listing Permission"](https://docs.microsoft.com/en-us/windows/uwp/monetize/manage-app-submissions#advanced-listings)
-   enabled for this to work.
+   node specified in your json.
 
  * **`-UpdateTrailers`** - This will replace the cloned submission's trailers metadata with yours
    (the localized content from the PDP's), deleting any existing data along the way.
-   Please note that your application must have
-   ["Advanced Listing Permission"](https://docs.microsoft.com/en-us/windows/uwp/monetize/manage-app-submissions#advanced-listings)
-   enabled for this to work.  For more info on trailers, review [PDP.md](./PDP.md#trailers).
+   For more info on trailers, review [PDP.md](./PDP.md#trailers).
 
  * **`-UpdateNotesForCertification`** - This will change the `notesForCertification` field of
    the cloned submission to that which is specified in your json.

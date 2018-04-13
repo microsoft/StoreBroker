@@ -328,7 +328,7 @@ function Get-StoreBrokerConfigFileContentForAppId
         $updated = $updated -replace '"isGameDvrEnabled": .*,', "`"isGameDvrEnabled`": $($sub.isGameDvrEnabled | ConvertTo-Json),"
 
         # GAMING OPTIONS
-        if ($app.hasAdvancedListingPermission)
+        if ($null -ne $sub.gamingOptions)
         {
             $gamingOptionsGenres = $sub.gamingOptions.genres | ConvertTo-Json -Depth $script:jsonConversionDepth
             if ($null -eq $gamingOptionsGenres) { $gamingOptionsGenres = "[ ]" }

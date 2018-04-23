@@ -11,7 +11,7 @@
   trailers and gaming options, even if their submission object doesn't
   provide those nodes.
 
-More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/116) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/TODO)
+More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/116) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/b11f0a4932717ba6d6500529303724bfaef40920)
 
 Author: [**@HowardWolosky**](https://github.com/HowardWolosky)
 

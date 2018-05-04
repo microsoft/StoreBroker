@@ -11,39 +11,91 @@ Add-Type -TypeDefinition @"
       AppId,
       AppName,
       AppxVersion,
-      AutoCommit,
+      Auto,
+      AutoSubmit,
+      ClientRequestId,
+      ContentPath,
+      CorrelationId,
       DayOfWeek,
       ErrorBucket,
       ExistingPackageRolloutAction,
+      FeatureAvailabilityId,
+      FeatureGroupId,
+      FilePath,
       FlightId,
       Force,
+      GetDetail,
+      GetReports,
+      GetValidation,
+      HasAudience,
       HResult,
       IapId,
+      ImageId,
+      IncludeMarketStates,
+      IncludePricing,
+      IncludeTrial,
+      IsAutoPromote,
+      IsEnabled,
       IsMandatoryUpdate,
+      IsManualPublish,
+      IsSeekEnabled,
+      JsonPath,
+      LanguageCode,
       Message,
+      Name,
       NumRetries,
+      PackageId,
+      PackageConfigurationId,
       PackagePath,
       PackageRolloutPercentage,
+      Percentage,
+      ProductAvailabilityId,
       ProductId,
       ProductType,
+      PropertyId,
+      ProvidedCertificationNotes,
+      ProvidedSubmissionData,
+      RedundantPackagesToKeep,
+      RelativeRank,
+      RemoveOnly,
       ReplacePackages,
+      RequestId,
+      ResourceType,
       RetryStatusCode,
+      RevisionToken,
+      SandboxId,
+      Scope,
+      ShouldOverridePackageLogos,
       ShowFlight,
       ShowSubmission,
+      SingleQuery,
       SourceFilePath,
+      SpecifiedType,
+      State,
       SubmissionId,
+      TargetPublishMode,
+      Type,
+      Orientation,
       UpdateAppProperties,
+      UpdateCertificationNotes,
       UpdateGamingOptions,
-      UpdateListings,
-      UpdateNotesForCertification,
+      UpdateImagesAndCaptions,
+      UpdateListingText,
+      UpdatePackages,
       UpdatePricingAndAvailability,
       UpdateProperties,
       UpdatePublishMode,
       UpdatePublishModeAndVisibility,
-      UpdateTrailers,
+      UpdateVideos,
+      UsingObject,
       UriFragment,
       UserName,
+      Version,
+      VideoId,
+      Visibility,
+      WaitSeconds,
       Web,
+      ZipPath
    }
 "@
 
@@ -496,11 +548,11 @@ function Set-TelemetryEvent
 
     if ($global:SBDisableTelemetry)
     {
-        Write-Log -Message "Telemetry has been disabled via `$global:SBDisableTelemetry. Skipping reporting event." -Level Verbose
+        Write-Log -Message "Telemetry has been disabled via `$global:SBDisableTelemetry. Skipping reporting event [$EventName]." -Level Verbose
         return
     }
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
 
     try
     {
@@ -599,11 +651,11 @@ function Set-TelemetryException
 
     if ($global:SBDisableTelemetry)
     {
-        Write-Log -Message "Telemetry has been disabled via `$global:SBDisableTelemetry. Skipping reporting event." -Level Verbose
+        Write-Log -Message "Telemetry has been disabled via `$global:SBDisableTelemetry. Skipping reporting exception." -Level Verbose
         return
     }
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
 
     try
     {
@@ -677,11 +729,11 @@ function Flush-TelemetryClient
 
     if ($global:SBDisableTelemetry)
     {
-        Write-Log -Message "Telemetry has been disabled via `$global:SBDisableTelemetry. Skipping reporting event." -Level Verbose
+        Write-Log -Message "Telemetry has been disabled via `$global:SBDisableTelemetry. Skipping flushing of the telemetry client." -Level Verbose
         return
     }
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
 
     $telemetryClient = Get-TelemetryClient -NoStatus:$NoStatus
 

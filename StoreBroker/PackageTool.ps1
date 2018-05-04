@@ -43,7 +43,7 @@ $script:minVersionFormatString = "{0} min version {1}"
 # The StoreBroker schema may include metadata that isn't a core part of the official Submission API
 # JSON schema (like the appId or iapId, package metadata, etc...). These values should be updated any time
 # we alter what additional metadata is added to the schema for that submission type.
-$script:appSchemaVersion = 2
+$script:appSchemaVersion = 3
 $script:iapSchemaVersion = 2
 $script:schemaPropertyName = 'sbSchema'
 

@@ -104,8 +104,15 @@ function Wait-JobWithAnimation
 
         The Git repo for this module can be found here: http://aka.ms/StoreBroker
 
-    .PARAMETER jobName
-        The name of the job that we are waiting to complete.
+    .PARAMETER Name
+        The name of the job(s) that we are waiting to complete.
+
+    .PARAMETER Description
+        The text displayed next to the spinning cursor, explaining what the job is doing.
+
+    .PARAMETER StopAllOnAnyFailure
+        Will call Stop-Job on any jobs still Running if any of the specified jobs entered
+        the Failed state.
 
     .EXAMPLE
         Wait-JobWithAnimation Job1
@@ -119,10 +126,16 @@ function Wait-JobWithAnimation
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory)]
-        [string] $JobName,
+        [string[]] $Name,
 
-        [string] $Description = ""
+        [string] $Description = "",
+
+        [switch] $StopAllOnAnyFailure
     )
+
+    [System.Collections.ArrayList]$runningJobs = $Name
+    $allJobsCompleted = $true
+    $hasFailedJob = $false
 
     $animationFrames = '|','/','-','\'
     $framesPerSecond = 9
@@ -134,14 +147,49 @@ function Wait-JobWithAnimation
     }
 
     $iteration = 0
-    while (((Get-Job -Name $JobName).state -eq 'Running'))
+    while ($runningJobs.Count -gt 0)
     {
+        # We'll run into issues if we try to modify the same collection we're iterating over
+        $jobsToCheck = $runningJobs.ToArray()
+        foreach ($jobName in $jobsToCheck)
+        {
+            $state = (Get-Job -Name $jobName).state
+            if ($state -ne 'Running')
+            {
+                $runningJobs.Remove($jobName)
+
+                if ($state -ne 'Completed')
+                {
+                    $allJobsCompleted = $false
+                }
+
+                if ($state -eq 'Failed')
+                {
+                    $hasFailedJob = $true
+                    if ($StopAllOnAnyFailure)
+                    {
+                        break
+                    }
+                }
+            }
+        }
+
+        if ($hasFailedJob -and $StopAllOnAnyFailure)
+        {
+            foreach ($jobName in $runningJobs)
+            {
+                Stop-Job -Name $jobName
+            }
+
+            $runingJobs.Clear()
+        }
+
         Write-InteractiveHost "`r$($animationFrames[$($iteration % $($animationFrames.Length))])  Elapsed: $([int]($iteration / $framesPerSecond)) second(s) $Description" -NoNewline -f Yellow
         Start-Sleep -Milliseconds ([int](1000/$framesPerSecond))
         $iteration++
     }
 
-    if ((Get-Job -Name $JobName).state -eq 'Completed')
+    if ($allJobsCompleted)
     {
         Write-InteractiveHost "`rDONE - Operation took $([int]($iteration / $framesPerSecond)) second(s) $Description" -NoNewline -f Green
 
@@ -512,8 +560,8 @@ function Write-Log
         [AllowNull()]
         [string[]] $Message = @(),
 
-        [ValidateSet('Error', 'Warning', 'Info', 'Verbose', 'Debug')]
-        [string] $Level = 'Info',
+        [ValidateSet('Error', 'Warning', 'Informational', 'Verbose', 'Debug')]
+        [string] $Level = 'Informational',
 
         [ValidateRange(1, 30)]
         [Int16] $Indent = 0,
@@ -597,11 +645,13 @@ function Write-Log
         # could confuse an end user.
         switch ($Level)
         {
-            'Error'   { Write-Error $consoleMessage }
+            # Need to explicitly say SilentlyContinue here so that we continue on, given that
+            # we've assigned a script-level ErrorActionPreference of "Stop" for the module.
+            'Error'   { Write-Error $consoleMessage -ErrorAction SilentlyContinue }
             'Warning' { Write-Warning $consoleMessage }
             'Verbose' { Write-Verbose $consoleMessage }
             'Debug'   { Write-Debug $consoleMessage }
-            'Info'    {
+            'Informational'    {
                 # We'd prefer to use Write-Information to enable users to redirect that pipe if
                 # they want, unfortunately it's only available on v5 and above.  We'll fallback to
                 # using Write-Host for earlier versions (since we still need to support v4).
@@ -681,7 +731,7 @@ function New-TemporaryDirectory
     $tempFolderPath = Join-Path -Path $env:TEMP -ChildPath $guid
 
     Write-Log -Message "Creating temporary directory: $tempFolderPath" -Level Verbose
-    New-Item -ItemType directory -Path $tempFolderPath
+    New-Item -ItemType Directory -Path $tempFolderPath
 }
 
 function Send-SBMailMessage
@@ -986,7 +1036,6 @@ function Get-HttpWebResponseContent
     [CmdletBinding()]
     [OutputType([String])]
     param(
-        [Parameter(Mandatory)]
         [System.Net.HttpWebResponse] $WebResponse
     )
 
@@ -996,7 +1045,7 @@ function Get-HttpWebResponseContent
     {
         $content = $null
 
-        if ($WebResponse.ContentLength -gt 0)
+        if (($null -ne $WebResponse) -and ($WebResponse.ContentLength -gt 0))
         {
             $stream = $WebResponse.GetResponseStream()
             $encoding = [System.Text.Encoding]::UTF8
@@ -1018,4 +1067,62 @@ function Get-HttpWebResponseContent
             $streamReader.Close()
         }
     }
+}
+
+function Convert-EnumToString
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        $InputObject
+    )
+
+    # ConvertTo-Json only works if the keys are strings.
+    # We need to string-ify all keys
+    if ($InputObject -is [array])
+    {
+        $modified = @()
+        foreach ($item in $InputObject)
+        {
+            $modified += (Convert-EnumToString -InputObject $item)
+        }
+
+        return @($modified)
+    }
+    elseif ($InputObject -is [hashtable])
+    {
+        $modified = @{}
+        foreach ($key in $InputObject.Keys.GetEnumerator())
+        {
+            $converted = (Convert-EnumToString -InputObject $InputObject[$key])
+            if ($InputObject[$key] -is [array])
+            {
+                $converted = @($converted)
+            }
+
+            $modified[$key.ToString()] = $converted
+        }
+
+        return $modified
+    }
+    elseif ($InputObject -is [System.Enum])
+    {
+        return $InputObject.ToString()
+    }
+    else
+    {
+        return $InputObject
+    }
+}
+
+function Get-JsonBody
+{
+    [CmdletBinding()]
+    [OutputType([String])]
+    param(
+        [Parameter(Mandatory)]
+        $InputObject
+    )
+
+    return ConvertTo-Json -InputObject (Convert-EnumToString -InputObject $InputObject) -Depth $script:jsonConversionDepth
 }

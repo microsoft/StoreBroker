@@ -23,6 +23,13 @@ $script:accessTokenRefreshBufferSeconds = 90
 # do get an AccessToken so that it accurately reflects the time a token can last.
 $script:accessTokenTimeoutSeconds = (59 * 60) - $script:accessTokenRefreshBufferSeconds
 
+# We'll cache the last acquired acccess token so that we don't have to always get it
+# with every command within the same console session, provided that it hasn't expired.
+$script:lastAccessToken = $null
+
+# Indicates when $script:lastAccessToken has expired and must be refreshed
+$script:lastAccessTokenExpirationDate = Get-Date
+
 # Common keywords in the API Model used by StoreBroker
 $script:keywordSpecificDate = 'SpecificDate'
 $script:keywordManual = 'Manual'
@@ -295,6 +302,11 @@ function Set-StoreBrokerAuthentication
             $script:authCredential = $Credential
         }
     }
+
+    if ($PSCmdlet.ShouldProcess("", "Clear cached access token"))
+    {
+        $script:lastAccessToken = $null
+    }
 }
 
 function Clear-StoreBrokerAuthentication
@@ -344,6 +356,11 @@ function Clear-StoreBrokerAuthentication
     if ($PSCmdlet.ShouldProcess("", "Clear tenantName"))
     {
         $script:tenantName = $null
+    }
+
+    if ($PSCmdlet.ShouldProcess("", "Clear cached access token"))
+    {
+        $script:lastAccessToken = $null
     }
 }
 
@@ -424,6 +441,14 @@ function Get-AccessToken
         throw $output
     }
 
+    # If the cached access token hasn't expired, we can just use it.
+    $numSecondsBeforeTokenExpiration = ($script:lastAccessTokenExpirationDate - (Get-Date)).TotalSeconds
+    if ((-not [String]::IsNullOrWhiteSpace($script:lastAccessToken)) -and
+        ($numSecondsBeforeTokenExpiration -gt 0))
+    {
+        return $script:lastAccessToken
+    }
+
     $clientId = $credential.UserName
     $clientSecret = $credential.GetNetworkCredential().Password
 
@@ -487,9 +512,11 @@ function Get-AccessToken
             }
 
             # Keep track of how long this token will be valid for, to enable logic that re-uses
-            # the same token across multiple commands to known when a new one is necessary.
+            # the same token across multiple commands to know when a new one is necessary.
             $script:accessTokenTimeoutSeconds = $response.expires_in - $script:accessTokenRefreshBufferSeconds
 
+            $script:lastAccessTokenExpirationDate = (Get-Date).AddSeconds($script:accessTokenTimeoutSeconds)
+            $script:lastAccessToken = $response.access_token
             return $response.access_token
         }
     }

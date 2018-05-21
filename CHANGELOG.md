@@ -3,10 +3,24 @@
 
 ------
 
+## [1.17.0](https://github.com/Microsoft/StoreBroker/tree/1.17.0) - (2018/06/06)
+### Fixes:
+
+- Sped up the module for users not using a Proxy.  `AccessToken` is now cached for the
+  duration of the console session, and only needs to be refreshed when it expires (which is about
+  every 60 minutes).  Previously, the access token was only cached for the duration of the currently
+  executing command, which meant that any succesive interactions at the commandline required a new
+  `AccessToken` to be acquired.
+
+More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/120) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/TODO)
+
+Author: [**@HowardWolosky**](https://github.com/HowardWolosky)
+
+------
 ## [1.16.4](https://github.com/Microsoft/StoreBroker/tree/1.16.4) - (2018/04/23)
 ### Fixes:
 
-- Removed checks validation checks preventing some apps from updating
+- Removed checks validation checks which had prevented some apps from updating
   gaming options or trailers.  The API now enables all apps to use
   trailers and gaming options, even if their submission object doesn't
   provide those nodes.

@@ -12,7 +12,7 @@
   executing command, which meant that any succesive interactions at the commandline required a new
   `AccessToken` to be acquired.
 
-More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/120) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/TODO)
+More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/120) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/35a953869ea70fc8fab575f4a5a0b919d0d9cfe1)
 
 Author: [**@HowardWolosky**](https://github.com/HowardWolosky)
 

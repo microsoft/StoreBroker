@@ -1124,7 +1124,7 @@ function Update-Submission
         [ValidateScript({if (Test-Path -Path $_ -PathType Leaf) { $true } else { throw "$_ cannot be found." }})]
         [string] $JsonPath,
 
-        [pscustomobject]$JsonObject,
+        [PSCustomObject]$JsonObject,
 
         [ValidateScript({if (Test-Path -Path $_ -PathType Leaf) { $true } else { throw "$_ cannot be found." }})]
         [string] $ZipPath,
@@ -1251,21 +1251,34 @@ function Update-Submission
         'NoStatus' = $NoStatus
     }
 
-    if ((-not [String]::IsNullOrWhiteSpace($JsonPath)) -and ($JsonObject -eq $null))
+    if (([String]::IsNullOrWhiteSpace($JsonPath)))
     {
-        Write-Log -Message "Reading in the submission content from: $JsonPath" -Level Verbose
-        if ($PSCmdlet.ShouldProcess($JsonPath, "Get-Content"))
+        if ($null -eq $JsonObject)
         {
-            $jsonSubmission = [string](Get-Content $JsonPath -Encoding UTF8) | ConvertFrom-Json
+            $message = "You need to specify either JsonPath or JsonObject"
+            Write-Log -Message $message -Level Error
+            throw $message
+        }
+        else
+        {
+            $jsonSubmission = $JsonObject
         }
     }
-    elseif (([String]::IsNullOrWhiteSpace($JsonPath)) -and ($JsonObject -ne $null)) {
-        $jsonSubmission = $jsonObject
-    }
-    else {
-        $message = "You should specify either JsonPath OR JsonObject.  Not both."
-        Write-Log -Message $message -Level Error
-        throw $message
+    else
+    {
+        if ($null -eq $JsonObject)
+        {
+            Write-Log -Message "Reading in the submission content from: $JsonPath" -Level Verbose
+            if ($PSCmdlet.ShouldProcess($JsonPath, "Get-Content"))
+            {
+                $jsonSubmission = [string](Get-Content $JsonPath -Encoding UTF8) | ConvertFrom-Json
+            }
+        }
+        else {
+            $message = "You can't specify both JsonPath and JsonObject"
+            Write-Log -Message $message -Level Error
+            throw $message
+        }
     }
 
     $product = Get-Product @commonParams -ProductId $ProductId

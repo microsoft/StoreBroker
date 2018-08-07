@@ -1263,20 +1263,18 @@ function Start-SubmissionMonitor
 
     $shouldMonitor = $true
     $indentLength = 5
-    $lastTokenRefreshTime = Get-Date
-    $accessToken = Get-AccessToken -NoStatus:$NoStatus
 
     # Get the info so we have it's name when we give the user updates.
     $isIapSubmission = -not [String]::IsNullOrEmpty($IapId)
     if ($isIapSubmission)
     {
-        $iap = Get-InAppProduct -IapId $IapId -AccessToken $AccessToken -NoStatus:$NoStatus
+        $iap = Get-InAppProduct -IapId $IapId -NoStatus:$NoStatus
         $appName = $iap.productId
         $fullName = $appName
     }
     else
     {
-        $app = Get-Application -AppId $AppId -AccessToken $AccessToken -NoStatus:$NoStatus
+        $app = Get-Application -AppId $AppId -NoStatus:$NoStatus
         $appName = $app.primaryName
         $fullName = $appName
 
@@ -1285,7 +1283,7 @@ function Start-SubmissionMonitor
         $isFlightingSubmission = (-not [String]::IsNullOrEmpty($FlightId))
         if ($isFlightingSubmission)
         {
-            $flight = Get-ApplicationFlight -AppId $AppId -FlightId $FlightId -AccessToken $AccessToken -NoStatus:$NoStatus
+            $flight = Get-ApplicationFlight -AppId $AppId -FlightId $FlightId -NoStatus:$NoStatus
             $flightName = $flight.friendlyName
             $fullName = "$appName | $flightName"
         }
@@ -1300,28 +1298,19 @@ function Start-SubmissionMonitor
 
     while ($shouldMonitor)
     {
-        # We need to refresh our access token every hour...we'll go a little more often to give
-        # ourselves some wiggle room to avoid unnecessary failures.
-        $accessTokenTimeoutMinutes = 58
-        if ((New-TimeSpan $lastTokenRefreshTime $(Get-Date)).Minutes -gt $accessTokenTimeoutMinutes)
-        {
-            $lastTokenRefreshTime = Get-Date
-            $accessToken = Get-AccessToken -NoStatus:$NoStatus
-        }
-
         try
         {
             if ($isIapSubmission)
             {
-                $submission = Get-InAppProductSubmission -IapId $IapId -SubmissionId $SubmissionId -AccessToken $AccessToken -NoStatus:$NoStatus
+                $submission = Get-InAppProductSubmission -IapId $IapId -SubmissionId $SubmissionId -NoStatus:$NoStatus
             }
             elseif ($isFlightingSubmission)
             {
-                $submission = Get-ApplicationFlightSubmission -AppId $AppId -FlightId $FlightId -SubmissionId $SubmissionId -AccessToken $AccessToken -NoStatus:$NoStatus
+                $submission = Get-ApplicationFlightSubmission -AppId $AppId -FlightId $FlightId -SubmissionId $SubmissionId -NoStatus:$NoStatus
             }
             else
             {
-                $submission = Get-ApplicationSubmission -AppId $AppId -SubmissionId $SubmissionId -AccessToken $AccessToken -NoStatus:$NoStatus
+                $submission = Get-ApplicationSubmission -AppId $AppId -SubmissionId $SubmissionId -NoStatus:$NoStatus
             }
 
             if ($submission.status -ne $lastStatus)

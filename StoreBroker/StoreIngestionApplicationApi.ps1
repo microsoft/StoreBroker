@@ -542,7 +542,7 @@ function Format-ApplicationSubmission
             $output += ""
 
             # Only show the Trailers section if it exists
-            if ($null -ne $trailers)
+            if ($trailers.Count -gt 0)
             {
                 $langTrailers = $trailerByLang[$lang]
                 $output += "$(" " * $indentLength)Trailers            : {0}" -f $(if ($langTrailers.count -eq 0) { "<None>" } else { "" })

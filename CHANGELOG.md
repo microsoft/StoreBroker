@@ -10,7 +10,7 @@
 - Fixed conflicting AccessToken caching logic between `Get-AccessToken` and `Start-SubmissionMonitor`.
 - Fixed issue in `Format-ApplicationSubmission` that incorrectly checked for valid trailers.
 
-More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/124) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/TODO)
+More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/124) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/19a8947d8dc5ac173f683d32afdb40f8daed6dec)
 
 Author: [**@HowardWolosky**](https://github.com/HowardWolosky)
 

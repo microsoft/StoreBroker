@@ -1,12 +1,24 @@
 # StoreBroker PowerShell Module
 ## Changelog
 
-------
+## [1.18.0](https://github.com/Microsoft/StoreBroker/tree/1.18.0) - (2018/08/07)
+### Fixes:
 
++ Updated `New-ApplicationSubmission` to leverage the new `isMinimalResponse=true` when cloning
+  submissions in an attempt to reduce the likelihood of getting a `500` timeout response from
+  the service.
+- Fixed conflicting AccessToken caching logic between `Get-AccessToken` and `Start-SubmissionMonitor`.
+- Fixed issue in `Format-ApplicationSubmission` that incorrectly checked for valid trailers.
+
+More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/124) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/TODO)
+
+Author: [**@HowardWolosky**](https://github.com/HowardWolosky)
+
+------
 ## [1.17.0](https://github.com/Microsoft/StoreBroker/tree/1.17.0) - (2018/06/06)
 ### Fixes:
 
-- Sped up the module for users not using a Proxy.  `AccessToken` is now cached for the
++ Sped up the module for users not using a Proxy.  `AccessToken` is now cached for the
   duration of the console session, and only needs to be refreshed when it expires (which is about
   every 60 minutes).  Previously, the access token was only cached for the duration of the currently
   executing command, which meant that any succesive interactions at the commandline required a new

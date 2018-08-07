@@ -873,7 +873,7 @@ function New-ApplicationSubmission
             }
         }
 
-        # Finally, we can POST with a null body to create a clone of the currently published submission
+        # Now we can POST with a null body to create a clone of the currently published submission
         $telemetryProperties = @{
             [StoreBrokerTelemetryProperty]::AppId = $AppId
             [StoreBrokerTelemetryProperty]::ExistingPackageRolloutAction = $ExistingPackageRolloutAction
@@ -881,7 +881,7 @@ function New-ApplicationSubmission
         }
 
         $params = @{
-            "UriFragment" = "applications/$AppId/submissions"
+            "UriFragment" = "applications/$AppId/submissions?isMinimalResponse=true"
             "Method" = "Post"
             "Description" = "Cloning current submission for App: $AppId"
             "AccessToken" = $AccessToken
@@ -890,7 +890,16 @@ function New-ApplicationSubmission
             "NoStatus" = $NoStatus
         }
 
-        return (Invoke-SBRestMethod @params)
+        $newSubmission = Invoke-SBRestMethod @params
+
+        # But that just returned back a sparse submission object (listings and packages are missing).
+        # We'll grab the submissionId from there and then turn around and request the full
+        # cloned submission body content so that it can be used/patched by other functions.
+        # We do things this way (using isMinimalResponse on the POST and then the additional GET),
+        # to try to help avoid the 500 errors that can happen when the service has trouble with
+        # timing out when trying to clone and return larger submissions in a single operation.
+        $submissionId = $newSubmission.id
+        return (Get-ApplicationSubmission -AppId $AppId -SubmissionId $submissionId -AccessToken $AccessToken -NoStatus:$NoStatus)
     }
     catch
     {

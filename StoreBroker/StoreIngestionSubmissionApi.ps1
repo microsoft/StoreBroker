@@ -1537,7 +1537,7 @@ function Update-Submission
 
         Set-TelemetryEvent -EventName Update-Submission -Properties $telemetryProperties -Metrics $telemetryMetrics
 
-        return
+        return $SubmissionId
     }
     catch
     {

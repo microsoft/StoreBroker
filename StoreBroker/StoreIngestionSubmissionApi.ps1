@@ -1124,7 +1124,7 @@ function Update-Submission
         [ValidateScript({if (Test-Path -Path $_ -PathType Leaf) { $true } else { throw "$_ cannot be found." }})]
         [string] $JsonPath,
 
-        [PSCustomObject]$JsonObject,
+        [PSCustomObject] $JsonObject,
 
         [ValidateScript({if (Test-Path -Path $_ -PathType Leaf) { $true } else { throw "$_ cannot be found." }})]
         [string] $ZipPath,
@@ -1264,21 +1264,19 @@ function Update-Submission
             $jsonSubmission = $JsonObject
         }
     }
-    else
+    elseif ($null -eq $JsonObject)
     {
-        if ($null -eq $JsonObject)
+        Write-Log -Message "Reading in the submission content from: $JsonPath" -Level Verbose
+        if ($PSCmdlet.ShouldProcess($JsonPath, "Get-Content"))
         {
-            Write-Log -Message "Reading in the submission content from: $JsonPath" -Level Verbose
-            if ($PSCmdlet.ShouldProcess($JsonPath, "Get-Content"))
-            {
-                $jsonSubmission = [string](Get-Content $JsonPath -Encoding UTF8) | ConvertFrom-Json
-            }
-        }
-        else {
-            $message = "You can't specify both JsonPath and JsonObject"
-            Write-Log -Message $message -Level Error
-            throw $message
-        }
+            $jsonSubmission = [string](Get-Content $JsonPath -Encoding UTF8) | ConvertFrom-Json
+        }    
+    }
+    else 
+    {
+        $message = "You can't specify both JsonPath and JsonObject"
+        Write-Log -Message $message -Level Error
+        throw $message
     }
 
     $product = Get-Product @commonParams -ProductId $ProductId

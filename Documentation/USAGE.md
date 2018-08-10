@@ -1023,9 +1023,9 @@ call will output a reminder to that effect, along with a reminder on how to retu
 ## Telemetry
 
 In order to track usage, gauge performance and identify areas for improvement, telemetry is
-employed during execution of commands within this module (via Application Insights).  This data
-is retained for a period of no more than 30 days.  For more information, refer to the
-[Privacy Policy](../README.md#privacy-policy).
+employed during execution of commands within this module (via Application Insights).  For more
+information, refer to the [Privacy Policy](../README.md#privacy-policy) and
+[Terms of Use](../README.md#terms-of-use).
 
 > You may notice some needed assemblies for communicating with Application Insights being
 > downloaded on first run of a StoreBroker command within each PowerShell session.  The
@@ -1033,7 +1033,7 @@ is retained for a period of no more than 30 days.  For more information, refer t
 > documentation describes how you can avoid having to always re-download the telemetry assemblies
 > in the future.
 
-We request that you always leave the telemetry feature enabled, but a situation may arise where
+We recommend that you always leave the telemetry feature enabled, but a situation may arise where
 it must be disabled for some reason.  In this scenario, you can disable telemetry by setting
 the following global variable:
 
@@ -1043,6 +1043,7 @@ The effect of that value will last for the duration of your session (until you c
 console window), or until you change its value back to its default of `$false`.
 
 The following type of information is collected:
+ * Date and timestamp
  * Every major command executed (to gauge usefulness of the various commands)
  * Switches used for submission updates
  * AppId / FlightId / IapId / SubmissionId / ProductId / App Name / Appx version

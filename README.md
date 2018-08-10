@@ -14,6 +14,7 @@
 *   [Governance](#governance)
 *   [Code of Conduct](#code-of-conduct)
 *   [Privacy Policy](#privacy-policy)
+*   [Terms of Use](#terms-of-use)
 
 ----------
 
@@ -130,3 +131,9 @@ or comments.
 ## Privacy Policy
 
 For more information, refer to Microsoft's [Privacy Policy](https://go.microsoft.com/fwlink/?LinkID=521839).
+
+----------
+
+## Terms of Use
+
+For more information, refer to Microsoft's [Terms of Use](https://www.microsoft.com/en-us/legal/intellectualproperty/copyright/default.aspx).

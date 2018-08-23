@@ -1751,7 +1751,7 @@ function Invoke-SBRestMethod
     # The initial number of minutes we'll wait before retrying this command when we've hit an
     # error with a status code that is configured to auto-retry.  To reduce repeated contention, we
     # stagger the initial wait time (and thus, the resulting spread when it exponentially backs off).
-    $retryDelayMin = (1, 1.25, 1.5, 1.75, 2) | Get-Random
+    $retryDelayMin = [Math]::Round((Get-Random -Minimum 0.4 -Maximum 2.0), 2)
     $numRetries = 0
 
     # Telemetry-related

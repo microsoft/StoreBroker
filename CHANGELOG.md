@@ -1,6 +1,16 @@
 # StoreBroker PowerShell Module
 ## Changelog
 
+## [1.18.1](https://github.com/Microsoft/StoreBroker/tree/1.18.1) - (2018/08/23)
+### Fixes:
+
+- Changed how the initial sleep time is determined for retry attempts in order to achieve a better spread amongst clients.
+
+More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/127) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/TODO)
+
+Author: [**@HowardWolosky**](https://github.com/HowardWolosky)
+
+------
 ## [1.18.0](https://github.com/Microsoft/StoreBroker/tree/1.18.0) - (2018/08/07)
 ### Fixes:
 

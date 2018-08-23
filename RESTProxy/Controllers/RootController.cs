@@ -87,6 +87,19 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Controllers
                 tenantName = headerValues.FirstOrDefault();
             }
 
+            // We must also extract out any relevant headers that a user may have set.
+            string correlationId = null;
+            if (Request.Headers.TryGetValues(ProxyManager.MSCorrelationIdHeader, out headerValues))
+            {
+                correlationId = headerValues.FirstOrDefault();
+            }
+
+            string clientRequestId = null;
+            if (Request.Headers.TryGetValues(ProxyManager.MSClientRequestIdHeader, out headerValues))
+            {
+                clientRequestId = headerValues.FirstOrDefault();
+            }
+
             // Now, just proxy the request over to the real API.
             return await ProxyManager.PerformRequestAsync(
                 pathAndQuery: Request.RequestUri.PathAndQuery,
@@ -95,7 +108,9 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Controllers
                 body: body,
                 tenantId: tenantId,
                 tenantName: tenantName,
-                endpointType: endpointType);
+                endpointType: endpointType,
+                correlationId: correlationId,
+                clientRequestId: clientRequestId);
         }
    }
 }

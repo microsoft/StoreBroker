@@ -16,6 +16,24 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
     using Newtonsoft.Json.Linq;
 
     /// <summary>
+    /// Describes the type of endpoint that the request will be proxy-ed through.
+    /// </summary>
+    public enum EndpointType
+    {
+        /// <summary>
+        /// The production (live) endpoint.
+        /// Changes made via this endpoint will affect customers.
+        /// </summary>
+        Prod,
+
+        /// <summary>
+        /// The internal, testing endpoint.
+        /// Changes made here will never be seen publicly.
+        /// </summary>
+        Int
+    }
+
+    /// <summary>
     /// Encapsulates the information related to a specific endpoint, as well as the ability
     /// to proxy a request through that endpoint.
     /// </summary>
@@ -76,24 +94,6 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
             this.AccessToken = string.Empty;
             this.ValidThru = DateTime.Now;
             this.AsyncLock = new AsyncLock();
-        }
-
-        /// <summary>
-        /// Describes the type of endpoint that the request will be proxy-ed through.
-        /// </summary>
-        public enum EndpointType
-        {
-            /// <summary>
-            /// The production (live) endpoint.
-            /// Changes made via this endpoint will affect customers.
-            /// </summary>
-            Prod,
-
-            /// <summary>
-            /// The internal, testing endpoint.
-            /// Changes made here will never be seen publicly.
-            /// </summary>
-            Int
         }
 
         /// <summary>
@@ -244,12 +244,20 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
         /// The <see cref="IPrincipal"/> of the user that we're performing the API request on behalf of.
         /// </param>
         /// <param name="body">The body content of the REST request (if needed).</param>
+        /// <param name="correlationId">
+        /// An ID that a client may have set in the header (which we must proxy) to track a string of related requests.
+        /// </param>
+        /// <param name="clientRequestId">
+        /// An ID that a client may have set in the header (which we must proxy) to track an individual request.
+        /// </param>
         /// <returns>The <see cref="HttpResponseMessage"/> to be sent to the user.</returns>
         public async Task<HttpResponseMessage> PerformRequestAsync(
             string pathAndQuery,
             HttpMethod method,
             IPrincipal onBehalfOf,
-            string body = null)
+            string body = null,
+            string correlationId = null,
+            string clientRequestId = null)
         {
             // This is the real API endpoint that we'll be contacting.  We'll just append
             // pathAndQuery directly to this to get the final REST Uri that we need to use.
@@ -277,6 +285,17 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
                 // in the authorization header.
                 string accessToken = await this.GetAccessTokenAsync();
                 request.Headers[HttpRequestHeader.Authorization] = string.Format("bearer {0}", accessToken);
+
+                // Add any additional headers that the client may have specified in their request
+                if (!string.IsNullOrWhiteSpace(correlationId))
+                {
+                    request.Headers[ProxyManager.MSCorrelationIdHeader] = correlationId;
+                }
+
+                if (!string.IsNullOrWhiteSpace(clientRequestId))
+                {
+                    request.Headers[ProxyManager.MSClientRequestIdHeader] = clientRequestId;
+                }
 
                 // Write the body to the request stream if one was provided.
                 // Not every REST API will require a body.  For instance, the GET requests have
@@ -339,9 +358,15 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
             // (which all begin with "MS-").  One example is "MS-CorrelationId"
             // which is needed by the Windows Store Submission API team when they
             // are investigating bug reports with the API.
+            const string MSHeaderPreface = "MS-";
+            const string RetryHeader = "retry";
             foreach (string key in httpResponseFromApi.Headers.AllKeys)
             {
-                if (key.StartsWith("MS-"))
+                if (key.StartsWith(MSHeaderPreface, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    httpResponseMessage.Headers.Add(key, httpResponseFromApi.Headers[key]);
+                }
+                else if (key.ToLowerInvariant().Contains(RetryHeader.ToLowerInvariant()))
                 {
                     httpResponseMessage.Headers.Add(key, httpResponseFromApi.Headers[key]);
                 }
@@ -351,7 +376,12 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
             {
                 // The contentType string tends to have the character encoding appended to it.
                 // We just want the actual contentType since we specify the content encoding separately.
-                string contentType = httpResponseFromApi.ContentType.Split(';')[0];
+                string contentType = "text/plain";
+                if (!string.IsNullOrWhiteSpace(httpResponseFromApi.ContentType))
+                {
+                    contentType = httpResponseFromApi.ContentType.Split(';')[0];
+                }
+                
                 httpResponseMessage.Content = new StringContent(responseBody, Encoding.UTF8, contentType);
             }
 

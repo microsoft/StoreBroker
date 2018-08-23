@@ -277,7 +277,7 @@ but without affecting live customers.
 
 > You must have the [Azure SDK](https://azure.microsoft.com/en-us/downloads/) installed before
 > you can deploy.  As of the time of this writing, the appropriate one to download
-> is the one for [VS 2015](https://go.microsoft.com/fwlink/?LinkId=518003&clcid=0x409).
+> is the one for [VS 2017](https://www.visualstudio.com/thank-you-downloading-visual-studio/?sku=Community&rel=15&utm_source=azuremscom&utm_medium=clickbutton&utm_campaign=tailored_azuredownloadpage&rid=34348).
 
 Deployment is very straightforward.  With the solution open, just right-click on `AzureService`
 and choose **Publish**.  Choose either "Production" or "Staging" from the profile dropdown
@@ -674,13 +674,13 @@ There are a couple things to note when doing local development:
 
  * You must have the [Azure SDK](https://azure.microsoft.com/en-us/downloads/) installed before
    you can do any development.  As of the time of this writing, the appropriate one to download
-   is the one for [VS 2015](https://go.microsoft.com/fwlink/?LinkId=518003&clcid=0x409).
+   is the one for [VS 2017](https://www.visualstudio.com/thank-you-downloading-visual-studio/?sku=Community&rel=15&utm_source=azuremscom&utm_medium=clickbutton&utm_campaign=tailored_azuredownloadpage&rid=34348).
 
  * The code is [StyleCop](http://stylecop.codeplex.com/) clean.  Please keep it that way.
    Install StyleCop (if you don't have it installed already) and run 
    `Tools->Run StyleCop (Rescan All)` before you submit to enure that it stays clean.
  
- * When developing/debugging the service locally, you'll want to set the `RESTProxy' as the
+ * When developing/debugging the service locally, you'll want to set the `RESTProxy` as the
    default project, and _not_ `AzureService`.
 
  * If you are deploying on your local box, it will deploy to `localhost`.  This will work fine
@@ -696,8 +696,8 @@ There are a couple things to note when doing local development:
    (**but do not check them in**):
 
    * Click on the `RESTProxy` solution in `Solution Explorer` and _temporarily_ enable
-    `Anonymous Authentication`
-   * Modify `ProxyManager.TryHasPermission` to always return `true`
+    `Anonymous Authentication` in the `Properties Pane`.
+   * Modify `Endpoint.TryHasPermission` to always return `true`
    * Statically add in the values for `ClientSecretProd` and `ClientSecretInt` in
     `ProxyManager.GetClientSecret`.   
 

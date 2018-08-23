@@ -29,9 +29,21 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
         public const string JsonMediaType = "application/json";
 
         /// <summary>
-        ///  The header name for the CorrelationId that the API adds for post-mortem diagnostics.
+        ///  The header name for the CorrelationId that the user or API sets for tracking a series of related requests
+        ///  for post-mortem diagnostics.
         /// </summary>
         public const string MSCorrelationIdHeader = "MS-CorrelationId";
+
+        /// <summary>
+        ///  The header name for the RequestId that the API adds for post-mortem diagnostics.
+        /// </summary>
+        public const string MSRequestIdHeader = "MS-RequestId";
+
+        /// <summary>
+        ///  The header name for the RequestId that clients can set for tracking an individual request
+        ///  during post-mortem diagnostics.
+        /// </summary>
+        public const string MSClientRequestIdHeader = "MS-Client-RequestId";
 
         /// <summary>
         /// The Application Insights client that will be used for "logging" all of the user requests
@@ -42,13 +54,13 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
         /// Stores the relevant info for each of the possible REST endpoints that we may proxy to,
         /// indexed by TenantId, and then by endpoint type.
         /// </summary>
-        private static Dictionary<string, Dictionary<EndpointType, Endpoint>> endpointByTenantId = new Dictionary<string, Dictionary<EndpointType, Endpoint>>();
+        private static Dictionary<string, TenantEndpointCollection> endpointByTenantId = new Dictionary<string, TenantEndpointCollection>();
 
         /// <summary>
         /// Stores the relevant info for each of the possible REST endpoints that we may proxy to,
         /// indexed by Tenant Friendly Name, and then by endpoint type.
         /// </summary>
-        private static Dictionary<string, Dictionary<EndpointType, Endpoint>> endpointByTenantName = new Dictionary<string, Dictionary<EndpointType, Endpoint>>();
+        private static Dictionary<string, TenantEndpointCollection> endpointByTenantName = new Dictionary<string, TenantEndpointCollection>();
 
         /// <summary>
         /// The default TenantId that should be used for determining the appropriate
@@ -72,37 +84,32 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
         {
             foreach (Endpoint endpoint in endpoints)
             {
-                // To maintain operational integrity, we don't want external entities to have
-                // access to the endpoints being used when ProxyManager is running.  Therefore,
-                // we will duplicate the endpoint being passed-in during configuration, and that
-                // duplicate is what will be shared between our private dictionaries.
-                Endpoint duplicatedEndpoint = endpoint.Duplicate();
                 string tenantId = endpoint.TenantId.ToLowerInvariant();
                 string tenantFriendlyName = endpoint.TenantFriendlyName.ToLowerInvariant();
 
-                Dictionary<EndpointType, Endpoint> endpointsByType;
-                if (ProxyManager.endpointByTenantId.TryGetValue(tenantId, out endpointsByType))
+                TenantEndpointCollection tenantEndpointCollection;
+                if (ProxyManager.endpointByTenantId.TryGetValue(tenantId, out tenantEndpointCollection))
                 {
-                    endpointsByType.Add(endpoint.Type, duplicatedEndpoint);
-                    ProxyManager.endpointByTenantId[tenantId] = endpointsByType;
+                    tenantEndpointCollection.Add(endpoint);
+                    ProxyManager.endpointByTenantId[tenantId] = tenantEndpointCollection;
                 }
                 else
                 {
-                    endpointsByType = new Dictionary<EndpointType, Endpoint>();
-                    endpointsByType.Add(endpoint.Type, duplicatedEndpoint);
-                    ProxyManager.endpointByTenantId.Add(tenantId, endpointsByType);
+                    tenantEndpointCollection = new TenantEndpointCollection(endpoint.TenantId, endpoint.TenantFriendlyName);
+                    tenantEndpointCollection.Add(endpoint);
+                    ProxyManager.endpointByTenantId.Add(tenantId, tenantEndpointCollection);
                 }
 
-                if (ProxyManager.endpointByTenantName.TryGetValue(tenantFriendlyName, out endpointsByType))
+                if (ProxyManager.endpointByTenantName.TryGetValue(tenantFriendlyName, out tenantEndpointCollection))
                 {
-                    endpointsByType.Add(endpoint.Type, duplicatedEndpoint);
-                    ProxyManager.endpointByTenantName[tenantFriendlyName] = endpointsByType;
+                    tenantEndpointCollection.Add(endpoint);
+                    ProxyManager.endpointByTenantName[tenantFriendlyName] = tenantEndpointCollection;
                 }
                 else
                 {
-                    endpointsByType = new Dictionary<EndpointType, Endpoint>();
-                    endpointsByType.Add(endpoint.Type, duplicatedEndpoint);
-                    ProxyManager.endpointByTenantName.Add(tenantFriendlyName, endpointsByType);
+                    tenantEndpointCollection = new TenantEndpointCollection(endpoint.TenantId, endpoint.TenantFriendlyName);
+                    tenantEndpointCollection.Add(endpoint);
+                    ProxyManager.endpointByTenantName.Add(tenantFriendlyName, tenantEndpointCollection);
                 }
             }
 
@@ -139,6 +146,12 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
         /// be used for this request.
         /// </param>
         /// <param name="endpointType">The type of endpoint that should be used for the request.</param>
+        /// <param name="correlationId">
+        /// An ID that a client may have set in the header (which we must proxy) to track a string of related requests.
+        /// </param>
+        /// <param name="clientRequestId">
+        /// An ID that a client may have set in the header (which we must proxy) to track an individual request.
+        /// </param>
         /// <returns>The <see cref="HttpResponseMessage"/> to be sent to the user.</returns>
         public static async Task<HttpResponseMessage> PerformRequestAsync(
             string pathAndQuery,
@@ -147,7 +160,9 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
             string body = null,
             string tenantId = null,
             string tenantName = null,
-            EndpointType endpointType = EndpointType.Prod)
+            EndpointType endpointType = EndpointType.Prod,
+            string correlationId = null,
+            string clientRequestId = null)
         {
             // We'll track how long this takes, for telemetry purposes.
             Stopwatch stopwatch = Stopwatch.StartNew();
@@ -155,8 +170,11 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
             // Assume ok unless we find out otherwise.
             HttpStatusCode statusCode = HttpStatusCode.OK;
 
-            // We want to record the MS-CorrelationId for every request in case we need to look up failures later.
-            string correlationId = string.Empty;
+            // We want to record the request header for every request in case we need to look up failures later.
+            string requestId = string.Empty;
+
+            // We also want to store the ClientId so that it's easier to see distribution of requests across Clients.
+            string clientId = string.Empty;
 
             try
             {
@@ -164,15 +182,30 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
                 HttpResponseMessage response;
                 if (ProxyManager.TryGetEndpoint(tenantId, tenantName, endpointType, out endpoint, out response))
                 {
-                    response = await endpoint.PerformRequestAsync(pathAndQuery, method, onBehalfOf, body);
+                    clientId = endpoint.ClientId;
+                    response = await endpoint.PerformRequestAsync(pathAndQuery, method, onBehalfOf, body, correlationId, clientRequestId);
                 }
 
-                // used in the finally block
+                // We'll capture the status code for use in the finally block.
                 statusCode = response.StatusCode;
+
+                // Get any of the request ID headers that can be used for post-mortem diagnostics.  We'll use them in the finally block.
                 IEnumerable<string> headerValues;
                 if (response.Headers.TryGetValues(ProxyManager.MSCorrelationIdHeader, out headerValues))
                 {
+                    // If the client supplied a correlationId, the value we're getting back from the API should be identical.
                     correlationId = headerValues.FirstOrDefault();
+                }
+
+                if (response.Headers.TryGetValues(ProxyManager.MSRequestIdHeader, out headerValues))
+                {
+                    requestId = headerValues.FirstOrDefault();
+                }
+
+                if (response.Headers.TryGetValues(ProxyManager.MSClientRequestIdHeader, out headerValues))
+                {
+                    // If the client supplied a clientRequestId, the value we're getting back from the API should be identical.
+                    clientRequestId = headerValues.FirstOrDefault();
                 }
 
                 return response;
@@ -186,9 +219,12 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
                     method,
                     tenantId,
                     tenantName,
+                    clientId,
                     endpointType,
                     statusCode,
                     correlationId,
+                    requestId,
+                    clientRequestId,
                     stopwatch.Elapsed.TotalSeconds);
             }
         }
@@ -238,7 +274,7 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
             endpoint = null;
             errorResponse = null;
             string errorMessage = string.Empty;
-            Dictionary<EndpointType, Endpoint> endpointByType;
+            TenantEndpointCollection tenantEndpointCollection;
 
             try
             {
@@ -251,15 +287,10 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
                     }
                     else
                     {
-                        if (ProxyManager.endpointByTenantId.TryGetValue(ProxyManager.defaultTenantId, out endpointByType))
+                        if (ProxyManager.endpointByTenantId.TryGetValue(ProxyManager.defaultTenantId, out tenantEndpointCollection))
                         {
-                            if (!endpointByType.TryGetValue(endpointType, out endpoint))
-                            {
-                                errorMessage = string.Format(
-                                    "No TenantId was specified with this request, and the default TenantId for this Proxy is not configured to handle requests for the specified endpoint type [{0}].",
-                                    endpointType.ToString());
-                                return false;
-                            }
+                            endpoint = tenantEndpointCollection.GetNextEndpoint(endpointType);
+                            return true;
                         }
                         else
                         {
@@ -275,16 +306,10 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
                 }
                 else if (!string.IsNullOrWhiteSpace(tenantId))
                 {
-                    if (ProxyManager.endpointByTenantId.TryGetValue(tenantId.ToLowerInvariant(), out endpointByType))
+                    if (ProxyManager.endpointByTenantId.TryGetValue(tenantId.ToLowerInvariant(), out tenantEndpointCollection))
                     {
-                        if (!endpointByType.TryGetValue(endpointType, out endpoint))
-                        {
-                            errorMessage = string.Format(
-                                "This Proxy is not configured to handle requests for TenantId [{0}] with the endpoint type of [{1}].",
-                                tenantId,
-                                endpointType.ToString());
-                            return false;
-                        }
+                        endpoint = tenantEndpointCollection.GetNextEndpoint(endpointType);
+                        return true;
                     }
                     else
                     {
@@ -296,16 +321,10 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
                 }
                 else
                 {
-                    if (ProxyManager.endpointByTenantName.TryGetValue(tenantName.ToLowerInvariant(), out endpointByType))
+                    if (ProxyManager.endpointByTenantName.TryGetValue(tenantName.ToLowerInvariant(), out tenantEndpointCollection))
                     {
-                        if (!endpointByType.TryGetValue(endpointType, out endpoint))
-                        {
-                            errorMessage = string.Format(
-                                "This Proxy is not configured to handle requests for Tenant [{0}] with the endpoint type of [{1}].",
-                                tenantName,
-                                endpointType.ToString());
-                            return false;
-                        }
+                        endpoint = tenantEndpointCollection.GetNextEndpoint(endpointType);
+                        return true;
                     }
                     else
                     {
@@ -315,8 +334,11 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
                         return false;
                     }
                 }
-
-                return true;
+            }
+            catch (KeyNotFoundException ex)
+            {
+                errorMessage = ex.Message;
+                return false;
             }
             finally
             {
@@ -344,9 +366,16 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
         /// <param name="method">The <see cref="HttpMethod"/> of the REST API.</param>
         /// <param name="tenantId">The TenantId of the account that this request was for.</param>
         /// <param name="tenantName">The friendly name of <paramref name="tenantId"/>.</param>
+        /// <param name="clientId">The id of the <see cref="Endpoint"/> that owned the request.</param>
         /// <param name="endpointType">The type of endpoint that should be used for the request.</param>
         /// <param name="statusCode">The <see cref="HttpStatusCode"/> for the result of the request.</param>
-        /// <param name="correlationId">The ID given to the request by the API to enable post-mortem analysis.</param>
+        /// <param name="correlationId">
+        /// An ID that a client (or the API) may have set in the header to track a string of related requests.
+        /// </param>
+        /// <param name="requestId">The ID given to the request by the API to enable post-mortem analysis.</param>
+        /// <param name="clientRequestId">
+        /// An ID that a client may have set in the header to track an individual request.
+        /// </param>
         /// <param name="duration">The total number of seconds that the request took to complete.</param>
         private static void LogTelemetryEvent(
             string userName,
@@ -354,9 +383,12 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
             HttpMethod method,
             string tenantId,
             string tenantName,
+            string clientId,
             EndpointType endpointType,
             HttpStatusCode statusCode,
             string correlationId,
+            string requestId,
+            string clientRequestId,
             double duration)
         {
             ProxyManager.telemetryClient.Context.Session.Id = System.Guid.NewGuid().ToString();
@@ -368,9 +400,12 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
             properties.Add("Method", method.ToString());
             properties.Add("StatusCode", statusCode.ToString());
             properties.Add("CorrelationId", correlationId);
+            properties.Add("RequestId", requestId);
+            properties.Add("ClientRequestId", clientRequestId);
             properties.Add("EndpointType", endpointType.ToString());
             properties.Add("TenantId", tenantId);
             properties.Add("TenantFriendlyName", tenantName);
+            properties.Add("ClientId", clientId);
 
             Dictionary<string, double> metrics = new Dictionary<string, double>();
             metrics.Add("Duration", duration);

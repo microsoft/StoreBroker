@@ -6,7 +6,7 @@
 
 - Changed how the initial sleep time is determined for retry attempts in order to achieve a better spread amongst clients.
 
-More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/127) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/TODO)
+More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/127) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/345c521707a0bdbe5b72b8c512771c010d0b5cd4)
 
 Author: [**@HowardWolosky**](https://github.com/HowardWolosky)
 

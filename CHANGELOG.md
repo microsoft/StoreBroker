@@ -1,6 +1,18 @@
 # StoreBroker PowerShell Module
 ## Changelog
 
+## [1.19.0](https://github.com/Microsoft/StoreBroker/tree/1.19.0) - (2018/08/30)
+### Fixes:
+
++ Updated `New-ApplicationFlightSubmission` to leverage the new `isMinimalResponse=true` when cloning
+  submissions in an attempt to reduce the likelihood of getting a `500` timeout response from
+  the service.
+
+More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/131) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/TODO)
+
+Author: [**@HowardWolosky**](https://github.com/HowardWolosky)
+
+------
 ## [1.18.1](https://github.com/Microsoft/StoreBroker/tree/1.18.1) - (2018/08/23)
 ### Fixes:
 

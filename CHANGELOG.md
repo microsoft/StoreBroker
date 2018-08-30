@@ -8,7 +8,7 @@
   submissions in an attempt to reduce the likelihood of getting a `500` timeout response from
   the service.
 
-More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/131) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/TODO)
+More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/131) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/ae8e72ad0ac44b71ed6cf4e9064fa63146505a07)
 
 Author: [**@HowardWolosky**](https://github.com/HowardWolosky)
 

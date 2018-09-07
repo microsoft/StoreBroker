@@ -360,13 +360,12 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
             // are investigating bug reports with the API.
             const string MSHeaderPreface = "MS-";
             const string RetryHeader = "retry";
+            const string LocationHeader = "Location";
             foreach (string key in httpResponseFromApi.Headers.AllKeys)
             {
-                if (key.StartsWith(MSHeaderPreface, StringComparison.InvariantCultureIgnoreCase))
-                {
-                    httpResponseMessage.Headers.Add(key, httpResponseFromApi.Headers[key]);
-                }
-                else if (key.ToLowerInvariant().Contains(RetryHeader.ToLowerInvariant()))
+                if ((key.StartsWith(MSHeaderPreface, StringComparison.InvariantCultureIgnoreCase)) ||
+                    (key.ToLowerInvariant().Contains(RetryHeader.ToLowerInvariant())) ||
+                    (key.ToLowerInvariant() == LocationHeader.ToLowerInvariant()))
                 {
                     httpResponseMessage.Headers.Add(key, httpResponseFromApi.Headers[key]);
                 }

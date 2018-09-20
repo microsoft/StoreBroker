@@ -53,6 +53,10 @@ $script:headerMSRequestId = 'MS-RequestId'
 $script:headerMSClientRequestId = 'MS-Client-RequestId'
 $script:headerMSCorrelationId = 'MS-CorrelationId'
 
+# Other headers that we may need for processing a response
+$script:headerRetryAfter = 'RetryAfter'
+$script:headerLocation = 'Location'
+
 Add-Type -TypeDefinition @"
    public enum StoreBrokerResourceType
    {
@@ -1621,6 +1625,10 @@ function Invoke-SBRestMethod
         This optional parameter forms the body of a PUT or POST request. It will be automatically
         encoded to UTF8 and sent as Content Type: "application/json; charset=UTF-8"
 
+    .PARAMETER ExtendedResult
+        If specified, the result will be a PSObject that contains the normal result, along with
+        the response code and other relevant header detail content.
+
     .PARAMETER AccessToken
         If provided, this will be used as the AccessToken for authentication with the
         REST Api as opposed to requesting a new one.
@@ -1681,6 +1689,8 @@ function Invoke-SBRestMethod
         [string] $Description,
 
         [string] $Body = $null,
+
+        [switch] $ExtendedResult,
 
         [string] $ClientRequestId,
 
@@ -1920,6 +1930,20 @@ function Invoke-SBRestMethod
                 Write-Log -Message "$($script:headerMSCorrelationId) : $returnedCorrelationId" -Level Verbose
             }
 
+            $statusCode = $result.StatusCode
+
+            $retryAfterHeaderValue = 0
+            if ($result.Headers.ContainsKey($script:headerRetryAfter))
+            {
+                $retryAfterHeaderValue = $result.Headers[$script:headerRetryAfter]
+            }
+
+            $locationHeaderValue = $null
+            if ($result.Headers.ContainsKey($script:headerLocation))
+            {
+                $locationHeaderValue = $result.Headers[$script:headerLocation]
+            }
+
             # Record the telemetry for this event.
             $stopwatch.Stop()
             if (-not [String]::IsNullOrEmpty($TelemetryEventName))
@@ -1940,7 +1964,21 @@ function Invoke-SBRestMethod
                 $finalResult = $finalResult
             }
 
-            return $finalResult
+            if ($ExtendedResult)
+            {
+                $finalResultEx = @{
+                    'Result' = $finalResult
+                    'StatusCode' = $statusCode
+                    'RetryAfter' = $retryAfterHeaderValue
+                    'Location' = $locationHeaderValue
+                }
+
+                return ([PSCustomObject] $finalResultEx)
+            }
+            else
+            {
+                return $finalResult
+            }
         }
         catch
         {

@@ -1067,6 +1067,8 @@ function Get-SubmissionValidation
         [Parameter(Mandatory)]
         [string] $SubmissionId,
 
+        [switch] $WaitForCompletion,
+
         [string] $ClientRequestId,
 
         [string] $CorrelationId,
@@ -1099,8 +1101,35 @@ function Get-SubmissionValidation
             "NoStatus" = $NoStatus
         }
 
-        $result = Invoke-SBRestMethod @params
-        return @($result.items)
+        $result = $null
+        if ($WaitForCompletion)
+        {
+            $params["ExtendedResult"] = $true
+
+            while ($true)
+            {
+                $result = Invoke-SBRestMethod @params
+                $statusCode = $result.StatusCode
+                $retryAfter = $result.RetryAfter
+                $params['UriFragment'] = $result.Location
+
+                if ($statusCode -eq 200)
+                {
+                    break
+                }
+
+                Write-Log -Message "Validation on the server has not completed (received status code of [$statusCode].  Will retry in [$retryAfter] seconds."
+                Start-Sleep -Seconds ($retryAfter)
+            }
+
+            return @($result.Result.items)
+        }
+        else
+        {
+            $result = Invoke-SBRestMethod @params
+            return @($result.items)
+        }
+
     }
     catch
     {
@@ -1495,6 +1524,9 @@ function Update-Submission
 
         if ($AutoSubmit)
         {
+            Write-Log -Message "User requested -AutoSubmit.  Ensuring that validation has completed before submitting the submission." -Level Verbose
+            $null = Get-SubmissionValidation @commonParams -WaitForCompletion
+
             Write-Log -Message "Submitting the submission since -AutoSubmit was requested." -Level Verbose
             Submit-Submission @commonParams -Auto
         }

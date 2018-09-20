@@ -1744,7 +1744,15 @@ function Invoke-SBRestMethod
         $stopwatch.Start()
 
         $serviceEndpoint = Get-ServiceEndpoint
-        $url = "$serviceEndpoint/v$serviceEndpointVersion/my/$UriFragment"
+        $uriPreface = "v$serviceEndpointVersion/my/"
+        $url = "$serviceEndpoint/$uriPreface/$UriFragment"
+
+        # This scenario might happen if a client calls into here setting the UriFragment
+        # to the value returned in the Location header from a previous request.
+        if ($UriFragment.StartsWith($uriPreface))
+        {
+            $url = "$serviceEndpoint/$UriFragment"
+        }
 
         $headers = @{"Authorization" = "Bearer $AccessToken"}
         if ($Method -in ('post', 'put'))

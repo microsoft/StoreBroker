@@ -95,7 +95,7 @@ function Set-SubmissionRollout
 
         [Parameter(ParameterSetName="Individual")]
         [ValidateRange(0, 100)]
-        [int] $Percentage,
+        [float] $Percentage,
 
         [Parameter(ParameterSetName="Individual")]
         [switch] $Enabled,
@@ -222,7 +222,7 @@ function Update-SubmissionRollout
         [string] $State = 'Initialized',
 
         [ValidateRange(0, 100)]
-        [int] $Percentage,
+        [float] $Percentage,
 
         [switch] $Enabled,
 

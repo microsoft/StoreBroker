@@ -1149,7 +1149,7 @@ function Update-Submission
         [string] $ExistingPackageRolloutAction,
 
         [ValidateRange(0, 100)]
-        [double] $PackageRolloutPercentage,
+        [float] $PackageRolloutPercentage,
 
         [switch] $IsMandatoryUpdate,
 
@@ -1270,9 +1270,9 @@ function Update-Submission
         if ($PSCmdlet.ShouldProcess($JsonPath, "Get-Content"))
         {
             $jsonSubmission = [string](Get-Content $JsonPath -Encoding UTF8) | ConvertFrom-Json
-        }    
+        }
     }
-    else 
+    else
     {
         $message = "You can't specify both JsonPath and JsonObject"
         Write-Log -Message $message -Level Error

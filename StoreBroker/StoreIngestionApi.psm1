@@ -54,7 +54,7 @@ $script:headerMSClientRequestId = 'MS-Client-RequestId'
 $script:headerMSCorrelationId = 'MS-CorrelationId'
 
 # Other headers that we may need for processing a response
-$script:headerRetryAfter = 'RetryAfter'
+$script:headerRetryAfter = 'Retry-After'
 $script:headerLocation = 'Location'
 
 Add-Type -TypeDefinition @"
@@ -1678,7 +1678,6 @@ function Invoke-SBRestMethod
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars", "", Justification="We use global variables sparingly and intentionally for module configuration, and employ a consistent naming convention.")]
     param(
         [Parameter(Mandatory)]
-        [ValidateScript({if ($_.StartsWith("/")) { throw "Fragments should not start with a leading `"/`"" } else { return $true }})]
         [string] $UriFragment,
 
         [Parameter(Mandatory)]
@@ -1708,6 +1707,14 @@ function Invoke-SBRestMethod
     )
 
     $serviceEndpointVersion = "2.0"
+
+    # Normalize our Uri fragment.  It might be coming from a method implemented here, or it might
+    # be coming from the Location header in a previous response.  Either way, we don't want there
+    # to be a leading "/"
+    if ($UriFragment.StartsWith("/"))
+    {
+        $UriFragment = $UriFragment.Substring(1)
+    }
 
     # The initial number of minutes we'll wait before retrying this command when we've hit an
     # error with a status code that is configured to auto-retry.  To reduce repeated contention, we
@@ -1744,7 +1751,7 @@ function Invoke-SBRestMethod
         $stopwatch.Start()
 
         $serviceEndpoint = Get-ServiceEndpoint
-        $uriPreface = "v$serviceEndpointVersion/my/"
+        $uriPreface = "v$serviceEndpointVersion/my"
         $url = "$serviceEndpoint/$uriPreface/$UriFragment"
 
         # This scenario might happen if a client calls into here setting the UriFragment

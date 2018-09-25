@@ -69,7 +69,7 @@ function Get-ProductPackage
 
     if ($WithSasUri)
     {
-        $getParams += "withUrl=true"
+        $getParams += "withSasUri=true"
     }
 
     $params = @{

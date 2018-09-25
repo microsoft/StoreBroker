@@ -44,6 +44,10 @@ $script:keywordPendingCommit = 'PendingCommit'
 $script:keywordRelease = 'Release'
 $script:keywordPublished = 'Published'
 
+# Special header that is used with the Submission API to track the type of client
+# that is using the API
+$script:headerClientName = 'X-ClientName'
+
 # Special header added to Submission API responses that provides a unique ID
 # that the Submission API team can use to trace back problems with a specific request.
 $script:headerMSRequestId = 'MS-RequestId'
@@ -1772,6 +1776,7 @@ function Invoke-SBRestMethod
         }
 
         $headers = @{"Authorization" = "Bearer $AccessToken"}
+        $headers.Add($script:headerClientName, "StoreBroker v$($MyInvocation.MyCommand.Module.Version)")
         if ($Method -in ('post', 'put'))
         {
             $headers.Add("Content-Type", "application/json; charset=UTF-8")

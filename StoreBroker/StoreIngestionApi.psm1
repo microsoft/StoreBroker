@@ -1091,8 +1091,13 @@ function Get-StoreFile
                     $uri = New-Object -TypeName System.Uri -ArgumentList $SasUri
                     $cloudBlockBlob = New-Object -TypeName Microsoft.WindowsAzure.Storage.Blob.CloudBlockBlob -ArgumentList $uri
 
+                    # Unfortunately, due to the fact that the files are processed/modified by the API after Azure
+                    # has stored the MD5 hash, when we later download them, the files simply won't match the MD5 that was stored.
+                    $downloadOptions = New-Object -TypeName Microsoft.WindowsAzure.Storage.DataMovement.DownloadOptions
+                    $downloadOptions.DisableContentMD5Validation = $true
+
                     # We will run this async command synchronously within the console.
-                    $task = [Microsoft.WindowsAzure.Storage.DataMovement.TransferManager]::DownloadAsync($cloudBlockBlob, $FilePath)
+                    $task = [Microsoft.WindowsAzure.Storage.DataMovement.TransferManager]::DownloadAsync($cloudBlockBlob, $FilePath, $downloadOptions, $null)
                     $task.GetAwaiter().GetResult() | Out-Null
                 }
 

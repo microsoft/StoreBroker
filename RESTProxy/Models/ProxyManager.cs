@@ -46,6 +46,11 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
         public const string MSClientRequestIdHeader = "MS-Client-RequestId";
 
         /// <summary>
+        /// The header name for a special header that the API uses for telemetry/tracking of API clients.
+        /// </summary>
+        public const string ClientNameHeader = "X-ClientName";
+
+        /// <summary>
         /// The Application Insights client that will be used for "logging" all of the user requests
         /// </summary>
         private static TelemetryClient telemetryClient = new TelemetryClient();
@@ -152,6 +157,10 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
         /// <param name="clientRequestId">
         /// An ID that a client may have set in the header (which we must proxy) to track an individual request.
         /// </param>
+        /// <param name="clientName">
+        /// The name of the requesting client that we can pass on to the API via a special header
+        /// for tracking purposes.
+        /// </param>
         /// <returns>The <see cref="HttpResponseMessage"/> to be sent to the user.</returns>
         public static async Task<HttpResponseMessage> PerformRequestAsync(
             string pathAndQuery,
@@ -162,7 +171,8 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
             string tenantName = null,
             EndpointType endpointType = EndpointType.Prod,
             string correlationId = null,
-            string clientRequestId = null)
+            string clientRequestId = null,
+            string clientName = null)
         {
             // We'll track how long this takes, for telemetry purposes.
             Stopwatch stopwatch = Stopwatch.StartNew();
@@ -183,7 +193,7 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
                 if (ProxyManager.TryGetEndpoint(tenantId, tenantName, endpointType, out endpoint, out response))
                 {
                     clientId = endpoint.ClientId;
-                    response = await endpoint.PerformRequestAsync(pathAndQuery, method, onBehalfOf, body, correlationId, clientRequestId);
+                    response = await endpoint.PerformRequestAsync(pathAndQuery, method, onBehalfOf, body, correlationId, clientRequestId, clientName);
                 }
 
                 // We'll capture the status code for use in the finally block.

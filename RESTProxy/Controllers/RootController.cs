@@ -28,7 +28,7 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Controllers
         /// (this is defined in WebApiConfig.cs).
         /// <para />
         /// We don't care at all about the parameters because all we end up doing is grabbing the
-        /// full AbsoluteUri and $proxying$ that request to the real API.  This is very abnormal 
+        /// full AbsoluteUri and $proxying$ that request to the real API.  This is very abnormal
         /// usage of ASP.NET WebApi, but doing things this way makes the code SUPER-concise.
         /// <para />
         /// The only event where this method will ever need to be updated is if additional
@@ -100,6 +100,12 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Controllers
                 clientRequestId = headerValues.FirstOrDefault();
             }
 
+            string clientName = null;
+            if (Request.Headers.TryGetValues(ProxyManager.ClientNameHeader, out headerValues))
+            {
+                clientName = headerValues.FirstOrDefault();
+            }
+
             // Now, just proxy the request over to the real API.
             return await ProxyManager.PerformRequestAsync(
                 pathAndQuery: Request.RequestUri.PathAndQuery,
@@ -110,7 +116,8 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Controllers
                 tenantName: tenantName,
                 endpointType: endpointType,
                 correlationId: correlationId,
-                clientRequestId: clientRequestId);
+                clientRequestId: clientRequestId,
+                clientName: clientName);
         }
    }
 }

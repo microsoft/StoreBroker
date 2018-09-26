@@ -250,6 +250,10 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
         /// <param name="clientRequestId">
         /// An ID that a client may have set in the header (which we must proxy) to track an individual request.
         /// </param>
+        /// <param name="clientName">
+        /// The name of the requesting client that we can pass on to the API via a special header
+        /// for tracking purposes.
+        /// </param>
         /// <returns>The <see cref="HttpResponseMessage"/> to be sent to the user.</returns>
         public async Task<HttpResponseMessage> PerformRequestAsync(
             string pathAndQuery,
@@ -257,7 +261,8 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
             IPrincipal onBehalfOf,
             string body = null,
             string correlationId = null,
-            string clientRequestId = null)
+            string clientRequestId = null,
+            string clientName = null)
         {
             // This is the real API endpoint that we'll be contacting.  We'll just append
             // pathAndQuery directly to this to get the final REST Uri that we need to use.
@@ -285,6 +290,11 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
                 // in the authorization header.
                 string accessToken = await this.GetAccessTokenAsync();
                 request.Headers[HttpRequestHeader.Authorization] = string.Format("bearer {0}", accessToken);
+
+                if (!string.IsNullOrWhiteSpace(clientName))
+                {
+                    request.Headers[ProxyManager.ClientNameHeader] = clientName;
+                }
 
                 // Add any additional headers that the client may have specified in their request
                 if (!string.IsNullOrWhiteSpace(correlationId))
@@ -363,8 +373,8 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
             const string LocationHeader = "Location";
             foreach (string key in httpResponseFromApi.Headers.AllKeys)
             {
-                if ((key.StartsWith(MSHeaderPreface, StringComparison.InvariantCultureIgnoreCase)) ||
-                    (key.ToLowerInvariant().Contains(RetryHeader.ToLowerInvariant())) ||
+                if (key.StartsWith(MSHeaderPreface, StringComparison.InvariantCultureIgnoreCase) ||
+                    key.ToLowerInvariant().Contains(RetryHeader.ToLowerInvariant()) ||
                     (key.ToLowerInvariant() == LocationHeader.ToLowerInvariant()))
                 {
                     httpResponseMessage.Headers.Add(key, httpResponseFromApi.Headers[key]);
@@ -380,7 +390,7 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
                 {
                     contentType = httpResponseFromApi.ContentType.Split(';')[0];
                 }
-                
+
                 httpResponseMessage.Content = new StringContent(responseBody, Encoding.UTF8, contentType);
             }
 

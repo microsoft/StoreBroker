@@ -1526,12 +1526,30 @@ function Update-Submission
         {
             Write-Log -Message "User requested -AutoSubmit.  Ensuring that validation has completed before submitting the submission." -Level Verbose
             $validation = Get-SubmissionValidation @commonParams -WaitForCompletion
-            Write-Log -Level Verbose -Message @(
-                "Issues found during validation: ",
-                (Format-SimpleTableString -Object $validation))
 
-            Write-Log -Message "Submitting the submission since -AutoSubmit was requested." -Level Verbose
-            Submit-Submission @commonParams -Auto
+            if ($null -eq $validation)
+            {
+                Write-Log -Message "No issues found during validation." -Level Verbose
+            }
+            else
+            {
+                Write-Log -Level Verbose -Message @(
+                    "Issues found during validation: ",
+                    (Format-SimpleTableString -Object $validation))
+            }
+
+            $hasValidationErrors = ($validation | Where-Object { $_.severity -eq 'Error' }).Length -gt 0
+            if ($hasValidationErrors)
+            {
+                $message = 'Unable to continue with submission because of validation errors.'
+                Write-Log -Message $message -Level Error
+                throw $message
+            }
+            else
+            {
+                Write-Log -Message "Submitting the submission since -AutoSubmit was requested." -Level Verbose
+                $null = Submit-Submission @commonParams -Auto
+            }
         }
         else
         {

@@ -7,8 +7,10 @@ $script:defaultIapConfigFileName = "IapConfigTemplate.json"
 # Images will be placed in the .zip folder under the $packageImageFolderName subfolder
 $script:packageImageFolderName = "Assets"
 
-# New-SubmissionPackage supports these extensions.
-$script:supportedExtensions = ".appx", ".appxbundle", ".appxupload"
+# New-SubmissionPackage supports these extensions, but won't inspect their content due to encryption
+$script:extensionsSupportingInspection = @(".appx", ".appxbundle", ".appxupload")
+$script:extensionsNotSupportingInspection = @('.xvc')
+$script:supportedExtensions =  $script:extensionsSupportingInspection + $script:extensionsNotSupportingInspection
 
 # String constants for New-SubmissionPackage parameters
 $script:s_ConfigPath = "ConfigPath"
@@ -2444,8 +2446,8 @@ function Read-ApplicationMetadata
     param(
         [Parameter(Mandatory)]
         [ValidateScript({
-            if (Test-Path -PathType Leaf -Include ($script:supportedExtensions | ForEach-Object { "*" + $_ }) $_) { $true }
-            else { throw "$_ cannot be found or is not a supported extension: $($script:supportedExtensions -join ", ")." } })]
+            if (Test-Path -PathType Leaf -Include ($script:extensionsSupportingInspection | ForEach-Object { "*" + $_ }) $_) { $true }
+            else { throw "$_ cannot be found or is not a supported extension that supports metadata inspection: $($script:extensionsSupportingInspection -join ", ")." } })]
         [string] $AppxPath,
 
         [ref] $AppxInfo
@@ -2550,18 +2552,23 @@ function Add-AppPackagesMetadata
             $appxName = Split-Path -Leaf -Path $path
 
             # We always calculate the formatted name, even if we won't use it, in order to
-            # populate $AppxInfo with the additional metadata.
-            $appMetadata =  Read-ApplicationMetadata -AppxPath $path -AppxInfo $AppxInfo
-            if ($EnableAutoPackageNameFormatting)
-            {
-                $appxName = ($appMetadata.formattedFileName + [System.IO.Path]::GetExtension($appxName))
-            }
-
-            # Finalize the properties to be submitted
+            # populate $AppxInfo with the additional metadata, but only if the package is
+            # one that we can inspect.
             $submissionProperties = @{}
-            foreach ($property in $script:applicationMetadataProperties)
+            $packageExtension = [System.IO.Path]::GetExtension($appxName)
+            if ($packageExtension -in $script:extensionsSupportingInspection)
             {
-                $submissionProperties.$property = $appMetadata.$property
+                $appMetadata =  Read-ApplicationMetadata -AppxPath $path -AppxInfo $AppxInfo
+                if ($EnableAutoPackageNameFormatting)
+                {
+                    $appxName = ($appMetadata.formattedFileName + [System.IO.Path]::GetExtension($appxName))
+                }
+
+                # Finalize the properties to be submitted
+                foreach ($property in $script:applicationMetadataProperties)
+                {
+                    $submissionProperties.$property = $appMetadata.$property
+                }
             }
 
             $submissionProperties.fileName              = $appxName
@@ -2573,7 +2580,7 @@ function Add-AppPackagesMetadata
 
             if ($script:tempFolderExists)
             {
-                $destinationPath = Join-Path $script:tempFolderPath $appxName
+                $destinationPath = Join-Path -Path $script:tempFolderPath -ChildPath $appxName
 
                 Write-Log -Message "Copying (Item: $path) to (Target: $destinationPath)" -Level Verbose
                 Copy-Item -Path $path -Destination $destinationPath

@@ -128,6 +128,8 @@ function ConvertFrom-ExistingSubmission
         [ValidateScript({if ($_.Length -eq 12) { $true } else { throw "It looks like you supplied an ProductId instead of an AppId." }})]
         [string] $AppId,
 
+        [string] $SandboxId,
+
         [string] $SubmissionId,
 
         [string] $Release,
@@ -194,7 +196,9 @@ function ConvertFrom-ExistingSubmission
 
         $langAssetNames = @{}
         $pdpsGenerated = 0
-        $listings = Get-Listing -ProductId $ProductId -SubmissionId $SubmissionId @commonParams
+
+        # Ensure we are always operating on an array of of listings, even if there is only one result.
+        $listings = @(Get-Listing -ProductId $ProductId -SubmissionId $SubmissionId @commonParams)
         foreach ($listing in $listings)
         {
             $lang = $listing.languageCode

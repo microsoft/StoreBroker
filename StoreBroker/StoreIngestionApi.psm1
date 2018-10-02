@@ -1464,7 +1464,10 @@ function Open-DevPortal
         The Git repo for this module can be found here: http://aka.ms/StoreBroker
 
     .PARAMETER AppId
-        The ID of the application to be viewed.
+        The ID of the app that should be opened in the Store (in the "BigId" format).
+
+    .PARAMETER ProductId
+        The ID of the app that should be opened in the Store (in the ProductId format).
 
     .PARAMETER SubmissionId
         The ID of the submission to be viewed.
@@ -1473,24 +1476,42 @@ function Open-DevPortal
         If provided, will show the flight UI as opposed to the flight submission UI.
 
     .EXAMPLE
-        Open-DevPortal 0ABCDEF12345
+        Open-DevPortal -AppId 0ABCDEF12345
 
         Opens a new tab in the default web browser to the page in the Dev Portal that displays
         the general status of the application.
 
     .EXAMPLE
-        Open-DevPortal 0ABCDEF12345 1234567890123456789
+        Open-DevPortal -AppId 0ABCDEF12345 -SubmissionId 1234567890123456789
 
         Opens a new tab in the default web browser to the page in the Dev Portal that displays
         the indicated submission.  Will work for both app and flight submissions.
 
     .EXAMPLE
-        Open-DevPortal 0ABCDEF12345 1234567890123456789 -ShowFlight
+        Open-DevPortal -AppId 0ABCDEF12345 -SubmissionId 1234567890123456789 -ShowFlight
+
+        Opens a new tab in the default web browser to the page in the Dev Portal that displays
+        the flight edit page (enabling you to change the name, flight groups and ranking).
+
+    .EXAMPLE
+        Open-DevPortal -ProductId 00012345678901234567
+
+        Opens a new tab in the default web browser to the page in the Dev Portal that displays
+        the general status of the application.
+
+    .EXAMPLE
+        Open-DevPortal -ProductId 00012345678901234567 -SubmissionId 1234567890123456789
+
+        Opens a new tab in the default web browser to the page in the Dev Portal that displays
+        the indicated submission.  Will work for both app and flight submissions.
+
+    .EXAMPLE
+        Open-DevPortal -ProductId 00012345678901234567 -SubmissionId 1234567890123456789 -ShowFlight
 
         Opens a new tab in the default web browser to the page in the Dev Portal that displays
         the flight edit page (enabling you to change the name, flight groups and ranking).
 #>
-    [CmdletBinding(DefaultParametersetName="App")]
+    [CmdletBinding(DefaultParametersetName="Product")]
     param(
         [Parameter(
             Mandatory,
@@ -1498,28 +1519,52 @@ function Open-DevPortal
             Position=0)]
         [Parameter(
             Mandatory,
-            ParameterSetName="Submission",
+            ParameterSetName="AppSubmission",
             Position=0)]
+        [ValidateScript({if ($_.Length -eq 12) { $true } else { throw "It looks like you supplied an ProductId instead of an AppId.  Use the -ProductId parameter with this value instead." }})]
         [string] $AppId,
 
         [Parameter(
             Mandatory,
-            ParameterSetName="Submission",
+            ParameterSetName="Product",
+            Position=0)]
+        [Parameter(
+            Mandatory,
+            ParameterSetName="ProductSubmission",
+            Position=0)]
+        [ValidateScript({if ($_.Length -le 12) { throw "It looks like you supplied an AppId instead of a ProductId.  Use the -AppId parameter with this value instead." } else { $true }})]
+        [string] $ProductId,
+
+        [Parameter(
+            Mandatory,
+            ParameterSetName="AppSubmission",
+            Position=1)]
+        [Parameter(
+            Mandatory,
+            ParameterSetName="ProductSubmission",
             Position=1)]
         [string] $SubmissionId,
 
-        [Parameter(ParameterSetName="Submission")]
+        [Parameter(ParameterSetName="AppSubmission")]
+        [Parameter(ParameterSetName="ProductSubmission")]
         [switch] $ShowFlight
     )
 
     # Telemetry-related
     $telemetryProperties = @{
         [StoreBrokerTelemetryProperty]::AppId = $AppId
+        [StoreBrokerTelemetryProperty]::ProductId = $ProductId
         [StoreBrokerTelemetryProperty]::ShowSubmission = (-not [String]::IsNullOrEmpty($SubmissionId))
         [StoreBrokerTelemetryProperty]::ShowFlight = $ShowFlight
     }
 
     Set-TelemetryEvent -EventName Open-DevPortal -Properties $telemetryProperties
+
+    if ([String]::IsNullOrEmpty($AppId))
+    {
+        $product = Get-Product -ProductId $ProductId
+        $AppId = ($product.externalIds | Where-Object { $_.type -eq 'StoreId' }).value
+    }
 
     Write-Log -Message "Opening Dev Portal in default web browser."
 
@@ -1553,7 +1598,10 @@ function Open-Store()
     The Git repo for this module can be found here: https://aka.ms/StoreBroker
 
 .PARAMETER AppId
-    The ID of the app that should be opened in the Store.
+    The ID of the app that should be opened in the Store (in the "BigId" format).
+
+.PARAMETER ProductId
+    The ID of the app that should be opened in the Store (in the ProductId format).
 
 .PARAMETER Web
     If specified, opens the Web Store instead of the native Windows Store App.
@@ -1564,20 +1612,27 @@ function Open-Store()
     Opens the Windows Store app and navigates to the specified application.
 
 .EXAMPLE
+    Open-Store -ProductId 00012345678901234567
+
+    Opens the Windows Store app and navigates to the specified application.
+
+.EXAMPLE
     Open-Store -AppId 0ABCDEF12345 -Web
 
     Opens the user's browser to the specified app's Windows Store page.
 #>
 [CmdletBinding(DefaultParametersetName="ProductId")]
 param(
-    [Parameter(
-        Mandatory,
-        ParameterSetName="AppId")]
+        [Parameter(
+            Mandatory,
+            ParameterSetName="AppId")]
+        [ValidateScript({if ($_.Length -eq 12) { $true } else { throw "It looks like you supplied an ProductId instead of an AppId.  Use the -ProductId parameter with this value instead." }})]
         [string] $AppId,
 
         [Parameter(
             Mandatory,
             ParameterSetName="ProductId")]
+        [ValidateScript({if ($_.Length -le 12) { throw "It looks like you supplied an AppId instead of a ProductId.  Use the -AppId parameter with this value instead." } else { $true }})]
         [string] $ProductId,
 
         [switch] $Web

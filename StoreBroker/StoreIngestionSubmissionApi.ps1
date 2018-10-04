@@ -1313,6 +1313,7 @@ function Update-Submission
 
     # Extra layer of validation to protect users from trying to submit a payload to the wrong product
     $jsonProductId = $jsonSubmission.productId
+    $jsonAppId = $jsonSubmission.appId
     if ([String]::IsNullOrWhiteSpace($jsonProductId))
     {
         $configPath = Join-Path -Path ([System.Environment]::GetFolderPath('Desktop')) -ChildPath 'newconfig.json'
@@ -1327,14 +1328,14 @@ function Update-Submission
             "and then diff the new config file against your current one to see the requested productId change.")
 
         # May be an older json file that still uses the AppId.  If so, do the conversion to check that way.
-        if (-not ([String]::IsNullOrWhiteSpace($jsonSubmission.appId)))
+        if (-not ([String]::IsNullOrWhiteSpace($jsonAppId)))
         {
             $jsonProductId = $product.id
 
-            if ($jsonSubmission.appId -ne $appId)
+            if ($jsonAppId -ne $appId)
             {
                 $output = @()
-                $output += "The AppId [$($jsonSubmission.appId))] in the submission content is not for the intended ProductId [$ProductId]."
+                $output += "The AppId [$jsonAppId))] in the submission content is not for the intended ProductId [$ProductId]."
                 $output += "You either entered the wrong ProductId at the commandline, or you're referencing the wrong submission content to upload."
 
                 $newLineOutput = ($output -join [Environment]::NewLine)
@@ -1349,6 +1350,21 @@ function Update-Submission
         $output = @()
         $output += "The ProductId [$jsonProductId] in the submission content does not match the intended ProductId [$ProductId]."
         $output += "You either entered the wrong ProductId at the commandline, or you're referencing the wrong submission content to upload."
+
+        $newLineOutput = ($output -join [Environment]::NewLine)
+        Write-Log -Message $newLineOutput -Level Error
+        throw $newLineOutput
+    }
+
+    # This is to handle the scenario where a user has specified BOTH ProductId _and_ AppId in their
+    # config, but they don't refer to the same product.   We would have exited earlier if
+    # only the AppId was specified and didn't match the ProductId from the commandline.
+    if ((-not [String]::IsNullOrWhiteSpace($jsonAppId)) -and ($jsonAppId -ne $appId))
+    {
+        $output = @()
+        $output += "You have both ProductId [$jsonProductId] _and_ AppId [$jsonAppId] specified in the submission content,"
+        $output += "however they don't reference the same product.  Review and correct the config file that was used with"
+        $output += "New-SubmissionPackage, and once fixed, create a corrected package and try this command again."
 
         $newLineOutput = ($output -join [Environment]::NewLine)
         Write-Log -Message $newLineOutput -Level Error

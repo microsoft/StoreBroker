@@ -181,15 +181,22 @@ function ConvertFrom-ExistingSubmission
 
         if ([String]::IsNullOrWhiteSpace($SubmissionId))
         {
-            $submissions = Get-Submission -ProductId $ProductId -State Published @commonParams
+            $submissions = Get-Submission -ProductId $ProductId -SandboxId $SandboxId @commonParams
             if ($submissions.Count -eq 0)
             {
-                $message = "No published submissions for [$name] were found to convert."
+                $message = "No submissions for [$name] were found to convert."
                 Write-Log -Message $message -Level Error
                 throw $message
             }
 
-            $SubmissionId = $submissions[0].id
+            $submission = $submissions | Where-Object { $_.[StoreBrokerSubmissionProperty]::state.ToString() -eq [StoreBrokerSubmissionState]::Published.ToString() }
+            if ($null -eq $submission)
+            {
+                Write-Log 'No published submission exists.  Falling back to using the current pending submission.' -Level Warning
+                $submission = $submissions[0] # We can safely grab this first one since w eknow that there is a submission at this point.
+            }
+
+            $SubmissionId = $submission.id
         }
 
         $properties = Get-ProductProperty -ProductId $ProductId -SubmissionId $SubmissionId @commonParams
@@ -217,8 +224,15 @@ function ConvertFrom-ExistingSubmission
             }
         }
 
-        Write-Log -Message "PDP's have been created here: $OutPath"
-        Show-AssetFileNames -LangAssetNames $langAssetNames -Release $Release
+        if ($listings.Count -gt 0)
+        {
+            Write-Log -Message "PDP's have been created here: $OutPath"
+            Show-AssetFileNames -LangAssetNames $langAssetNames -Release $Release
+        }
+        else
+        {
+            Write-Log -Message 'This submission did not have any listings with data to export.' -Level Warning
+        }
 
         # Record the telemetry for this event.
         $stopwatch.Stop()
@@ -1042,7 +1056,7 @@ function Add-Trailers
         [Parameter(Mandatory)]
         [System.Xml.XmlDocument] $Xml,
 
-        [Parameter(Mandatory)]
+        [AllowNull()]
         [PSCustomObject[]] $Videos,
 
         [Parameter(Mandatory)]
@@ -1051,7 +1065,7 @@ function Add-Trailers
 
     $assets = @()
 
-    # Create ScreenshotCaptions node if it does not exist
+    # Create Trailers node if it does not exist
     $elementName = "Trailers"
     $elementNode = Ensure-RootChild -Xml $Xml -Element $elementName
 
@@ -1078,8 +1092,6 @@ function Add-Trailers
 
         $asset = New-Object PSObject -Property $properties
         $assets += $asset
-
-
 
         $title = $trailer.thumbnail.title
         $screenshotDescription = $trailer.thumbnail.description

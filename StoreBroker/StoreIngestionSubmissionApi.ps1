@@ -7,6 +7,7 @@ Add-Type -TypeDefinition @"
        releaseTimeInUtc,
        resourceType,
        revisionToken,
+       state,
        targets
    }
 "@

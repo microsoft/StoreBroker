@@ -1344,7 +1344,7 @@ function Update-Submission
         }
     }
 
-    if ((-not [String]::IsNullOrWhiteSpace($jsonProductId)) -and ($ProductId -ne $jsonProductId))
+    if ($ProductId -ne $jsonProductId)
     {
         $output = @()
         $output += "The ProductId [$jsonProductId] in the submission content does not match the intended ProductId [$ProductId]."

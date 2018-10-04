@@ -297,7 +297,7 @@ function New-Listing
         $params = @{
             "UriFragment" = "products/$ProductId/listings`?" + ($getParams -join '&')
             "Method" = 'Post'
-            "Description" = "Creating new $LanguageCode listing for $ProductId"
+            "Description" = "Creating new $LanguageCode listing for $ProductId (SubmissionId: $SubmissionId)"
             "Body" = $body
             "ClientRequestId" = $ClientRequestId
             "CorrelationId" = $CorrelationId
@@ -370,7 +370,7 @@ function Remove-Listing
         $params = @{
             "UriFragment" = "products/$ProductId/listings/$LanguageCode" + ($getParams -join '&')
             "Method" = "Delete"
-            "Description" = "Deleting the $LanguageCode listing for $ProductId"
+            "Description" = "Deleting the $LanguageCode listing for $ProductId (SubmissionId: $SubmissionId)"
             "ClientRequestId" = $ClientRequestId
             "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
@@ -590,7 +590,7 @@ function Set-Listing
         $params = @{
             "UriFragment" = "products/$ProductId/listings/$LanguageCode`?" + ($getParams -join '&')
             "Method" = 'Put'
-            "Description" = "Updating $LanguageCode listing for $ProductId"
+            "Description" = "Updating $LanguageCode listing for $ProductId (SubmissionId: $SubmissionId)"
             "Body" = $body
             "ClientRequestId" = $ClientRequestId
             "CorrelationId" = $CorrelationId

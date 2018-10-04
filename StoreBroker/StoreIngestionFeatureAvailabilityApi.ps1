@@ -161,7 +161,7 @@ function New-FeatureAvailability
         $params = @{
             "UriFragment" = "products/$ProductId/featureavailabilities"
             "Method" = 'Post'
-            "Description" = "Creating new feature availability for $ProductId"
+            "Description" = "Creating new feature availability for $ProductId (SubmissionId: $SubmissionId)"
             "Body" = $body
             "ClientRequestId" = $ClientRequestId
             "CorrelationId" = $CorrelationId
@@ -248,7 +248,7 @@ function Set-FeatureAvailability
         $params = @{
             "UriFragment" = "products/$ProductId/featureavailabilities/$FeatureAvailabilityId`?" + ($getParams -join '&')
             "Method" = 'Put'
-            "Description" = "Updating feature availability $FeatureAvailabilityId for $ProductId"
+            "Description" = "Updating feature availability $FeatureAvailabilityId for $ProductId (SubmissionId: $SubmissionId)"
             "Body" = $body
             "ClientRequestId" = $ClientRequestId
             "CorrelationId" = $CorrelationId

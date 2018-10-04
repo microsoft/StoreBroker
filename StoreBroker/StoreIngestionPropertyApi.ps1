@@ -78,14 +78,14 @@ function Get-ProductProperty
         {
             $params["UriFragment"] = "products/$ProductId/properties/$PropertyId`?" + ($getParams -join '&')
             $params["Method" ] = 'Get'
-            $params["Description"] =  "Getting property $PropertyId for $ProductId"
+            $params["Description"] = "Getting property $PropertyId for $ProductId (SubmissionId: $SubmissionId)"
 
             return Invoke-SBRestMethod @params
         }
         else
         {
             $params["UriFragment"] = "products/$ProductId/properties`?" + ($getParams -join '&')
-            $params["Description"] =  "Getting properties for $ProductId"
+            $params["Description"] = "Getting properties for $ProductId (SubmissionId: $SubmissionId)"
             $params["SinglePage" ] = $SinglePage
 
             return Invoke-SBRestMethodMultipleResult @params
@@ -165,7 +165,7 @@ function New-ProductProperty
         $params = @{
             "UriFragment" = "products/$ProductId/properties`?" + ($getParams -join '&')
             "Method" = 'Post'
-            "Description" = "Creating new property for $ProductId"
+            "Description" = "Creating new property for $ProductId (SubmissionId: $SubmissionId)"
             "Body" = $body
             "ClientRequestId" = $ClientRequestId
             "CorrelationId" = $CorrelationId
@@ -268,7 +268,7 @@ function Set-ProductProperty
         $params = @{
             "UriFragment" = "products/$ProductId/properties/$PropertyId`?" + ($getParams -join '&')
             "Method" = 'Put'
-            "Description" = "Updating property $PropertyId for $ProductId"
+            "Description" = "Updating property $PropertyId for $ProductId (SubmissionId: $SubmissionId)"
             "Body" = $body
             "ClientRequestId" = $ClientRequestId
             "CorrelationId" = $CorrelationId

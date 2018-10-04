@@ -201,7 +201,7 @@ function New-ProductPackageConfiguration
         $params = @{
             "UriFragment" = "products/$ProductId/packageConfigurations`?" + ($getParams -join '&')
             "Method" = 'Post'
-            "Description" = "Creating new package configuration for $ProductId"
+            "Description" = "Creating new package configuration for $ProductId (SubmissionId: $SubmissionId)"
             "Body" = $body
             "ClientRequestId" = $ClientRequestId
             "CorrelationId" = $CorrelationId
@@ -337,7 +337,7 @@ function Set-ProductPackageConfiguration
         $params = @{
             "UriFragment" = "products/$ProductId/packageConfigurations/$PackageConfigurationId`?" + ($getParams -join '&')
             "Method" = 'Put'
-            "Description" = "Updating package configuration $PackageConfigurationId for $ProductId"
+            "Description" = "Updating package configuration $PackageConfigurationId for $ProductId (SubmissionId: $SubmissionId)"
             "Body" = $body
             "ClientRequestId" = $ClientRequestId
             "CorrelationId" = $CorrelationId

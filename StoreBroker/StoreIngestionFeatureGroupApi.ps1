@@ -136,12 +136,12 @@ function New-FeatureGroup
         $body = Get-JsonBody -InputObject $hashBody
 
         $uriFragment = "products/$ProductId/featureGroups`?" + ($getParams -join '&')
-        $description = "Creating new feature group for $ProductId"
+        $description = "Creating new feature group for $ProductId (SubmissionId: $SubmissionId)"
         $isbulkOperation = $Object.Count -gt 1
         if ($isbulkOperation)
         {
             $uriFragment = "products/$ProductId/featureGroups/bulk`?" + ($getParams -join '&')
-            $description = "Bulk creating feature groups for $ProductId"
+            $description = "Bulk creating feature groups for $ProductId (SubmissionId: $SubmissionId)"
         }
 
         $params = @{
@@ -238,7 +238,7 @@ function Remove-FeatureGroup
         $params = @{
             "UriFragment" = "products/$ProductId/featureGroups/$FeatureGroupId`?" + ($getParams -join '&')
             "Method" = "Delete"
-            "Description" = "Deleting feature group $FeaureGroupId for $ProductId"
+            "Description" = "Deleting feature group $FeaureGroupId for $ProductId (SubmissionId: $SubmissionId)"
             "ClientRequestId" = $ClientRequestId
             "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
@@ -335,7 +335,7 @@ function Set-FeatureGroup
         $params = @{
             "UriFragment" = "products/$ProductId/featureGroups/$FeatureGroupId`?" + ($getParams -join '&')
             "Method" = 'Put'
-            "Description" = "Updating feature group $FeatureGroupId for $ProductId"
+            "Description" = "Updating feature group $FeatureGroupId for $ProductId (SubmissionId: $SubmissionId)"
             "Body" = $body
             "ClientRequestId" = $ClientRequestId
             "CorrelationId" = $CorrelationId

@@ -193,12 +193,12 @@ function New-ListingVideo
         Write-Log -Message "Body: $body" -Level Verbose
 
         $uriFragment = "products/$ProductId/listings/$LanguageCode/videos`?" + ($getParams -join '&')
-        $description = "Creating new $LanguageCode listing videos for $ProductId"
+        $description = "Creating new $LanguageCode listing videos for $ProductId (SubmissionId: $SubmissionId)"
         $isbulkOperation = $Object.Count -gt 1
         if ($isbulkOperation)
         {
             $uriFragment = "products/$ProductId/listings/$LanguageCode/videos/bulk`?" + ($getParams -join '&')
-            $description = "Bulk creating $LanguageCode listing videos for $ProductId"
+            $description = "Bulk creating $LanguageCode listing videos for $ProductId (SubmissionId: $SubmissionId)"
         }
 
         $params = @{
@@ -300,7 +300,7 @@ function Remove-ListingVideo
         $params = @{
             "UriFragment" = "products/$ProductId/listings/$LanguageCode/videos/$VideoId`?" + ($getParams -join '&')
             "Method" = "Delete"
-            "Description" = "Deleting video $VideoId from the $LanguageCode listing for $ProductId"
+            "Description" = "Deleting video $VideoId from the $LanguageCode listing for $ProductId (SubmissionId: $SubmissionId)"
             "ClientRequestId" = $ClientRequestId
             "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
@@ -432,7 +432,7 @@ function Set-ListingVideo
         $params = @{
             "UriFragment" = "products/$ProductId/listings/$LanguageCode/Videos/$VideoId`?" + ($getParams -join '&')
             "Method" = 'Put'
-            "Description" = "Updating listing video $VideoId for $ProductId"
+            "Description" = "Updating listing video $VideoId for $ProductId (SubmissionId: $SubmissionId)"
             "Body" = $body
             "ClientRequestId" = $ClientRequestId
             "CorrelationId" = $CorrelationId

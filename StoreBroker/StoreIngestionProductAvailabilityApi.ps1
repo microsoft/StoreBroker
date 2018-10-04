@@ -165,7 +165,7 @@ function New-ProductAvailability
         $params = @{
             "UriFragment" = "products/$ProductId/productAvailabilities`?" + ($getParams -join '&')
             "Method" = 'Post'
-            "Description" = "Creating new product availability for $ProductId"
+            "Description" = "Creating new product availability for $ProductId (SubmissionId: $SubmissionId)"
             "Body" = $body
             "ClientRequestId" = $ClientRequestId
             "CorrelationId" = $CorrelationId
@@ -280,7 +280,7 @@ function Set-ProductAvailability
         $params = @{
             "UriFragment" = "products/$ProductId/productAvailabilities/$ProductAvailabilityId`?" + ($getParams -join '&')
             "Method" = 'Put'
-            "Description" = "Updating product availability $ProductAvailabilityId for $ProductId"
+            "Description" = "Updating product availability $ProductAvailabilityId for $ProductId (SubmissionId: $SubmissionId)"
             "Body" = $body
             "ClientRequestId" = $ClientRequestId
             "CorrelationId" = $CorrelationId

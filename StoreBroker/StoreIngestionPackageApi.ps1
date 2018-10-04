@@ -171,7 +171,7 @@ function New-ProductPackage
     $params = @{
         "UriFragment" = "products/$ProductId/packages`?" + ($getParams -join '&')
         "Method" = 'Post'
-        "Description" = "Creating new package for $ProductId"
+        "Description" = "Creating new package for $ProductId (SubmissionId: $SubmissionId)"
         "Body" = $body
         "ClientRequestId" = $ClientRequestId
         "CorrelationId" = $CorrelationId
@@ -279,7 +279,7 @@ function Set-ProductPackage
         $params = @{
             "UriFragment" = "products/$ProductId/packages/$PackageId`?" + ($getParams -join '&')
             "Method" = 'Put'
-            "Description" = "Updating package $PackageId for $ProductId"
+            "Description" = "Updating package $PackageId for $ProductId (SubmissionId: $SubmissionId)"
             "Body" = $body
             "ClientRequestId" = $ClientRequestId
             "CorrelationId" = $CorrelationId
@@ -350,7 +350,7 @@ function Remove-ProductPackage
         $params = @{
             "UriFragment" = "products/$ProductId/packages/$PackageId`?" + ($getParams -join '&')
             "Method" = 'Delete'
-            "Description" = "Removing package $PackageId for $ProductId"
+            "Description" = "Removing package $PackageId for $ProductId (SubmissionId: $SubmissionId)"
             "ClientRequestId" = $ClientRequestId
             "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken

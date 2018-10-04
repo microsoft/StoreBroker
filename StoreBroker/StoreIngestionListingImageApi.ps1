@@ -181,12 +181,12 @@ function New-ListingImage
         Write-Log -Message "Body: $body" -Level Verbose
 
         $uriFragment = "products/$ProductId/listings/$LanguageCode/images`?" + ($getParams -join '&')
-        $description = "Creating new $LanguageCode listing image for $ProductId"
+        $description = "Creating new $LanguageCode listing image for $ProductId (SubmissionId: $SubmissionId)"
         $isbulkOperation = $Object.Count -gt 1
         if ($isbulkOperation)
         {
             $uriFragment = "products/$ProductId/listings/$LanguageCode/images/bulk`?" + ($getParams -join '&')
-            $description = "Bulk creating $LanguageCode listing images for $ProductId"
+            $description = "Bulk creating $LanguageCode listing images for $ProductId (SubmissionId: $SubmissionId)"
         }
 
         $params = @{
@@ -288,7 +288,7 @@ function Remove-ListingImage
         $params = @{
             "UriFragment" = "products/$ProductId/listings/$LanguageCode/images/$ImageId`?" + ($getParams -join '&')
             "Method" = "Delete"
-            "Description" = "Deleting image $ImageId from the $LanguageCode listing for $ProductId"
+            "Description" = "Deleting image $ImageId from the $LanguageCode listing for $ProductId (SubmissionId: $SubmissionId)"
             "ClientRequestId" = $ClientRequestId
             "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
@@ -403,7 +403,7 @@ function Set-ListingImage
         $params = @{
             "UriFragment" = "products/$ProductId/listings/$LanguageCode/images/$ImageId`?" + ($getParams -join '&')
             "Method" = 'Put'
-            "Description" = "Updating listing image $ImageId for $ProductId"
+            "Description" = "Updating listing image $ImageId for $ProductId (SubmissionId: $SubmissionId)"
             "Body" = $body
             "ClientRequestId" = $ClientRequestId
             "CorrelationId" = $CorrelationId

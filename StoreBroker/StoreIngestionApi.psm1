@@ -1345,7 +1345,7 @@ function Start-SubmissionMonitor
             $report = Get-SubmissionReport @commonParams -ProductId $ProductId -SubmissionId $SubmissionId
             $validation = Get-SubmissionValidation @commonParams -ProductId $ProductId -SubmissionId $SubmissionId
 
-            if (($submission.status -ne $lastSubState) -or ($validation.Count -gt 0))
+            if (($submission.substate -ne $lastSubState) -or ($validation.Count -gt 0))
             {
                 $lastSubState = $submission.substate
 
@@ -1358,6 +1358,7 @@ function Start-SubmissionMonitor
                 }
 
                 $body += "SubmissionId          : $SubmissionId"
+                $body += "Friendly Name         : $($submission.friendlyName)"
                 $body += "Submission State      : $($submission.state)"
                 $body += "Submission State      : $lastSubState"
                 $body += ""

@@ -518,7 +518,7 @@ function Update-ListingVideo
         {
             # Then we proceed with adding/uploading all of the current videos
             Write-Log -Message "Creating [$LanguageCode] listing videos." -Level Verbose
-            foreach ($trailer in $SubmissionData.trailerAssets)
+            foreach ($trailer in $SubmissionData.trailers)
             {
                 $fileName = $trailer.videoFileName
                 $trailerAssets = $trailer.trailerAssets.$LanguageCode

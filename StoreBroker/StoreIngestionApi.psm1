@@ -1344,7 +1344,13 @@ function Start-SubmissionMonitor
                 $body += "Status Details [Certification Reports] : {0}" -f $(if ($submission.statusDetails.certificationReports.count -eq 0) { "<None>" } else { "" })
                 foreach ($report in $submission.statusDetails.certificationReports)
                 {
-                    $body += $(" " * $indentLength) + $(Get-Date -Date $report.date -Format R) + ": $($report.reportUrl)"
+                    $date = ""
+                    if ($null -ne $report.date)
+                    {
+                        $date = $(Get-Date -Date $report.date -Format R)
+                    }
+
+                    $body += $(" " * $indentLength) + $date + ": $($report.reportUrl)"
                 }
 
                 $body += ""

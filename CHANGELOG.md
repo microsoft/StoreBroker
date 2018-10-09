@@ -1,6 +1,19 @@
 # StoreBroker PowerShell Module
 ## Changelog
 
+## [1.19.1](https://github.com/Microsoft/StoreBroker/tree/1.19.1) - (2018/10/09)
+### Fixes:
+
+- Updates the formatting logic for certification reports to account for reports
+  that don't follow the documented object model and are missing dates.  At the
+  moment, formatting the report causes an exception when we attempt to format
+  the `date` property if it has a `$null` value.
+
+More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/132) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/)
+
+Author: [**@HowardWolosky**](https://github.com/HowardWolosky)
+
+------
 ## [1.19.0](https://github.com/Microsoft/StoreBroker/tree/1.19.0) - (2018/08/30)
 ### Fixes:
 

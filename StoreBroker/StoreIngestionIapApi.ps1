@@ -848,7 +848,13 @@ function Format-InAppProductSubmission
         $output += "Status Details [Certification Reports] : {0}" -f $(if ($IapSubmissionData.statusDetails.certificationReports.count -eq 0) { "<None>" } else { "" })
         foreach ($report in $IapSubmissionData.statusDetails.certificationReports)
         {
-            $output += $(" " * $indentLength) + $(Get-Date -Date $report.date -Format R) + ": $($report.reportUrl)"
+            $date = ""
+            if ($null -ne $report.date)
+            {
+                $date = $(Get-Date -Date $report.date -Format R)
+            }
+
+            $output += $(" " * $indentLength) + $date + ": $($report.reportUrl)"
         }
     }
 

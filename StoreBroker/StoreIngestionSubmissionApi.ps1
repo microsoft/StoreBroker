@@ -1319,7 +1319,7 @@ function Update-Submission
     $jsonAppId = $jsonSubmission.appId
     if ([String]::IsNullOrWhiteSpace($jsonProductId))
     {
-        $configPath = Join-Path -Path ([System.Environment]::GetFolderPath('Desktop')) -ChildPath 'newconfig.json'
+        $configPath = '.\newconfig.json'
 
         Write-Log -Level Warning -Message @(
             "The config file used to generate this submission did not have a ProductId defined in it.",

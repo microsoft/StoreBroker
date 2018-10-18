@@ -469,7 +469,7 @@ function Update-ProductProperty
             Add-Member -InputObject $property -Name ([StoreBrokerPropertyProperty]::canCollectKinectData.ToString()) -Value ($SubmissionData.gamingOptions.kinectDataForExternal -eq 'Enabled') -Type NoteProperty -Force
         }
 
-        $null = Set-Property @params -Object $property
+        $null = Set-ProductProperty @params -Object $property
 
         # Record the telemetry for this event.
         $stopwatch.Stop()

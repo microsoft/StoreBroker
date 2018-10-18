@@ -1303,7 +1303,7 @@ function Start-SubmissionMonitor
         'NoStatus' = $NoStatus
     }
 
-    if ($null -ne $PSBoundParameters['AccessToken'])
+    if ($PSBoundParameters.ContainsKey('AccessToken'))
     {
         $commonParams.Add('AccessToken', $AccessToken)
     }

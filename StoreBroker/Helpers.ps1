@@ -1176,3 +1176,151 @@ function Get-JsonBody
 
     return ConvertTo-Json -InputObject (Convert-EnumToString -InputObject $InputObject) -Depth $script:jsonConversionDepth
 }
+
+function Test-PropertyExists
+{
+<#
+    .SYNOPSIS
+        Determines if an object contains a property with a specified name.
+
+    .DESCRIPTION
+        Determines if an object contains a property with a specified name.
+
+        This is essentially using Get-Member to verify that a property exists,
+        but additionally adds a check to ensure that InputObject isn't null.
+
+        The Git repo for this module can be found here: http://aka.ms/StoreBroker
+
+    .PARAMETER InputObject
+        The object to check to see if it has a property named Name.
+
+    .PARAMETER Name
+        The name of the property on InputObject that is being tested for.
+
+    .EXAMPLE
+        Test-PropertyExists -InputObject $listing -Name 'title'
+        
+        Returns $true if $listing is non-null and has a property named 'title'.
+        Returns $false otherwise.
+
+    .NOTES
+        Internal-only helper method.
+#>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param(
+        [Parameter(Mandatory)]
+        [AllowNull()]
+        $InputObject,
+
+        [Parameter(Mandatory)]
+        [String] $Name
+    )
+
+    return (($null -ne $InputObject) -and
+            ($null -ne (Get-Member -InputObject $InputObject -Name $Name -MemberType NoteProperty)))
+}
+
+function Set-ObjectProperty
+{
+<#
+    .SYNOPSIS
+        Reliably sets a property on a PSCustomObject, whether or not the property already exists.
+
+    .DESCRIPTION
+        Reliably sets a property on a PSCustomObject, whether or not the property already exists.
+
+        This is, by and large, a wrapper on top of Add-Member.  It's main benefit is to also
+        wrap the logic to support only setting the value if the source property exists (a requirement
+        if a user is providing a minimal object).
+
+        The Git repo for this module can be found here: http://aka.ms/StoreBroker
+
+    .PARAMETER InputObject
+        The object that has a property named Name that should be getting assigned a new value.
+
+    .PARAMETER Name
+        The name of the property on InputObject whose value should get assigned.
+
+    .PARAMETER Value
+        The value that should be assgined to the Name property on InputObject.
+
+    .PARAMETER SourceObject
+        An object with a property called SourceName that contains the value that is desired
+        to be assigned to the Name property on InputObject.
+
+    .PARAMETER SourceName
+        The property on SourceObject that contains the value that is desired to be assigned
+        to the Name property on InputObject.
+
+    .PARAMETER SkipIfNotDefined
+        Only set the value on InputObject if SourceObject exists and has a property on in
+        called SourceName.  This would commonly be set if being used with a minimal object,
+        and thus only want to update an object if the minimal (source) object contains the
+        property being updated.
+
+    .EXAMPLE
+        Set-ObjectProperty -InputObject $listing -Name 'title' -Value 'Photos'
+        
+        Sets the title of $listing.title = 'Photos', adding the 'title' property to $listing
+        if it didn't already exist.
+
+    .EXAMPLE
+        Set-ObjectProperty -InputObject $listing -Name 'title' -SourceObject $suppliedListing -SourceName 'title'
+        
+        Sets the title of $listing.title = $suppliedListing.title, adding the 'title' property to
+        $listing if it didn't already exist.
+
+    .EXAMPLE
+        Set-ObjectProperty -InputObject $listing -Name 'title' -SourceObject $suppliedListing -SourceName 'title' -SkipIfNotDefined
+        
+        If $suppliedListing is not null, and it has a property called 'title', then it will 
+        set the title of $listing.title = $suppliedListing.title, adding the 'title' property to
+        $listing if it didn't already exist.  Otherwise, it will do nothing.
+
+    .NOTES
+        Internal-only helper method.
+#>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [PSCustomObject] $InputObject,
+
+        [Parameter(Mandatory)]
+        [String] $Name,
+
+        [Parameter(
+            Mandatory,
+            ParameterSetName="DirectValue")]
+        [AllowNull()]
+        [AllowEmptyString()]
+        $Value,
+
+        [Parameter(
+            Mandatory,
+            ParameterSetName="SourceObject")]
+        [AllowNull()]
+        $SourceObject,
+
+        [Parameter(
+            Mandatory,
+            ParameterSetName="SourceObject")]
+        $SourceName,
+
+        [Parameter(ParameterSetName="SourceObject")]
+        [switch] $SkipIfNotDefined
+    )
+
+    if ($PSCmdlet.ParameterSetName -eq 'SourceObject')
+    {
+        if ((-not (Test-PropertyExists -InputObject $SourceObject -Name $SourceName)) -and
+            $SkipIfNotDefined)
+        {
+            return
+        }
+
+        $Value = $SourceObject.$SourceName
+    }
+
+    Add-Member -InputObject $InputObject -Name $Name -Value $Value -MemberType NoteProperty -Force
+}

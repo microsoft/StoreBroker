@@ -501,10 +501,8 @@ function Update-ListingImage
                 $imageSubmission = New-ListingImage @params -FileName (Split-Path -Path $image.fileName -Leaf) -Type $type
                 $null = Set-StoreFile -FilePath (Join-Path -Path $ContentPath -ChildPath $image.fileName) -SasUri $imageSubmission.fileSasUri -NoStatus:$NoStatus
 
-                Add-Member -InputObject $imageSubmission -Name ([StoreBrokerListingImageProperty]::state.ToString()) -Value ([StoreBrokerFileState]::Uploaded.ToString()) -Type NoteProperty -Force
-
-                $imageSubmission.state = [StoreBrokerFileState]::Uploaded.ToString()
-                $imageSubmission.description = $image.description
+                Set-ObjectProperty -InputObject $imageSubmission -Name ([StoreBrokerListingImageProperty]::state) -Value ([StoreBrokerFileState]::Uploaded.ToString())
+                Set-ObjectProperty -InputObject $imageSubmission -Name ([StoreBrokerListingImageProperty]::description) -Value $image.description
 
                 $null = Set-ListingImage @params -Object $imageSubmission
             }

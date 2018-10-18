@@ -318,6 +318,8 @@ function Update-ProductAvailability
         [ValidateSet('Public', 'Private', 'StopSelling')]
         [string] $Visibility,
 
+        [switch] $IsMinimalObject,
+
         [string] $ClientRequestId,
 
         [string] $CorrelationId,
@@ -331,7 +333,7 @@ function Update-ProductAvailability
 
     try
     {
-        $providedSubmissionData = ($null -ne $PSBoundParameters['SubmissionData'])
+        $providedSubmissionData = ($PSBoundParameters.ContainsKey('SubmissionData'))
         if ((-not $providedSubmissionData) -and $UpdateVisibilityFromSubmissionData)
         {
             $message = 'Cannot request -UpdateVisibilityFromSubmissionData without providing SubmissionData.'
@@ -339,7 +341,7 @@ function Update-ProductAvailability
             throw $message
         }
 
-        $providedVisibility = ($null -ne $PSBoundParameters['Visibility'])
+        $providedVisibility = ($PSBoundParameters.ContainsKey('Visibility'))
         if ((-not $providedVisibility) -and (-not $UpdateVisibilityFromSubmissionData))
         {
             Write-Log -Message 'No modification parameters provided.  Nothing to do.' -Level Verbose
@@ -361,20 +363,20 @@ function Update-ProductAvailability
 
         if ($UpdateVisibilityFromSubmissionData)
         {
-            $availability.visibility = $SubmissionData.visibility
+            Set-ObjectProperty -InputObject $availability -Name ([StoreBrokerProductAvailabilityProperty]::visibility) -SourceObject $SubmissionData -SourceName 'visibility' -SkipIfNotDefined:$IsMinimalObject
         }
 
         # If users pass in a different value for any of the publish/values at the commandline,
         # it overrides that which comes from the SubmissionData.
         if ($providedVisibility)
         {
-            $availability.visibility = $Visibility
+            Set-ObjectProperty -InputObject $availability -Name ([StoreBrokerProductAvailabilityProperty]::visibility) -Value $Visibility
         }
 
         # Hidden (API v1) == Private (API v2)
         if ($availability.visibility -eq 'Hidden')
         {
-            $availability.visibility = 'Private'
+            Set-ObjectProperty -InputObject $availability -Name ([StoreBrokerProductAvailabilityProperty]::visibility) -Value 'Private'
         }
 
         $null = Set-ProductAvailability @params -Object $availability

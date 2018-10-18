@@ -138,7 +138,7 @@ function Set-SubmissionRollout
             $hashBody[[StoreBrokerRolloutProperty]::resourceType] = [StoreBrokerResourceType]::Rollout
             $hashBody[[StoreBrokerRolloutProperty]::state] = $State
 
-            if ($null -ne $PSBoundParameters['Percentage'])
+            if ($PSBoundParameters.ContainsKey('Percentage'))
             {
                 $hashBody[[StoreBrokerRolloutProperty]::percentage] = $Percentage
                 $telemetryProperties[[StoreBrokerTelemetryProperty]::Percentage] = $Percentage
@@ -148,7 +148,7 @@ function Set-SubmissionRollout
             # (so for $false, they'd have to pass in -Enabled:$false).
             # Otherwise, there'd be no way to know when the user wants to simply keep the
             # existing value.
-            if ($null -ne $PSBoundParameters['Enabled'])
+            if ($PSBoundParameters.ContainsKey('Enabled'))
             {
                 $hashBody[[StoreBrokerRolloutProperty]::isEnabled] = ($Enabled -eq $true)
                 $telemetryProperties[[StoreBrokerTelemetryProperty]::IsEnabled] = ($Enabled -eq $true)
@@ -158,7 +158,7 @@ function Set-SubmissionRollout
             # (so for $false, they'd have to pass in -SeekEnabled:$false).
             # Otherwise, there'd be no way to know when the user wants to simply keep the
             # existing value.
-            if ($null -ne $PSBoundParameters['SeekEnabled'])
+            if ($PSBoundParameters.ContainsKey('SeekEnabled'))
             {
                 $hashBody[[StoreBrokerRolloutProperty]::isSeekEnabled] = ($SeekEnabled -eq $true)
                 $telemetryProperties[[StoreBrokerTelemetryProperty]::IsSeekEnabled] = ($SeekEnabled -eq $true)
@@ -256,29 +256,30 @@ function Update-SubmissionRollout
         }
 
         $rollout = Get-SubmissionRollout @params
-        $rollout.state = $State
 
-        if ($null -ne $PSBoundParameters['Percentage'])
+        Set-ObjectProperty -InputObject $rollout -Name ([StoreBrokerRolloutProperty]::state) -Value $State
+
+        if ($PSBoundParameters.ContainsKey('Percentage'))
         {
-            $rollout.percentage = $Percentage
+            Set-ObjectProperty -InputObject $rollout -Name ([StoreBrokerRolloutProperty]::percentage) -Value $Percentage
         }
 
         # We only set the value if the user explicitly provided a value for this parameter
         # (so for $false, they'd have to pass in -Enabled:$false).
         # Otherwise, there'd be no way to know when the user wants to simply keep the
         # existing value.
-        if ($null -ne $PSBoundParameters['Enabled'])
+        if ($PSBoundParameters.ContainsKey(['Enabled'))
         {
-            $rollout.isEnabled = ($Enabled -eq $true)
+            Set-ObjectProperty -InputObject $rollout -Name ([StoreBrokerRolloutProperty]::isEnabled) -Value ($Enabled -eq $true)
         }
 
         # We only set the value if the user explicitly provided a value for this parameter
         # (so for $false, they'd have to pass in -SeekEnabled:$false).
         # Otherwise, there'd be no way to know when the user wants to simply keep the
         # existing value.
-        if ($null -ne $PSBoundParameters['SeekEnabled'])
+        if ($PSBoundParameters.ContainsKey('SeekEnabled'))
         {
-            $rollout.isSeekEnabled = ($SeekEnabled -eq $true)
+            Set-ObjectProperty -InputObject $rollout -Name ([StoreBrokerRolloutProperty]::isSeekEnabled) -Value ($SeekEnabled -eq $true)
         }
 
         $null = Set-SubmissionRollout @params -Object $rollout

@@ -543,8 +543,10 @@ function Update-ListingVideo
                     $videoSubmission = New-ListingVideo @videoParams
                     $null = Set-StoreFile -FilePath (Join-Path -Path $ContentPath -ChildPath $fileName) -SasUri $videoSubmission.fileSasUri -NoStatus:$NoStatus
                     $null = Set-StoreFile -FilePath (Join-Path -Path $ContentPath -ChildPath $thumbnailFileName) -SasUri $videoSubmission.thumbnail.fileSasUri -NoStatus:$NoStatus
-                    $videoSubmission.state = [StoreBrokerFileState]::Uploaded.ToString()
-                    $videoSubmission.thumbnail.state = [StoreBrokerFileState]::Uploaded.ToString()
+
+                    Set-ObjectProperty -InputObject $videoSubmission -Name ([StoreBrokerListingVideoProperty]::state) -Value ([StoreBrokerFileState]::Uploaded.ToString())
+                    Set-ObjectProperty -InputObject $videoSubmission.thumbnail -Name ([StoreBrokerListingVideoThumbnailProperty]::state) -Value ([StoreBrokerFileState]::Uploaded.ToString())
+                    
                     $null = Set-ListingVideo @params -Object $videoSubmission
                 }
             }

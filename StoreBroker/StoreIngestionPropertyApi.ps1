@@ -6,6 +6,7 @@ Add-Type -TypeDefinition @"
    {
        canCollectKinectData,
        canInstallOnRemovableMedia,
+       category,
        hasLocalCooperative,
        hasLocalMultiplayer,
        hasThirdPartyAddOn,
@@ -20,8 +21,12 @@ Add-Type -TypeDefinition @"
        localCooperativeMinPlayers,
        localMultiplayerMaxPlayers,
        localMultiplayerMinPlayers,
+       privacyPolicyUri,
        resourceType,
-       revisionToken
+       revisionToken,
+       subcategories,
+       supportContact,
+       websiteUri
    }
 "@
 
@@ -310,6 +315,8 @@ function Update-ProductProperty
 
         [switch] $UpdateGamingOptions,
 
+        [switch] $IsMinimalObject,
+
         [string] $ClientRequestId,
 
         [string] $CorrelationId,
@@ -323,7 +330,7 @@ function Update-ProductProperty
 
     try
     {
-        $providedSubmissionData = ($null -ne $PSBoundParameters['SubmissionData'])
+        $providedSubmissionData = ($PSBoundParameters.ContainsKey('SubmissionData'))
         if ((-not $providedSubmissionData) -and $UpdateCategoryFromSubmissionData)
         {
             $message = 'Cannot request -UpdateCategoryFromSubmissionData without providing SubmissionData.'
@@ -350,19 +357,28 @@ function Update-ProductProperty
 
         $property = Get-ProductProperty @params
 
+        $setObjectPropertyParams = @{
+            'InputObject' = $property
+            'SkipIfNotDefined' = $IsMinimalObject
+        }
+
         if ($UpdateCategoryFromSubmissionData)
         {
-            [System.Collections.ArrayList]$split = $SubmissionData.applicationCategory -split '_'
-            $category = $split[0]
-            $split.RemoveAt(0)
-            $subCategory = $split
-            if ($subCategory.Count -eq 0)
+            if ((Test-PropertyExists -InputObject $SubmissionData -Name 'applicationCategory') -or
+                (-not $IsMinimalObject))
             {
-                $null = $subCategory.Add('NotSet')
-            }
+                [System.Collections.ArrayList]$split = $SubmissionData.applicationCategory -split '_'
+                $category = $split[0]
+                $split.RemoveAt(0)
+                $subCategory = $split
+                if ($subCategory.Count -eq 0)
+                {
+                    $null = $subCategory.Add('NotSet')
+                }
 
-            $property.category = $category
-            $property.subcategories = (ConvertTo-Json -InputObject $subCategory)
+                Set-ObjectProperty @setObjectPropertyParams -Name ([StoreBrokerProductPropertyProperty]::category) -Value $category
+                Set-ObjectProperty @setObjectPropertyParams -Name ([StoreBrokerProductPropertyProperty]::subcategories) -Value (ConvertTo-Json -InputObject $subCategory)
+            }
         }
 
         <#
@@ -414,11 +430,12 @@ function Update-ProductProperty
         {
             # TODO: No equivalent for: $SubmissionData.hardwarePreferences
 
-            Add-Member -InputObject $property -Name ([StoreBrokerPropertyProperty]::isGameDvrEnabled.ToString()) -Value ($SubmissionData.isGameDvrEnabled) -Type NoteProperty -Force
-            Add-Member -InputObject $property -Name ([StoreBrokerPropertyProperty]::canInstallOnRemovableMedia.ToString()) -Value ($SubmissionData.canInstallOnRemovableMedia) -Type NoteProperty -Force
-            Add-Member -InputObject $property -Name ([StoreBrokerPropertyProperty]::isAutomaticBackupAvailable.ToString()) -Value ($SubmissionData.automaticBackupEnabled) -Type NoteProperty -Force
-            Add-Member -InputObject $property -Name ([StoreBrokerPropertyProperty]::isAccessible.ToString()) -Value ($SubmissionData.meetAccessibilityGuidelines) -Type NoteProperty -Force
-            Add-Member -InputObject $property -Name ([StoreBrokerPropertyProperty]::hasThirdPartyAddOn.ToString()) -Value ($SubmissionData.hasExternalInAppProducts) -Type NoteProperty -Force
+            $setObjectPropertyParams['SourceObject'] = $SubmissionData
+            Set-ObjectProperty @setObjectPropertyParams -Name ([StoreBrokerProductPropertyProperty]::isGameDvrEnabled) -SourceName 'isGameDvrEnabled'
+            Set-ObjectProperty @setObjectPropertyParams -Name ([StoreBrokerProductPropertyProperty]::canInstallOnRemovableMedia) -SourceName 'canInstallOnRemovableMedia'
+            Set-ObjectProperty @setObjectPropertyParams -Name ([StoreBrokerProductPropertyProperty]::isAutomaticBackupAvailable) -SourceName 'automaticBackupEnabled'
+            Set-ObjectProperty @setObjectPropertyParams -Name ([StoreBrokerProductPropertyProperty]::isAccessible) -SourceName 'meetAccessibilityGuidelines'
+            Set-ObjectProperty @setObjectPropertyParams -Name ([StoreBrokerProductPropertyProperty]::hasThirdPartyAddOn) -SourceName 'hasExternalInAppProducts'
         }
 
         # TODO: Figure out a better way to identify which listing's information should be used
@@ -431,16 +448,23 @@ function Update-ProductProperty
 
             if ([String]::IsNullOrWhiteSpace($langCode))
             {
-                $message = "Provided SubmissionData does not have any Listing information. Contact info exists within the Listing information."
-                Write-Log -Message $message -Level Error
-                throw $message
+                if (-not $IsMinimalObject)
+                {
+                    $message = "Provided SubmissionData does not have any Listing information. Contact info exists within the Listing information."
+                    Write-Log -Message $message -Level Error
+                    throw $message
+                }
             }
+            else
+            {
+                Write-Log -Message "Using the [$langCode] listing data for updating this product's support contact info." -Level Verbose
+                $listing = $SubmissionData.listings.$langCode.baseListing
 
-            Write-Log -Message "Using the [$langCode] listing data for updating this product's support contact info." -Level Verbose
-            $listing = $SubmissionData.listings.$langCode.baseListing
-            $property.supportContact = $listing.supportContact
-            $property.privacyPolicyUri = $listing.privacyPolicy
-            $property.websiteUri = $listing.websiteUrl
+                $setObjectPropertyParams['SourceObject'] = $listing
+                Set-ObjectProperty @setObjectPropertyParams -Name  ([StoreBrokerProductPropertyProperty]::supportContact) -SourceName 'supportContact'
+                Set-ObjectProperty @setObjectPropertyParams -Name  ([StoreBrokerProductPropertyProperty]::privacyPolicyUri) -SourceName 'privacyPolicy'
+                Set-ObjectProperty @setObjectPropertyParams -Name  ([StoreBrokerProductPropertyProperty]::websiteUri) -SourceName 'websiteUrl'
+            }
         }
 
         if ($UpdateGamingOptions)
@@ -458,18 +482,23 @@ function Update-ProductProperty
             }
 
             #TODO: $SubmissionData.genres is no longer relevant. Is that ok?
-
-            Add-Member -InputObject $property -Name ([StoreBrokerPropertyProperty]::hasLocalMultiplayer.ToString()) -Value ($SubmissionData.gamingOptions.isLocalMultiplayer) -Type NoteProperty -Force
-            Add-Member -InputObject $property -Name ([StoreBrokerPropertyProperty]::hasLocalCooperative.ToString()) -Value ($SubmissionData.gamingOptions.isLocalCooperative) -Type NoteProperty -Force
-            Add-Member -InputObject $property -Name ([StoreBrokerPropertyProperty]::hasOnlineMultiplayer.ToString()) -Value ($SubmissionData.gamingOptions.isOnlineMultiplayer) -Type NoteProperty -Force
-            Add-Member -InputObject $property -Name ([StoreBrokerPropertyProperty]::hasOnlineCooperative.ToString()) -Value ($SubmissionData.gamingOptions.isOnlineCooperative) -Type NoteProperty -Force
-            Add-Member -InputObject $property -Name ([StoreBrokerPropertyProperty]::localMultiplayerMinPlayers.ToString()) -Value ($SubmissionData.gamingOptions.localMultiplayerMinPlayers) -Type NoteProperty -Force
-            Add-Member -InputObject $property -Name ([StoreBrokerPropertyProperty]::localMultiplayerMaxPlayers.ToString()) -Value ($SubmissionData.gamingOptions.localMultiplayerMaxPlayers) -Type NoteProperty -Force
-            Add-Member -InputObject $property -Name ([StoreBrokerPropertyProperty]::localCooperativeMinPlayers.ToString()) -Value ($SubmissionData.gamingOptions.localCooperativeMinPlayers) -Type NoteProperty -Force
-            Add-Member -InputObject $property -Name ([StoreBrokerPropertyProperty]::localCooperativeMaxPlayers.ToString()) -Value ($SubmissionData.gamingOptions.localCooperativeMaxPlayers) -Type NoteProperty -Force
-            Add-Member -InputObject $property -Name ([StoreBrokerPropertyProperty]::isBroadcastingEnabled.ToString()) -Value ($SubmissionData.gamingOptions.isBroadcastingPrivilegeGranted) -Type NoteProperty -Force
-            Add-Member -InputObject $property -Name ([StoreBrokerPropertyProperty]::isCrossPlayEnabled.ToString()) -Value ($SubmissionData.gamingOptions.isCrossPlayEnabled) -Type NoteProperty -Force
-            Add-Member -InputObject $property -Name ([StoreBrokerPropertyProperty]::canCollectKinectData.ToString()) -Value ($SubmissionData.gamingOptions.kinectDataForExternal -eq 'Enabled') -Type NoteProperty -Force
+            $setObjectPropertyParams['SourceObject'] = $SubmissionData.gamingOptions
+            Set-ObjectProperty @setObjectPropertyParams -Name ([StoreBrokerProductPropertyProperty]::hasLocalMultiplayer) -SourceName 'isLocalMultiplayer'
+            Set-ObjectProperty @setObjectPropertyParams -Name ([StoreBrokerProductPropertyProperty]::hasLocalCooperative) -SourceName 'isLocalCooperative'
+            Set-ObjectProperty @setObjectPropertyParams -Name ([StoreBrokerProductPropertyProperty]::hasOnlineMultiplayer) -SourceName 'isOnlineMultiplayer'
+            Set-ObjectProperty @setObjectPropertyParams -Name ([StoreBrokerProductPropertyProperty]::hasOnlineCooperative) -SourceName 'isOnlineCooperative'
+            Set-ObjectProperty @setObjectPropertyParams -Name ([StoreBrokerProductPropertyProperty]::localMultiplayerMinPlayers) -SourceName 'localMultiplayerMinPlayers'
+            Set-ObjectProperty @setObjectPropertyParams -Name ([StoreBrokerProductPropertyProperty]::localMultiplayerMaxPlayers) -SourceName 'localMultiplayerMaxPlayers'
+            Set-ObjectProperty @setObjectPropertyParams -Name ([StoreBrokerProductPropertyProperty]::localCooperativeMinPlayers) -SourceName 'localCooperativeMinPlayers'
+            Set-ObjectProperty @setObjectPropertyParams -Name ([StoreBrokerProductPropertyProperty]::localCooperativeMaxPlayers) -SourceName 'localCooperativeMaxPlayers'
+            Set-ObjectProperty @setObjectPropertyParams -Name ([StoreBrokerProductPropertyProperty]::isBroadcastingEnabled) -SourceName 'isBroadcastingPrivilegeGranted'
+            Set-ObjectProperty @setObjectPropertyParams -Name ([StoreBrokerProductPropertyProperty]::isCrossPlayEnabled) -SourceName 'isCrossPlayEnabled'
+            $canCollectKinectData = ($SubmissionData.gamingOptions.kinectDataForExternal -eq 'Enabled')
+            if ((Test-PropertyExists -InputObject $SubmissionData.gamingOptions -Name 'kinectDataForExternal') -or
+                (-not $IsMinimalObject))
+            {
+                Set-ObjectProperty -InputObject $property -Name ([StoreBrokerProductPropertyProperty]::canCollectKinectData) -Value $canCollectKinectData
+            }
         }
 
         $null = Set-ProductProperty @params -Object $property

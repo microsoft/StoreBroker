@@ -170,7 +170,7 @@ function New-ProductPackageConfiguration
             $hashBody = @{}
             $hashBody[[StoreBrokerPackageConfigurationProperty]::resourceType] = [StoreBrokerResourceType]::PackageConfiguration
 
-            if (($null -ne $PSBoundParameters['IsMandatoryUpdate']) -or ($null -ne $PSBoundParameters['MandatoryUpdateEffectiveDate']))
+            if (($PSBoundParameters.ContainsKey('IsMandatoryUpdate')) -or ($PSBoundParameters.ContainsKey('MandatoryUpdateEffectiveDate')))
             {
                 $hashBody[[StoreBrokerPackageConfigurationProperty]::mandatoryUpdate] = @{}
 
@@ -178,13 +178,13 @@ function New-ProductPackageConfiguration
                 # (so for $false, they'd have to pass in -IsMandatoryUpdate:$false).
                 # Otherwise, there'd be no way to know when the user wants to simply keep the
                 # existing value.
-                if ($null -ne $PSBoundParameters['IsMandatoryUpdate'])
+                if ($PSBoundParameters.ContainsKey('IsMandatoryUpdate'))
                 {
                     $hashBody[[StoreBrokerPackageConfigurationProperty]::mandatoryUpdate][[StoreBrokerPackageConfigurationMandatoryUpdateProperty]::isSpecifiedByDeveloper] = ($IsMandatoryUpdate -eq $true)
                     $telemetryProperties[[StoreBrokerTelemetryProperty]::IsMandatoryUpdate] = ($IsMandatoryUpdate -eq $true)
                 }
 
-                if ($null -ne $PSBoundParameters['MandatoryUpdateEffectiveDate'])
+                if ($PSBoundParameters.ContainsKey('MandatoryUpdateEffectiveDate'))
                 {
                     if (-not $IsMandatoryUpdate)
                     {
@@ -308,7 +308,7 @@ function Set-ProductPackageConfiguration
             $hashBody[[StoreBrokerPackageConfigurationProperty]::resourceType] = [StoreBrokerResourceType]::PackageConfiguration
             $hashBody[[StoreBrokerPackageConfigurationProperty]::revisionToken] = $RevisionToken
 
-            if (($null -ne $PSBoundParameters['IsMandatoryUpdate']) -or ($null -ne $PSBoundParameters['MandatoryUpdateEffectiveDate']))
+            if (($PSBoundParameters.ContainsKey('IsMandatoryUpdate')) -or ($PSBoundParameters.ContainsKey('MandatoryUpdateEffectiveDate')))
             {
                 $hashBody[[StoreBrokerPackageConfigurationProperty]::mandatoryUpdate] = @{}
 
@@ -316,13 +316,13 @@ function Set-ProductPackageConfiguration
                 # (so for $false, they'd have to pass in -IsMandatoryUpdate:$false).
                 # Otherwise, there'd be no way to know when the user wants to simply keep the
                 # existing value.
-                if ($null -ne $PSBoundParameters['IsMandatoryUpdate'])
+                if ($PSBoundParameters.ContainsKey('IsMandatoryUpdate'))
                 {
                     $hashBody[[StoreBrokerPackageConfigurationProperty]::mandatoryUpdate][[StoreBrokerPackageConfigurationMandatoryUpdateProperty]::isSpecifiedByDeveloper] = ($IsMandatoryUpdate -eq $true)
                     $telemetryProperties[[StoreBrokerTelemetryProperty]::IsMandatoryUpdate] = ($IsMandatoryUpdate -eq $true)
                 }
 
-                if ($null -ne $PSBoundParameters['MandatoryUpdateEffectiveDate'])
+                if ($PSBoundParameters.ContainsKey('MandatoryUpdateEffectiveDate'))
                 {
                     if (-not $IsMandatoryUpdate)
                     {
@@ -399,17 +399,17 @@ function Update-ProductPackageConfiguration
         $configuration = Get-ProductPackageConfiguration @params
 
         $mandatoryUpdate = @{}
-        if ($null -ne $PSBoundParameters['IsMandatoryUpdate'])
+        if ($PSBoundParameters.ContainsKey('IsMandatoryUpdate'))
         {
             $mandatoryUpdate[[StoreBrokerPackageConfigurationMandatoryUpdateProperty]::isSpecifiedByDeveloper] = ($IsMandatoryUpdate -eq $true)
         }
 
-        if ($null -ne $PSBoundParameters['MandatoryUpdateEffectiveDate'])
+        if ($PSBoundParameters.ContainsKey('MandatoryUpdateEffectiveDate'))
         {
             $mandatoryUpdate[[StoreBrokerPackageConfigurationMandatoryUpdateProperty]::effectiveDatetime] = $MandatoryUpdateEffectiveDate.ToUniversalTime().ToString('o')
         }
 
-        Add-Member -InputObject $configuration -Name ([StoreBrokerPackageConfigurationProperty]::mandatoryUpdate.ToString()) -Value ([PSCustomObject]$mandatoryUpdate) -Type NoteProperty -Force
+        Set-ObjectProperty -InputObject $configuration -Name ([StoreBrokerPackageConfigurationProperty]::mandatoryUpdate) -Value ([PSCustomObject]$mandatoryUpdate)
 
         $null = Set-ProductPackageConfiguration @params -Object $configuration
 

@@ -107,6 +107,7 @@
         'New-ProductPackage',
         'Set-ProductPackage',
         'Update-ProductPackage',
+        'Wait-ProductPackageProcessed',
 
         'Get-ProductPackageConfiguration',
         'New-ProductPackageConfiguration',

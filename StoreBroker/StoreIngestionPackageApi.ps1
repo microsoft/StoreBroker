@@ -99,6 +99,189 @@ function Get-ProductPackage
     }
 }
 
+function Wait-ProductPackageProcessed
+{
+<#
+    .SYNOPSIS
+        A helper method for making it simple to ensure that all specifeid packages
+        in a submission have been successfully processed.
+
+    .DESCRIPTION
+        Before a submission can be submitted, the submission must pass validation
+        (which can be checked via Get-SubmissionValidation).  However, Submission
+        Validation will return back inaccurate results for packages unless they
+        have all entered the Processed state.
+
+        This function can be used to verify that either all (or a subset of)
+        packages for a submission have reached the Processed state.
+
+        The Git repo for this module can be found here: http://aka.ms/StoreBroker
+
+    .PARAMETER ProductId
+        The ID of the product that the packages are assigned to.
+
+    .PARAMETER SubmissionId
+        The submission of the Product that the packages are assigned to.
+
+    .PARAMETER PackageId
+        The list of packages in SubmissionId to check.  If no PackageId's are specified,
+        all packages assigned to the specified submission will be checked.
+
+    .PARAMETER RetryAfter
+        The number of seconds to wait before checking to see if a package's status has changed.
+
+    .PARAMETER FeatureGroupId
+        The Azure FeatureGroup that the packages are associated with.  Only relevant for Azure
+        clients.
+
+    .PARAMETER FailOnFirstError
+        By default, this function will wait until all packages have either entered a final
+        state of success ("Processed") or failure ("ProcessFailed").  If specified, as soon
+        as it has been detected that a package has entered the "ProcessFailed" state, the
+        function will immediately fail.
+
+    .PARAMETER ClientRequestId
+        An optional identifier that should be sent along to the Store to help with identifying
+        this request during post-mortem debugging.
+
+    .PARAMETER CorrelationId
+        An optional identifier that should be sent along to the Store to help with identifying
+        this request during post-mortem debugging.  This is typically supplied when trying to
+        associate a group of API requests with a single end-goal.
+
+    .PARAMETER AccessToken
+        If provided, this will be used as the AccessToken for authentication with the
+        REST Api as opposed to requesting a new one.
+
+    .PARAMETER NoStatus
+        If this switch is specified, long-running commands will run on the main thread
+        with no commandline status update.  When not specified, those commands run in
+        the background, enabling the command prompt to provide status information.
+
+    .EXAMPLE
+        Wait-ProductPackageProcessed -ProductId 00012345678901234567 -SubmissionId 1234567890123456789
+
+        Waits until all packages currently attached to the specified submission have either
+        completed or failed Processing.  If any failed processing, will throw an exception once
+        all have been checked.
+
+    .EXAMPLE
+        Wait-ProductPackageProcessed -ProductId 00012345678901234567 -SubmissionId 1234567890123456789 -FailOnFirstError
+
+        Waits until all packages currently attached to the specified submission have finished
+        processing.  If any package checked has failed processing, this will immediately throw an
+        exception without checking the status of any other packages.
+
+    .EXAMPLE
+        Wait-ProductPackageProcessed -ProductId 00012345678901234567 -SubmissionId 1234567890123456789 -ProductId @('pcs-ws-0123456789012345678-9012345678901234567')
+
+        Only checks the specified PackageId for the indicated submission, even if that submission
+        has additional packages.  Will return back as soon as the specified package has completed
+        processing, or will throw an exception if it has failed processing.
+#>
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(Mandatory)]
+        [ValidateScript({if ($_.Length -le 12) { throw "It looks like you supplied an AppId instead of a ProductId.  Use Get-Product with -AppId to find the ProductId for this AppId." } else { $true }})]
+        [string] $ProductId,
+
+        [Parameter(Mandatory)]
+        [string] $SubmissionId,
+
+        [string[]] $PackageId,
+
+        [ValidateRange(0, 3600)]
+        [int] $RetryAfter = 180,
+
+        [string] $FeatureGroupId,
+
+        [switch] $FailOnFirstError,
+
+        [string] $ClientRequestId,
+
+        [string] $CorrelationId,
+
+        [string] $AccessToken,
+
+        [switch] $NoStatus
+    )
+
+    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
+
+    $CorrelationId = Get-CorrelationId -CorrelationId $CorrelationId -Identifier 'Wait-ProductPackageProcessed'
+
+    $telemetryProperties = @{
+        [StoreBrokerTelemetryProperty]::ProductId = $ProductId
+        [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
+        [StoreBrokerTelemetryProperty]::PackageId = $PackageId -join ', '
+        [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
+        [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+    }
+
+    Set-TelemetryEvent -EventName Wait-ProductPackageProcessed -Properties $telemetryProperties
+
+    $commonParams = @{
+        'ProductId' = $ProductId
+        'SubmissionId' = $SubmissionId
+        'FeatureGroupId' = $FeatureGroupId
+        'ClientRequestId' = $ClientRequestId
+        'CorrelationId' = $CorrelationId
+        'AccessToken' = $AccessToken
+        'NoStatus' = $NoStatus
+    }
+
+    if ($PackageId.Count -eq 0)
+    {
+        $packages = Get-ProductPackage @commonParams
+        $PackageId = $packages |
+            Where-Object { $_.state -ne [StoreBrokerFileState]::Processed } |
+            Select-Object -ExpandProperty id
+    }
+
+    $processFailed = @()
+    $i = 0
+    while ($i -lt $PackageId.Count)
+    {
+        $id = $PackageId[$i]
+        $package = Get-ProductPackage @commonParams -PackageId $id
+
+        if ($package.state -eq [StoreBrokerFileState]::Processed)
+        {
+            $i++
+            continue
+        }
+
+        if ($package.state -eq [StoreBrokerFileState]::ProcessFailed)
+        {
+            $processFailed += $id
+
+            if ($FailOnFirstError)
+            {
+                break
+            }
+
+            $i++
+            continue
+        }
+
+        Write-Log -Message "Package [$id] current state is [$($package.state)].  Waiting $RetryAfter seconds before checking again."
+
+        if ($package.state -eq [StoreBrokerFileState]::PendingUpload)
+        {
+            Write-Log -Message "The Store will not start to process the package until its state is set to $([StoreBrokerFileState]::Uploaded).  Until then, this function will keep checking this package's status indefinitely." -Level Warning
+        }
+
+        Start-Sleep -Seconds $RetryAfter
+    }
+
+    if ($processFailed.Count -gt 0)
+    {
+        $output = "One or more packages are in the ProcessFailed state: $($processFailed -join ',')"
+        Write-Log -Message $output -Level Error
+        throw $output
+    }
+}
+
 function New-ProductPackage
 {
     [CmdletBinding(

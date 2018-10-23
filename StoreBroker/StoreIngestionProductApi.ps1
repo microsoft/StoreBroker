@@ -21,7 +21,7 @@ function Get-Product
 
         [Parameter(ParameterSetName="Search")]
         [Alias('ExternalId')]
-        [ValidateScript({if ($_.Length -eq 12) { $true } else { throw "It looks like you supplied an ProductId instead of an AppId." }})]
+        [ValidateScript({if ($_.Length -eq 12) { $true } else { throw "It looks like you supplied a ProductId instead of an AppId." }})]
         [string] $AppId,
 
         [Parameter(ParameterSetName="Search")]

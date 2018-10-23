@@ -364,8 +364,8 @@ function Update-ProductProperty
 
         if ($UpdateCategoryFromSubmissionData)
         {
-            if ((Test-PropertyExists -InputObject $SubmissionData -Name 'applicationCategory') -or
-                (-not $IsMinimalObject))
+            if ((-not $IsMinimalObject) -or
+                (Test-PropertyExists -InputObject $SubmissionData -Name 'applicationCategory'))
             {
                 [System.Collections.ArrayList]$split = $SubmissionData.applicationCategory -split '_'
                 $category = $split[0]
@@ -494,8 +494,8 @@ function Update-ProductProperty
             Set-ObjectProperty @setObjectPropertyParams -Name ([StoreBrokerProductPropertyProperty]::isBroadcastingEnabled) -SourceName 'isBroadcastingPrivilegeGranted'
             Set-ObjectProperty @setObjectPropertyParams -Name ([StoreBrokerProductPropertyProperty]::isCrossPlayEnabled) -SourceName 'isCrossPlayEnabled'
             $canCollectKinectData = ($SubmissionData.gamingOptions.kinectDataForExternal -eq 'Enabled')
-            if ((Test-PropertyExists -InputObject $SubmissionData.gamingOptions -Name 'kinectDataForExternal') -or
-                (-not $IsMinimalObject))
+            if ((-not $IsMinimalObject) -or
+                (Test-PropertyExists -InputObject $SubmissionData.gamingOptions -Name 'kinectDataForExternal'))
             {
                 Set-ObjectProperty -InputObject $property -Name ([StoreBrokerProductPropertyProperty]::canCollectKinectData) -Value $canCollectKinectData
             }

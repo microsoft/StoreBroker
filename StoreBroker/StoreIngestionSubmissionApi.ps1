@@ -1128,8 +1128,8 @@ function Update-SubmissionDetail
         if ($UpdatePublishModeAndDateFromSubmissionData)
         {
             Set-ObjectProperty @setObjectPropertyParams -Name ([StoreBrokerSubmissionProperty]::releaseTimeInUtc) -SourceName 'targetPublishDate'
-            if ((Test-PropertyExists -InputObject $SubmissionData -Name 'targetPublishMode') -or
-                (-not $IsMinimalObject))
+            if ((-not $IsMinimalObject) -or
+                (Test-PropertyExists -InputObject $SubmissionData -Name 'targetPublishMode'))
             {
                 Set-ObjectProperty @setObjectPropertyParams -Name ([StoreBrokerProductPropertyProperty]::isManualPublish) -Value ($SubmissionData.targetPublishMode -eq $script:keywordManual)
             }

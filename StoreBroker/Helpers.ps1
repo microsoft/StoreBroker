@@ -1218,7 +1218,7 @@ function Test-PropertyExists
     )
 
     return (($null -ne $InputObject) -and
-            ($null -ne (Get-Member -InputObject $InputObject -Name $Name -MemberType NoteProperty)))
+            ($null -ne (Get-Member -InputObject $InputObject -Name $Name -MemberType Properties)))
 }
 
 function Set-ObjectProperty
@@ -1313,8 +1313,8 @@ function Set-ObjectProperty
 
     if ($PSCmdlet.ParameterSetName -eq 'SourceObject')
     {
-        if ((-not (Test-PropertyExists -InputObject $SourceObject -Name $SourceName)) -and
-            $SkipIfNotDefined)
+        if ($SkipIfNotDefined -and
+            (-not (Test-PropertyExists -InputObject $SourceObject -Name $SourceName)))
         {
             return
         }

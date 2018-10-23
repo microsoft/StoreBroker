@@ -1796,7 +1796,10 @@ function Invoke-SBRestMethod
 
     # Telemetry-related
     $stopwatch = New-Object -TypeName System.Diagnostics.Stopwatch
-    $localTelemetryProperties = @{ [StoreBrokerTelemetryProperty]::UriFragment = $UriFragment }
+    $localTelemetryProperties = @{
+        [StoreBrokerTelemetryProperty]::UriFragment = $UriFragment
+        [StoreBrokerTelemetryProperty]::WaitForCompletion = ($WaitForCompletion -eq $true)
+    }
     $TelemetryProperties.Keys | ForEach-Object { $localTelemetryProperties[$_] = $TelemetryProperties[$_] }
     $errorBucket = $TelemetryExceptionBucket
     if ([String]::IsNullOrEmpty($errorBucket))

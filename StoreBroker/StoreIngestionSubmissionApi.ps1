@@ -118,6 +118,7 @@ function Get-Submission
             [StoreBrokerTelemetryProperty]::GetDetail = $Detail
             [StoreBrokerTelemetryProperty]::GetReports = $Reports
             [StoreBrokerTelemetryProperty]::GetValidation = $Validation
+            [StoreBrokerTelemetryProperty]::WaitForCompletion = ($WaitForCompletion -eq $true)
             [StoreBrokerTelemetryProperty]::SingleQuery = $singleQuery
             [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
             [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
@@ -232,8 +233,6 @@ function New-Submission
             Position = 1)]
         [string] $SandboxId,
 
-        [int] $WaitSeconds = -1, # 0 means no wait.  We'll use -1 to indicate not to send it, which causes it to use the server side default of 60 seconds.
-
         [ValidateSet('Live', 'Preview')]  # Preview is currently limited to Azure
         [string] $Scope = 'Live',
 
@@ -264,7 +263,7 @@ function New-Submission
             [StoreBrokerTelemetryProperty]::FlightId = $FlightId
             [StoreBrokerTelemetryProperty]::SandboxId = $SandboxId
             [StoreBrokerTelemetryProperty]::Scope = $Scope
-            [StoreBrokerTelemetryProperty]::WaitSeconds = $WaitSeconds
+            [StoreBrokerTelemetryProperty]::WaitUntilReady = ($WaitUntilReady -eq $true)
             [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
             [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
         }
@@ -329,12 +328,6 @@ function New-Submission
             }
         }
 
-        $getParams = @()
-        if ($WaitSeconds -ge 0)
-        {
-            $getParams += "waitSeconds=$WaitSeconds"
-        }
-
         # Convert the input into a Json body.
         $hashBody = @{}
         $hashBody[[StoreBrokerSubmissionProperty]::resourceType] = [StoreBrokerResourceType]::Submission
@@ -364,7 +357,7 @@ function New-Submission
         Write-Log -Message "Body: $body" -Level Verbose
 
         $params = @{
-            "UriFragment" = "products/$ProductId/submissions`?" + ($getParams -join '&')
+            "UriFragment" = "products/$ProductId/submissions"
             "Method" = 'Post'
             "Description" = "Creating a new submission for product: $ProductId"
             "Body" = $body
@@ -1091,6 +1084,7 @@ function Get-SubmissionValidation
         $telemetryProperties = @{
             [StoreBrokerTelemetryProperty]::ProductId = $ProductId
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
+            [StoreBrokerTelemetryProperty]::WaitForCompletion = ($WaitForCompletion -eq $true)
             [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
             [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
         }

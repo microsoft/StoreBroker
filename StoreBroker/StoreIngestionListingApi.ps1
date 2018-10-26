@@ -647,6 +647,8 @@ function Update-Listing
     {
         $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
+        $ContentPath = Resolve-UnverifiedPath -Path $ContentPath
+
         $commonParams = @{
             'ProductId' = $ProductId
             'SubmissionId' = $SubmissionId

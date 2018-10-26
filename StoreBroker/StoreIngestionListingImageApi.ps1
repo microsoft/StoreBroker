@@ -466,6 +466,8 @@ function Update-ListingImage
     {
         $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
+        $ContentPath = Resolve-UnverifiedPath -Path $ContentPath
+
         $params = @{
             'ProductId' = $ProductId
             'SubmissionId' = $SubmissionId

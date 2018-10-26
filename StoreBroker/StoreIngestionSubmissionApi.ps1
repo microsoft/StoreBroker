@@ -1207,6 +1207,17 @@ function Update-Submission
     Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
+    # Make sure that we're working with full paths (since we do use non-native PowerShell commands)
+    $pathsToResolve = @('JsonPath', 'ZipPath', 'ContentPath')
+    foreach ($path in $pathsToResolve)
+    {
+        if ($PSBoundParameters.ContainsKey($path))
+        {
+            $pathVar = Get-Variable -Name $path
+            $pathVar.Value = Resolve-UnverifiedPath -Path $pathVar.Value
+        }
+   }
+
     # Check for specified options that are invalid for Flight submission updates
     if (-not [String]::IsNullOrWhiteSpace($FlightId))
     {

@@ -495,6 +495,8 @@ function Update-ListingVideo
     {
         $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
+        $ContentPath = Resolve-UnverifiedPath -Path $ContentPath
+
         $params = @{
             'ProductId' = $ProductId
             'SubmissionId' = $SubmissionId

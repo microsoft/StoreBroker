@@ -595,6 +595,8 @@ function Update-ProductPackage
     {
         $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
+        $ContentPath = Resolve-UnverifiedPath -Path $ContentPath
+
         if (($AddPackages -or $ReplacePackages -or $UpdatePackages) -and ($SubmissionData.applicationPackages.Count -eq 0))
         {
             $output = @()

@@ -40,6 +40,7 @@ Add-Type -TypeDefinition @"
 Add-Type -TypeDefinition @"
    public enum StoreBrokerSubmissionSubState
    {
+       Cancelled,
        InDraft,
        Submitted,
        Failed,
@@ -294,8 +295,9 @@ function New-Submission
                     throw $message
                 }
 
-                # We can't delete a submission that isn't in the InDraft substate.  We'd have to cancel it first.
-                if ($inProgressSub.substate -ne [StoreBrokerSubmissionSubState]::InDraft)
+                # We can't delete a submission that isn't in the InDraft substate.  We'd have to cancel it first,
+                # unless it has previously been cancelled.
+                if ($inProgressSub.substate -notin @([StoreBrokerSubmissionSubState]::Cancelled, [StoreBrokerSubmissionSubState]::InDraft))
                 {
                     $null = Stop-Submission @commonParams -SubmissionId $inProgressSub.id
                 }

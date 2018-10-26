@@ -379,7 +379,7 @@ function Update-Flight
             'NoStatus' = $NoStatus
         }
 
-        $global:flight = Get-Flight @params
+        $flight = Get-Flight @params
 
         if ($null -ne $PSBoundParameters['Name'])
         {

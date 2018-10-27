@@ -1072,9 +1072,35 @@ function Get-HttpWebResponseContent
 
 function Convert-EnumToString
 {
+<#
+    .SYNOPSIS
+        Converts all keys and values in arrays and hashtables that are enum values
+        within InputObject into strings.
+
+    .DESCRIPTION
+        Converts all keys and values in arrays and hashtables that are enum values
+        within InputObject into strings.
+
+        The Git repo for this module can be found here: http://aka.ms/StoreBroker
+
+    .PARAMETER InputObject
+        The object that potentially has enum values to convert to string.
+
+    .EXAMPLE
+        @{[StoreBrokerSubmissionProperty]::isManualPublish = $true; 'array' = @(1, 2, 3, [StoreBrokerSubmissionState]::Published)} | Convert-EnumToString
+
+        Returns @{ "isManualPublish":  true; 'array': @(1, 2, 3, 'Published') }
+
+    .NOTES
+        While new arrays and hashtables are created to hold the converted values, the original
+        object(s) will be used within the returned object if they are neither arrays,
+        hashtables or enum values.
+#>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)]
+        [Parameter(
+            ValueFromPipeline,
+            Mandatory)]
         $InputObject
     )
 
@@ -1118,10 +1144,33 @@ function Convert-EnumToString
 
 function Get-JsonBody
 {
+<#
+    .SYNOPSIS
+        A wrapper around ConvertTo-Json that ensures any Enum value is converted to
+        a string before the JSON conversion occurs.
+
+    .DESCRIPTION
+        A wrapper around ConvertTo-Json that ensures any Enum value is converted to
+        a string before the JSON conversion occurs.
+
+        This exists primarily because hashtable keys must be strings for serialization purposes.
+
+        The Git repo for this module can be found here: http://aka.ms/StoreBroker
+
+    .PARAMETER InputObject
+        The object that is to be converted into JSON.
+
+    .EXAMPLE
+        @{[StoreBrokerSubmissionProperty]::isManualPublish = $true} | Get-JsonBody
+
+        Returns { "isManualPublish":  true }
+#>
     [CmdletBinding()]
     [OutputType([String])]
     param(
-        [Parameter(Mandatory)]
+        [Parameter(
+            ValueFromPipeline,
+            Mandatory)]
         $InputObject
     )
 

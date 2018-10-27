@@ -26,7 +26,7 @@ Add-Type -TypeDefinition @"
       FlightId,
       Force,
       GetDetail,
-      GetReports,
+      GetReport,
       GetValidation,
       HasAudience,
       HResult,

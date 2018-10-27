@@ -1,4 +1,7 @@
-﻿# Need to split-path $MyInvocation.MyCommand.Path twice and then add StoreBroker folder
+﻿# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
+# Need to split-path $MyInvocation.MyCommand.Path twice and then add StoreBroker folder
 $sbModulePath = Join-Path ($MyInvocation.MyCommand.Path | Split-Path -Parent | Split-Path -Parent) "StoreBroker"
 
 Import-Module $sbModulePath

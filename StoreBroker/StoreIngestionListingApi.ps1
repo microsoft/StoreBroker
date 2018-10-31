@@ -4,14 +4,14 @@
 Add-Type -TypeDefinition @"
    public enum StoreBrokerListingProperty
    {
+       additionalMinimumHardware,
+       additionalRecommendedHardware,
        description,
        devStudio,
        features,
        keywords,
        languageCode,
        licenseTerm,
-       minimumHardware,
-       recommendedHardware,
        releaseNotes,
        resourceType,
        revisionToken,
@@ -260,12 +260,12 @@ function New-Listing
 
             if ($null -ne $MinimumHardware)
             {
-                $hashBody[[StoreBrokerListingProperty]::minimumHardware] = @($MinimumHardware)
+                $hashBody[[StoreBrokerListingProperty]::additionalMinimumHardware] = @($MinimumHardware)
             }
 
             if ($null -ne $RecommendedHardware)
             {
-                $hashBody[[StoreBrokerListingProperty]::recommendedHardware] = @($RecommendedHardware)
+                $hashBody[[StoreBrokerListingProperty]::additionalRecommendedHardware] = @($RecommendedHardware)
             }
 
             if (-not [String]::IsNullOrWhiteSpace($DevStudio))
@@ -554,12 +554,12 @@ function Set-Listing
 
             if ($null -ne $MinimumHardware)
             {
-                $hashBody[[StoreBrokerListingProperty]::minimumHardware] = @($MinimumHardware)
+                $hashBody[[StoreBrokerListingProperty]::additionalMinimumHardware] = @($MinimumHardware)
             }
 
             if ($null -ne $RecommendedHardware)
             {
-                $hashBody[[StoreBrokerListingProperty]::recommendedHardware] = @($RecommendedHardware)
+                $hashBody[[StoreBrokerListingProperty]::additionalRecommendedHardware] = @($RecommendedHardware)
             }
 
             if ($null -ne $DevStudio)
@@ -699,7 +699,7 @@ function Update-Listing
                     'SourceObject' = $suppliedListing
                     'SkipIfNotDefined' = $IsMinimalObject
                 }
-        
+
                 # Updating the existing Listing submission with the user's supplied content
                 Set-ObjectProperty @setObjectPropertyParams -Name ([StoreBrokerListingProperty]::shortTitle) -SourceName 'shortTitle'
                 Set-ObjectProperty @setObjectPropertyParams -Name ([StoreBrokerListingProperty]::voiceTitle) -SourceName 'voiceTitle'
@@ -708,7 +708,8 @@ function Update-Listing
                 Set-ObjectProperty @setObjectPropertyParams -Name ([StoreBrokerListingProperty]::trademark) -SourceName 'copyrightAndTrademarkInfo'
                 Set-ObjectProperty @setObjectPropertyParams -Name ([StoreBrokerListingProperty]::licenseTerm) -SourceName 'licenseTerms'
                 Set-ObjectProperty @setObjectPropertyParams -Name ([StoreBrokerListingProperty]::features) -SourceName 'features'
-                Set-ObjectProperty @setObjectPropertyParams -Name ([StoreBrokerListingProperty]::recommendedHardware) -SourceName 'minimumHardware'
+                Set-ObjectProperty @setObjectPropertyParams -Name ([StoreBrokerListingProperty]::additionalMinimumHardware) -SourceName 'minimumHardware'
+                Set-ObjectProperty @setObjectPropertyParams -Name ([StoreBrokerListingProperty]::additionalRecommendedHardware) -SourceName 'recommendedHardware'
                 Set-ObjectProperty @setObjectPropertyParams -Name ([StoreBrokerListingProperty]::devStudio) -SourceName 'devStudio'
                 Set-ObjectProperty @setObjectPropertyParams -Name ([StoreBrokerListingProperty]::title) -SourceName 'title'
                 Set-ObjectProperty @setObjectPropertyParams -Name ([StoreBrokerListingProperty]::description) -SourceName 'description'
@@ -725,7 +726,7 @@ function Update-Listing
                 $hasAlternateIcons = (($suppliedListing.images |
                     Where-Object { $_.imageType -in ('Icon', 'Icon150x150', 'Icon71x71') }).Count -gt 0)
 
-                if ((Test-PropertyExists -InputObject $suppliedListing -Name 'images') -or 
+                if ((Test-PropertyExists -InputObject $suppliedListing -Name 'images') -or
                     (-not $IsMinimalObject))
                 {
                     Set-ObjectProperty -InputObject $listing -Name ([StoreBrokerListingProperty]::shouldOverridePackageLogos) -Value $hasAlternateIcons
@@ -791,8 +792,8 @@ function Update-Listing
                 $listingParams['Trademark'] = $suppliedListing.trademark
                 $listingParams['LicenseTerm'] = $suppliedListing.licenseTerm
                 $listingParams['Features'] = $suppliedListing.features
-                $listingParams['MinimumHardware'] = $suppliedListing.minimumHardware
-                $listingParams['RecommendedHardware'] = $suppliedListing.recommendedHardware
+                $listingParams['additionalMinimumHardware'] = $suppliedListing.minimumHardware
+                $listingParams['AdditionalRecommendedHardware'] = $suppliedListing.recommendedHardware
                 $listingParams['DevStudio'] = $suppliedListing.devStudio
                 $listingParams['Description'] = $suppliedListing.description
                 $listingParams['ShortDescription'] = $suppliedListing.shortDescription

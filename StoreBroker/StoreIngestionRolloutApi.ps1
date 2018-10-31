@@ -268,7 +268,7 @@ function Update-SubmissionRollout
         # (so for $false, they'd have to pass in -Enabled:$false).
         # Otherwise, there'd be no way to know when the user wants to simply keep the
         # existing value.
-        if ($PSBoundParameters.ContainsKey(['Enabled'))
+        if ($PSBoundParameters.ContainsKey('Enabled'))
         {
             Set-ObjectProperty -InputObject $rollout -Name ([StoreBrokerRolloutProperty]::isEnabled) -Value ($Enabled -eq $true)
         }

@@ -103,7 +103,7 @@ function Get-Submission
         specified Submission was recently created, it is possible that the API is asynchronously
         creating resources for the Submission, and thus the information in the Submission
         cannot be "trusted" until all of its resources are "ready".
- 
+
     .PARAMETER SinglePage
         When specified, will only return back the first set of results supplied by the API.
         If not specified, then the API continuously be queried until all results have been
@@ -338,7 +338,7 @@ function New-Submission
         that all of its resources are ready.  The API creates all of the submission's related
         objects asynchronously, and thus the information in the Submission cannot be "trusted"
         until all of its resources are "ready".
- 
+
     .PARAMETER ClientRequestId
         An optional identifier that should be sent along to the Store to help with identifying
         this request during post-mortem debugging.
@@ -886,14 +886,14 @@ function Set-SubmissionDetail
         Change if this submission should be published manually or not.
         If this switch is not specified, no change will be made to the existing object.
         To change the corresponding value, you must explicitly specify either $true or $false
-        with this switch. 
-    
+        with this switch.
+
     .PARAMETER AutoPromote
         Only relevant for Products using Sandboxes.
         Change if this submission should be automatically promoted from a Dev Sandbox to Cert Sandbox.
         If this switch is not specified, no change will be made to the existing object.
         To change the corresponding value, you must explicitly specify either $true or $false
-        with this switch. 
+        with this switch.
 
     .PARAMETER ClientRequestId
         An optional identifier that should be sent along to the Store to help with identifying
@@ -1847,25 +1847,31 @@ function Update-Submission
                     Write-Log -Message "Unzip complete." -Level Verbose
                 }
 
-                $packageParams = $commonParams.PSObject.Copy() # Get a new instance, not a reference
-                $packageParams.Add('SubmissionData', $jsonSubmission)
-                $packageParams.Add('ContentPath', $ContentPath)
-                if ($AddPackages) { $packageParams.Add('AddPackages', $AddPackages) }
-                if ($ReplacePackages) { $packageParams.Add('ReplacePackages', $ReplacePackages) }
-                if ($UpdatePackages) {
-                    $packageParams.Add('UpdatePackages', $UpdatePackages)
-                    $packageParams.Add('RedundantPackagesToKeep', $RedundantPackagesToKeep)
+                if ($AddPackages -or $ReplacePackages -or $UpdatePackages)
+                {
+                    $packageParams = $commonParams.PSObject.Copy() # Get a new instance, not a reference
+                    $packageParams.Add('SubmissionData', $jsonSubmission)
+                    $packageParams.Add('ContentPath', $ContentPath)
+                    if ($AddPackages) { $packageParams.Add('AddPackages', $AddPackages) }
+                    if ($ReplacePackages) { $packageParams.Add('ReplacePackages', $ReplacePackages) }
+                    if ($UpdatePackages) {
+                        $packageParams.Add('UpdatePackages', $UpdatePackages)
+                        $packageParams.Add('RedundantPackagesToKeep', $RedundantPackagesToKeep)
+                    }
+                    $null = Update-ProductPackage @packageParams
                 }
-                $null = Update-ProductPackage @packageParams
 
-                $listingParams = $commonParams.PSObject.Copy() # Get a new instance, not a reference
-                $listingParams.Add('SubmissionData', $jsonSubmission)
-                $listingParams.Add('ContentPath', $ContentPath)
-                $listingParams.Add('UpdateListingText', $UpdateListingText)
-                $listingParams.Add('UpdateImagesAndCaptions', $UpdateImagesAndCaptions)
-                $listingParams.Add('UpdateVideos', $UpdateVideos)
-                $listingParams.Add('IsMinimalObject', $IsMinimalObject)
-                $null = Update-Listing @listingParams
+                if ($UpdateListingText -or $UpdateImagesAndCaptions -or $UpdateVideos)
+                {
+                    $listingParams = $commonParams.PSObject.Copy() # Get a new instance, not a reference
+                    $listingParams.Add('SubmissionData', $jsonSubmission)
+                    $listingParams.Add('ContentPath', $ContentPath)
+                    $listingParams.Add('UpdateListingText', $UpdateListingText)
+                    $listingParams.Add('UpdateImagesAndCaptions', $UpdateImagesAndCaptions)
+                    $listingParams.Add('UpdateVideos', $UpdateVideos)
+                    $listingParams.Add('IsMinimalObject', $IsMinimalObject)
+                    $null = Update-Listing @listingParams
+                }
             }
 
             if ($UpdateAppProperties -or $UpdateGamingOptions)

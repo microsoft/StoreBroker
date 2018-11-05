@@ -648,6 +648,15 @@ function Update-Listing
 
     Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
 
+    if ($SubmissionData.listings.Count -eq 0)
+    {
+        if ((-not $UpdateVideos) -or ($SubmissionData.trailers.Count -eq 0))
+        {
+            Write-Log -Message 'Your submission data does not contain any Listing metadata, yet you specified one or more switches for updating Listing metadata.  No action on listing metadata will occur.' -Level Warning
+            return
+        }
+    }
+
     try
     {
         $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
@@ -757,15 +766,18 @@ function Update-Listing
 
         # Now we have to see what languages exist in the user's supplied content that we didn't already
         # have cloned submissions for
-        $SubmissionData.listings |
-            Get-Member -Type NoteProperty |
-                ForEach-Object {
-                    $langCode = $_.Name
-                    if (-not $existingLangCodes.Contains($langCode))
-                    {
-                        $null = $missingLangCodes.Add($langCode)
+        if ($SubmissionData.listings.Count -gt 0)
+        {
+            $SubmissionData.listings |
+                Get-Member -Type NoteProperty |
+                    ForEach-Object {
+                        $langCode = $_.Name
+                        if (-not $existingLangCodes.Contains($langCode))
+                        {
+                            $null = $missingLangCodes.Add($langCode)
+                        }
                     }
-                }
+        }
 
         Write-Log -Message 'Now adding listings for languages that don''t already exist.' -Level Verbose
         if (($missingLangCodes.Count -gt 0) -and (-not $UpdateListingText) -and ($UpdateImagesAndCaptions -or $UpdateVideos))

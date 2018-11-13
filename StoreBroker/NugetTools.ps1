@@ -294,7 +294,7 @@ function Get-NugetPackageDllPath
 
     # First we'll check to see if the user has cached the assembly into the module's script directory
     $moduleAssembly = Join-Path $PSScriptRoot $AssemblyName
-    if (Test-Path -Path $moduleAssembly -PathType Leaf)
+    if (Test-Path -Path $moduleAssembly -PathType Leaf -ErrorAction SilentlyContinue)
     {
         if (Test-AssemblyIsDesiredVersion -AssemblyPath $moduleAssembly -DesiredVersion $NugetPackageVersion)
         {
@@ -333,7 +333,7 @@ function Get-NugetPackageDllPath
     else
     {
         $cachedAssemblyPath = Join-Path $(Join-Path $script:tempAssemblyCacheDir $AssemblyPackageTailDirectory) $AssemblyName
-        if (Test-Path -Path $cachedAssemblyPath -PathType Leaf)
+        if (Test-Path -Path $cachedAssemblyPath -PathType Leaf -ErrorAction SilentlyContinue)
         {
             if (Test-AssemblyIsDesiredVersion -AssemblyPath $cachedAssemblyPath -DesiredVersion $NugetPackageVersion)
             {
@@ -352,7 +352,7 @@ function Get-NugetPackageDllPath
     Get-NugetPackage -PackageName $NugetPackageName -Version $NugetPackageVersion -TargetPath $script:tempAssemblyCacheDir -NoStatus:$NoStatus
 
     $cachedAssemblyPath = Join-Path $(Join-Path $script:tempAssemblyCacheDir $AssemblyPackageTailDirectory) $AssemblyName
-    if (Test-Path -Path $cachedAssemblyPath -PathType Leaf)
+    if (Test-Path -Path $cachedAssemblyPath -PathType Leaf -ErrorAction SilentlyContinue)
     {
         Write-Log -Message @(
             "To avoid this download delay in the future, copy the following file:",

@@ -1,6 +1,17 @@
 # StoreBroker PowerShell Module
 ## Changelog
 
+## [1.19.1](https://github.com/Microsoft/StoreBroker/tree/1.19.1) - (2018/11/13)
+### Fixes:
+
++ Updated `Get-NugetPackageDllPath` to not report errors when `Test-Path` is unable to access
+  a location.  All we care about is knowing if we can access the file or not...the error is just
+  noise.
+
+More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/TODO) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/TODO)
+
+Author: [**@HowardWolosky**](https://github.com/HowardWolosky)
+
 ## [1.19.0](https://github.com/Microsoft/StoreBroker/tree/1.19.0) - (2018/08/30)
 ### Fixes:
 

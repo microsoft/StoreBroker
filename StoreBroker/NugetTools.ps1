@@ -191,7 +191,14 @@ function Test-AssemblyIsDesiredVersion
 
     $splitTargetVer = $DesiredVersion.Split('.')
 
-    $versionInfo = (Get-Item -Path $AssemblyPath).VersionInfo
+    $file = Get-Item -Path $AssemblyPath -ErrorVariable ev
+    if (($null -ne $ev) -and ($ev.Count -gt 0))
+    {
+        Write-Log "Problem accessing [$Path]: $($ev[0].Exception.Message)" -Level Warning
+        return $false
+    }
+
+    $versionInfo = $file.VersionInfo
     $splitSourceVer = @(
         $versionInfo.ProductMajorPart,
         $versionInfo.ProductMinorPart,

@@ -10,7 +10,7 @@ $script:packageImageFolderName = "Assets"
 
 # New-SubmissionPackage supports these extensions, but won't inspect their content due to encryption
 $script:extensionsSupportingInspection = @(".appx", ".appxbundle", ".appxupload")
-$script:extensionsNotSupportingInspection = @('.xvc')
+$script:extensionsNotSupportingInspection = @('.xvc', '.msix', '.msixbundle')
 $script:supportedExtensions =  $script:extensionsSupportingInspection + $script:extensionsNotSupportingInspection
 
 # String constants for New-SubmissionPackage parameters
@@ -199,7 +199,7 @@ function New-StoreBrokerInAppProductConfigFile
     )
 
     $dir = Split-Path -Parent -Path $Path
-    if (-not (Test-Path -PathType Container -Path $dir))
+    if (-not (Test-Path -PathType Container -Path $dir -ErrorAction Ignore))
     {
         Write-Log -Message "Creating directory: $dir" -Level Verbose
         New-Item -Force -ItemType Directory -Path $dir | Out-Null
@@ -427,7 +427,7 @@ function New-StoreBrokerConfigFile
     )
 
     $dir = Split-Path -Parent -Path $Path
-    if (-not (Test-Path -PathType Container -Path $dir))
+    if (-not (Test-Path -PathType Container -Path $dir -ErrorAction Ignore))
     {
         Write-Log -Message "Creating directory: $dir" -Level Verbose
         New-Item -Force -ItemType Directory -Path $dir | Out-Null
@@ -480,14 +480,14 @@ function Out-DirectoryToZip
     param(
         [Parameter(Mandatory)]
         [ValidateScript({
-            if (Test-Path -PathType Container -Path $_) { $true }
+            if (Test-Path -PathType Container -Path $_ -ErrorAction Ignore) { $true }
             else { throw "Could not find directory to compress: [$_]." }
         })]
         [string] $Path,
 
         [Parameter(Mandatory)]
         [ValidateScript({
-            if (($_ -like "*.zip") -and (Test-Path -IsValid -Path $_)) { $true }
+            if (($_ -like "*.zip") -and (Test-Path -IsValid -Path $_ -ErrorAction Ignore)) { $true }
             else { throw "Destination path is not a zip file: [$_]." }
         })]
         [string] $Destination
@@ -503,7 +503,7 @@ function Out-DirectoryToZip
             # Delete output paths if they already exist.
             foreach ($zipPath in ($tempLocalZipPath, $Destination))
             {
-                if (Test-Path -PathType Leaf -Include "*.zip" -Path $zipPath)
+                if (Test-Path -PathType Leaf -Include "*.zip" -Path $zipPath -ErrorAction Ignore)
                 {
                     Write-Log -Message "Removing zip path: [$zipPath]." -Level Verbose
                     Remove-Item -Force -Recurse -Path $zipPath
@@ -1249,14 +1249,14 @@ function Get-LocalizedMediaFile
     if (-not [string]::IsNullOrEmpty($MediaFallbackLanguage) -and ($MediaFallbackLanguage -ne $Language))
     {
         $mediaFallbackLanguageSourcePath = [System.IO.Path]::Combine($ImagesRootPath, $Release, $MediaFallbackLanguage)
-        if (-not (Test-Path -Path $mediaFallbackLanguageSourcePath -PathType Container))
+        if (-not (Test-Path -Path $mediaFallbackLanguageSourcePath -PathType Container -ErrorAction Ignore))
         {
             Write-Log -Message "A fallback language was specified [$MediaFallbackLanguage], but a folder for that language does not exist [$mediaFallbackLanguageSourcePath], so media fallback support has been disabled." -Level Warning
             $mediaFallbackLanguageSourcePath = $null
         }
     }
 
-    if (Test-Path -Path $mediaLanguageSourcePath -PathType Container)
+    if (Test-Path -Path $mediaLanguageSourcePath -PathType Container -ErrorAction Ignore)
     {
         $image = Get-ChildItem -Recurse -File -Path $mediaLanguageSourcePath -Include $Filename
         $fileRelativePackagePath = [System.IO.Path]::Combine($script:packageImageFolderName, $Language, $Filename)
@@ -1289,10 +1289,10 @@ function Get-LocalizedMediaFile
     }
 
     $fileFullPackagePath = Join-Path -Path $script:tempFolderPath -ChildPath $fileRelativePackagePath
-    if (-not (Test-Path -PathType Leaf $fileFullPackagePath))
+    if (-not (Test-Path -PathType Leaf $fileFullPackagePath -ErrorAction Ignore))
     {
         $packageMediaFullPath = Split-Path -Path $fileFullPackagePath -Parent
-        if (-not (Test-Path -PathType Container -Path $packageMediaFullPath))
+        if (-not (Test-Path -PathType Container -Path $packageMediaFullPath -ErrorAction Ignore))
         {
             New-Item -ItemType directory -Path $packageMediaFullPath | Out-Null
         }
@@ -1354,7 +1354,7 @@ function Convert-ListingsMetadata
     param(
         [Parameter(Mandatory)]
         [ValidateScript({
-            if (Test-Path -PathType Container -Path $_) { $true }
+            if (Test-Path -PathType Container -Path $_ -ErrorAction Ignore) { $true }
             else { throw "'$_' is not a directory or cannot be found." } })]
         [string] $PDPRootPath,
 
@@ -1375,7 +1375,7 @@ function Convert-ListingsMetadata
 
         [Parameter(Mandatory)]
         [ValidateScript( {
-            if (Test-Path -PathType Container -Path $_) { $true }
+            if (Test-Path -PathType Container -Path $_ -ErrorAction Ignore) { $true }
             else { throw "'$_' is not a directory or cannot be found." } })]
         [Alias('MediaRootPath')]
         [string] $ImagesRootPath,
@@ -1446,7 +1446,7 @@ function Convert-TrailersMetadata
     param(
         [Parameter(Mandatory)]
         [ValidateScript({
-            if (Test-Path -PathType Container -Path $_) { $true }
+            if (Test-Path -PathType Container -Path $_ -ErrorAction Ignore) { $true }
             else { throw "'$_' is not a directory or cannot be found." } })]
         [string] $PDPRootPath,
 
@@ -1467,7 +1467,7 @@ function Convert-TrailersMetadata
 
         [Parameter(Mandatory)]
         [ValidateScript( {
-            if (Test-Path -PathType Container -Path $_) { $true }
+            if (Test-Path -PathType Container -Path $_ -ErrorAction Ignore) { $true }
             else { throw "'$_' is not a directory or cannot be found." } })]
         [Alias('MediaRootPath')]
         [string] $ImagesRootPath,
@@ -1748,7 +1748,7 @@ function Convert-InAppProductListingsMetadata
     param(
         [Parameter(Mandatory)]
         [ValidateScript({
-            if (Test-Path -PathType Container -Path $_) { $true }
+            if (Test-Path -PathType Container -Path $_ -ErrorAction Ignore) { $true }
             else { throw "'$_' is not a directory or cannot be found." } })]
         [string] $PDPRootPath,
 
@@ -1769,7 +1769,7 @@ function Convert-InAppProductListingsMetadata
 
         [Parameter(Mandatory)]
         [ValidateScript({
-            if (Test-Path -PathType Container -Path $_) { $true }
+            if (Test-Path -PathType Container -Path $_ -ErrorAction Ignore) { $true }
             else { throw "'$_' is not a directory or cannot be found." } })]
         [Alias('MediaRootPath')]
         [string] $ImagesRootPath,
@@ -1834,7 +1834,7 @@ function Open-AppxContainer
         {
             $containerZipPath = $containerZipPathFormat -f [System.Guid]::NewGuid()
         }
-        while (Test-Path -PathType Leaf -Path $containerZipPath)
+        while (Test-Path -PathType Leaf -Path $containerZipPath -ErrorAction Ignore)
 
         Write-Log -Message "Copying (Item: $AppxContainerPath) to (Target: $containerZipPath)." -Level Verbose
         Copy-Item -Force -Path $AppxContainerPath -Destination $containerZipPath
@@ -1851,7 +1851,7 @@ function Open-AppxContainer
     }
     catch
     {
-        if ((-not [System.String]::IsNullOrEmpty($expandedContainerPath)) -and (Test-Path $expandedContainerPath))
+        if ((-not [System.String]::IsNullOrEmpty($expandedContainerPath)) -and (Test-Path -Path $expandedContainerPath -ErrorAction Ignore))
         {
             Write-Log -Message "Deleting item: $expandedContainerPath" -Level Verbose
             Remove-Item -Force -Recurse -Path $expandedContainerPath -ErrorAction SilentlyContinue
@@ -1862,7 +1862,7 @@ function Open-AppxContainer
     }
     finally
     {
-        if ((-not [System.String]::IsNullOrEmpty($containerZipPath)) -and (Test-Path $containerZipPath))
+        if ((-not [System.String]::IsNullOrEmpty($containerZipPath)) -and (Test-Path -Path $containerZipPath -ErrorAction Ignore))
         {
             Write-Log -Message "Deleting item: $containerZipPath" -Level Verbose
             Remove-Item -Force -Recurse -Path $containerZipPath -ErrorAction SilentlyContinue
@@ -1949,7 +1949,7 @@ function Get-TargetPlatform
     param(
         [Parameter(Mandatory)]
         [ValidateScript({
-            if (Test-Path -PathType Leaf -Include "AppxManifest.xml" -Path $_) { $true }
+            if (Test-Path -PathType Leaf -Include "AppxManifest.xml" -Path $_ -ErrorAction Ignore) { $true }
             else { throw "$_ cannot be found or is not an AppxManifest.xml." } })]
         [string] $AppxManifestPath
     )
@@ -2020,7 +2020,7 @@ function Read-AppxMetadata
     param(
         [Parameter(Mandatory)]
         [ValidateScript({
-            if (Test-Path -PathType Leaf -Include "*.appx" -Path $_) { $true }
+            if (Test-Path -PathType Leaf -Include "*.appx" -Path $_ -ErrorAction Ignore) { $true }
             else { throw "$_ cannot be found or is not an .appx." } })]
         [string] $AppxPath,
 
@@ -2146,7 +2146,7 @@ function Read-AppxUploadMetadata
     param(
         [Parameter(Mandatory)]
         [ValidateScript({
-            if (Test-Path -PathType Leaf -Include "*.appxupload" -Path $_) { $true }
+            if (Test-Path -PathType Leaf -Include "*.appxupload" -Path $_ -ErrorAction Ignore) { $true }
             else { throw "$_ cannot be found or is not an .appxupload." } })]
         [string] $AppxuploadPath,
 
@@ -2241,7 +2241,7 @@ function Read-AppxBundleMetadata
     param(
         [Parameter(Mandatory)]
         [ValidateScript({
-            if (Test-Path -PathType Leaf -Include "*.appxbundle" -Path $_) { $true }
+            if (Test-Path -PathType Leaf -Include "*.appxbundle" -Path $_ -ErrorAction Ignore) { $true }
             else { throw "$_ cannot be found or is not an .appxbundle." } })]
         [string] $AppxbundlePath,
 
@@ -2447,7 +2447,7 @@ function Read-ApplicationMetadata
     param(
         [Parameter(Mandatory)]
         [ValidateScript({
-            if (Test-Path -PathType Leaf -Include ($script:extensionsSupportingInspection | ForEach-Object { "*" + $_ }) $_) { $true }
+            if (Test-Path -PathType Leaf -Include ($script:extensionsSupportingInspection | ForEach-Object { "*" + $_ }) -Path $_ -ErrorAction Ignore) { $true }
             else { throw "$_ cannot be found or is not a supported extension that supports metadata inspection: $($script:extensionsSupportingInspection -join ", ")." } })]
         [string] $AppxPath,
 
@@ -2521,9 +2521,9 @@ function Add-AppPackagesMetadata
         [ValidateScript({
             foreach ($path in $_)
             {
-                if (-not (Test-Path -PathType Leaf -Include ($script:supportedExtensions | ForEach-Object { "*" + $_ }) -Path $path))
+                if (-not (Test-Path -PathType Leaf -Include ($script:supportedExtensions | ForEach-Object { "*" + $_ }) -Path $path -ErrorAction Ignore))
                 {
-                    throw "$_ is not a file or cannot be found."
+                    throw "$path cannot be found or is not a supported extension: $($script:supportedExtensions -join ", ")."
                 }
             }
 
@@ -2757,7 +2757,7 @@ function Get-SubmissionRequestBody
         if (-not [System.String]::IsNullOrWhiteSpace($Release))
         {
             $pathWithRelease = Join-Path -Path $PDPRootPath -ChildPath $Release
-            if (Test-Path -PathType Container -Path $pathWithRelease)
+            if (Test-Path -PathType Container -Path $pathWithRelease -ErrorAction Ignore)
             {
                 $listingsPath = $pathWithRelease
             }
@@ -2893,7 +2893,7 @@ function Get-InAppProductSubmissionRequestBody
         if (-not [System.String]::IsNullOrWhiteSpace($Release))
         {
             $pathWithRelease = Join-Path -Path $PDPRootPath -ChildPath $Release
-            if (Test-Path -PathType Container -Path $pathWithRelease)
+            if (Test-Path -PathType Container -Path $pathWithRelease -ErrorAction Ignore)
             {
                 $listingsPath = $pathWithRelease
             }
@@ -3003,7 +3003,7 @@ function Resolve-PackageParameters
             # Resolve path parameters to full paths. Necessary in case a path contains '.' or '..'
             $ParamMap[$param] = Resolve-UnverifiedPath -Path $ParamMap[$param]
 
-            if (-not (Test-Path -PathType Container -Path $ParamMap[$param]))
+            if (-not (Test-Path -PathType Container -Path $ParamMap[$param] -ErrorAction Ignore))
             {
                 $out = "$($param): `"$($ParamMap[$param])`" is not a directory or cannot be found."
 
@@ -3120,7 +3120,7 @@ function Resolve-PackageParameters
             $validExtensions = $script:supportedExtensions | ForEach-Object { "*" + $_ }
             foreach ($path in $ConfigObject.packageParameters.AppxPath)
             {
-                if ((Test-Path -PathType Leaf -Include $validExtensions -Path $path) -and ($path -notin $packagePaths))
+                if ((Test-Path -PathType Leaf -Include $validExtensions -Path $path -ErrorAction Ignore) -and ($path -notin $packagePaths))
                 {
                     $packagePaths += $path
                 }
@@ -3137,11 +3137,11 @@ function Resolve-PackageParameters
                 else
                 {
                     $path = Join-Path $env:TFS_DropLocation $path
-                    if ((Test-Path -PathType Leaf -Include $validExtensions -Path $path) -and ($path -notin $packagePaths))
+                    if ((Test-Path -PathType Leaf -Include $validExtensions -Path $path -ErrorAction Ignore) -and ($path -notin $packagePaths))
                     {
                         $packagePaths += $path
                     }
-                    elseif (Test-Path -PathType Container -Path $path)
+                    elseif (Test-Path -PathType Container -Path $path -ErrorAction Ignore)
                     {
                         $fullPaths = (Get-ChildItem -File -Include $validExtensions -Path (Join-Path $path "*.*")).FullName
                         foreach ($fullPath in $fullPaths)
@@ -3269,7 +3269,7 @@ function Convert-AppConfig
 
     param(
         [Parameter(Mandatory)]
-        [ValidateScript({ if (Test-Path -PathType Leaf $_) { $true } else { throw "$_ cannot be found." } })]
+        [ValidateScript({ if (Test-Path -PathType Leaf -Path $_ -ErrorAction Ignore) { $true } else { throw "$_ cannot be found." } })]
         [string] $ConfigPath
     )
 
@@ -3326,11 +3326,11 @@ function Join-SubmissionPackage
     [CmdletBinding(SupportsShouldProcess=$True)]
     param(
         [Parameter(Mandatory=$true)]
-        [ValidateScript({if (Test-Path -Path $_ -PathType Leaf) { $true } else { throw "$_ cannot be found." }})]
+        [ValidateScript({if (Test-Path -Path $_ -PathType Leaf -ErrorAction Ignore) { $true } else { throw "$_ cannot be found." }})]
         [string] $MasterJsonPath,
 
         [Parameter(Mandatory=$true)]
-        [ValidateScript({if (Test-Path -Path $_ -PathType Leaf) { $true } else { throw "$_ cannot be found." }})]
+        [ValidateScript({if (Test-Path -Path $_ -PathType Leaf -ErrorAction Ignore) { $true } else { throw "$_ cannot be found." }})]
         [string] $AdditionalJsonPath,
 
         [Parameter(Mandatory=$true)]
@@ -3355,14 +3355,14 @@ function Join-SubmissionPackage
     {
         $errorMessage = "[{0}] already exists.  Choose a different name, or specify the -Force switch to overwrite it."
 
-        if (Test-Path -Path $OutJsonPath -PathType Leaf)
+        if (Test-Path -Path $OutJsonPath -PathType Leaf -ErrorAction Ignore)
         {
             $output = $errorMessage -f $OutJsonPath
             Write-Log -Message $output -Level Error
             throw $output
         }
 
-        if (Test-Path -Path $outZipPath -PathType Leaf)
+        if (Test-Path -Path $outZipPath -PathType Leaf -ErrorAction Ignore)
         {
             $output = $errorMessage -f $outZipPath
             Write-Log -Message $output -Level Error
@@ -3375,7 +3375,7 @@ function Join-SubmissionPackage
     # Make sure that these zip files actually exist.
     foreach ($zipFile in ($masterZipPath, $additionalZipPath))
     {
-        if (-not (Test-Path -Path $zipFile -PathType Leaf))
+        if (-not (Test-Path -Path $zipFile -PathType Leaf -ErrorAction Ignore))
         {
             throw "Could not find [$zipFile].  We expect the .json and .zip to have the same base name."
         }
@@ -3430,7 +3430,7 @@ function Join-SubmissionPackage
             if ($package.fileStatus -eq "PendingUpload")
             {
                 $destPath = Join-Path $outUnpackedZipPath $package.fileName
-                if (Test-Path $destPath -PathType Leaf)
+                if (Test-Path -Path $destPath -PathType Leaf -ErrorAction Ignore)
                 {
                     $output = "A package called [$($package.fileName)] already exists in the Master zip file."
                     Write-Log -Message $output -Level Error
@@ -3581,10 +3581,10 @@ function New-SubmissionPackage
     [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter(Mandatory)]
-        [ValidateScript({ if (Test-Path -PathType Leaf $_) { $true } else { throw "$_ cannot be found." } })]
+        [ValidateScript({ if (Test-Path -PathType Leaf -Path $_ -ErrorAction Ignore) { $true } else { throw "$_ cannot be found." } })]
         [string] $ConfigPath,
 
-        [ValidateScript({ if (Test-Path -PathType Container $_) { $true } else { throw "$_ cannot be found." } })]
+        [ValidateScript({ if (Test-Path -PathType Container -Path $_ -ErrorAction Ignore) { $true } else { throw "$_ cannot be found." } })]
         [string] $PDPRootPath,
 
         [string] $Release,
@@ -3595,14 +3595,14 @@ function New-SubmissionPackage
 
         [string[]] $LanguageExclude,
 
-        [ValidateScript({ if (Test-Path -PathType Container $_) { $true } else { throw "$_ cannot be found." } })]
+        [ValidateScript({ if (Test-Path -PathType Container -Path $_ -ErrorAction Ignore) { $true } else { throw "$_ cannot be found." } })]
         [Alias('MediaRootPath')]
         [string] $ImagesRootPath,
 
         [ValidateScript({
             foreach ($path in $_)
             {
-                if (-not (Test-Path -PathType Leaf -Include ($script:supportedExtensions | ForEach-Object { "*" + $_ }) -Path $path))
+                if (-not (Test-Path -PathType Leaf -Include ($script:supportedExtensions | ForEach-Object { "*" + $_ }) -Path $path -ErrorAction Ignore))
                 {
                     throw "$_ cannot be found or is not a supported extension: $($script:supportedExtensions -join ", ")."
                 }
@@ -3672,7 +3672,7 @@ function New-SubmissionPackage
 
         # It may not actually exist due to What-If support.
         $script:tempFolderExists = (-not [System.String]::IsNullOrEmpty($script:tempFolderPath)) -and
-                                   (Test-Path -PathType Container $script:tempFolderPath)
+                                   (Test-Path -PathType Container -Path $script:tempFolderPath -ErrorAction Ignore)
 
         # Get the submission request object
         $resourceParams = $script:s_PDPRootPath, $script:s_Release, $script:s_PDPInclude, $script:s_PDPExclude, $script:s_LanguageExclude, $script:s_ImagesRootPath, $script:s_AppxPath, $script:s_DisableAutoPackageNameFormatting, $script:s_MediaFallbackLanguage
@@ -3836,10 +3836,10 @@ function New-InAppProductSubmissionPackage
     [Alias('New-IapSubmissionPackage')]
     param(
         [Parameter(Mandatory)]
-        [ValidateScript({ if (Test-Path -PathType Leaf $_) { $true } else { throw "$_ cannot be found." } })]
+        [ValidateScript({ if (Test-Path -PathType Leaf -Path $_ -ErrorAction Ignore) { $true } else { throw "$_ cannot be found." } })]
         [string] $ConfigPath,
 
-        [ValidateScript({ if (Test-Path -PathType Container $_) { $true } else { throw "$_ cannot be found." } })]
+        [ValidateScript({ if (Test-Path -PathType Container -Path $_ -ErrorAction Ignore) { $true } else { throw "$_ cannot be found." } })]
         [string] $PDPRootPath,
 
         [string] $Release,
@@ -3850,7 +3850,7 @@ function New-InAppProductSubmissionPackage
 
         [string[]] $LanguageExclude,
 
-        [ValidateScript({ if (Test-Path -PathType Container $_) { $true } else { throw "$_ cannot be found." } })]
+        [ValidateScript({ if (Test-Path -PathType Container -Path $_ -ErrorAction Ignore) { $true } else { throw "$_ cannot be found." } })]
         [Alias('MediaRootPath')]
         [string] $ImagesRootPath,
 
@@ -3912,7 +3912,7 @@ function New-InAppProductSubmissionPackage
 
         # It may not actually exist due to What-If support.
         $script:tempFolderExists = (-not [System.String]::IsNullOrEmpty($script:tempFolderPath)) -and
-                                   (Test-Path -PathType Container $script:tempFolderPath)
+                                   (Test-Path -PathType Container -Path $script:tempFolderPath -ErrorAction Ignore)
 
         # Get the submission request object
         $resourceParams = $script:s_PDPRootPath, $script:s_Release, $script:s_PDPInclude, $script:s_PDPExclude, $script:s_LanguageExclude, $script:s_ImagesRootPath, $script:s_MediaFallbackLanguage

@@ -474,7 +474,7 @@ function Update-ListingVideo
             Mandatory,
             ParameterSetName="Update")]
         [ValidateScript({if (Test-Path -Path $_ -PathType Container) { $true } else { throw "$_ cannot be found." }})]
-        [string] $ContentPath, # NOTE: The main wrapper should unzip the zip (if there is one), so that all internal helpers only operate on a Contentpath
+        [string] $MediaRootPath, # NOTE: The main wrapper should unzip the zip (if there is one), so that all internal helpers only operate on a MediaRootPath
 
         [Parameter(Mandatory)]
         [Alias('LangCode')]
@@ -498,7 +498,7 @@ function Update-ListingVideo
     {
         $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
-        $ContentPath = Resolve-UnverifiedPath -Path $ContentPath
+        $MediaRootPath = Resolve-UnverifiedPath -Path $MediaRootPath
 
         $params = @{
             'ProductId' = $ProductId
@@ -537,12 +537,12 @@ function Update-ListingVideo
                     $videoParams['FileName'] = (Split-Path -Path $fileName -Leaf)
                     $videoParams['ThumbnailFileName'] = (Split-Path -Path $thumbnailFileName -Leaf)
                     $videoParams['ThumbnailTitle'] = $title
-                    $videoParams['ThumbnailDescription'] = $description
+                    $videoParams['ThumbnailDescription'] = $thumbnailDescription
                     # TODO: $videoParams['ThumbnailOrientation'] = ???
 
                     $videoSubmission = New-ListingVideo @videoParams
-                    $null = Set-StoreFile -FilePath (Join-Path -Path $ContentPath -ChildPath $fileName) -SasUri $videoSubmission.fileSasUri -NoStatus:$NoStatus
-                    $null = Set-StoreFile -FilePath (Join-Path -Path $ContentPath -ChildPath $thumbnailFileName) -SasUri $videoSubmission.thumbnail.fileSasUri -NoStatus:$NoStatus
+                    $null = Set-StoreFile -FilePath (Join-Path -Path $MediaRootPath -ChildPath $fileName) -SasUri $videoSubmission.fileSasUri -NoStatus:$NoStatus
+                    $null = Set-StoreFile -FilePath (Join-Path -Path $MediaRootPath -ChildPath $thumbnailFileName) -SasUri $videoSubmission.thumbnail.fileSasUri -NoStatus:$NoStatus
 
                     Set-ObjectProperty -InputObject $videoSubmission -Name ([StoreBrokerListingVideoProperty]::state) -Value ([StoreBrokerFileState]::Uploaded.ToString())
                     Set-ObjectProperty -InputObject $videoSubmission.thumbnail -Name ([StoreBrokerListingVideoThumbnailProperty]::state) -Value ([StoreBrokerFileState]::Uploaded.ToString())
@@ -558,7 +558,7 @@ function Update-ListingVideo
         $telemetryProperties = @{
             [StoreBrokerTelemetryProperty]::ProductId = $ProductId
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
-            [StoreBrokerTelemetryProperty]::ContentPath = (Get-PiiSafeString -PlainText $ContentPath)
+            [StoreBrokerTelemetryProperty]::MediaRootPath = (Get-PiiSafeString -PlainText $MediaRootPath)
             [StoreBrokerTelemetryProperty]::LanguageCode = $LanguageCode
             [StoreBrokerTelemetryProperty]::RemoveOnly = $RemoveOnly
             [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId

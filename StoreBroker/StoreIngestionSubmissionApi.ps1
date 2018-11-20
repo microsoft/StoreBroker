@@ -1530,7 +1530,10 @@ function Update-Submission
         [string] $ZipPath,
 
         [ValidateScript({if (Test-Path -Path $_ -PathType Container) { $true } else { throw "$_ cannot be found." }})]
-        [string] $ContentPath,
+        [string] $PackageRootPath,
+
+        [ValidateScript({if (Test-Path -Path $_ -PathType Container) { $true } else { throw "$_ cannot be found." }})]
+        [string] $MediaRootPath,
 
         [Alias('AutoCommit')]
         [switch] $AutoSubmit,
@@ -1590,6 +1593,7 @@ function Update-Submission
         [Alias('UpdateNotesForCertification')]
         [switch] $UpdateCertificationNotes,
 
+        [switch] $SeekEnabled,
         # Normally, every single field is updated in a request, so if a field is missing or null,
         # is is updated to be null.  If this is set, then only the non-null/non-empty fields will
         # be updated.
@@ -1608,7 +1612,7 @@ function Update-Submission
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
     # Make sure that we're working with full paths (since we do use non-native PowerShell commands)
-    $pathsToResolve = @('JsonPath', 'ZipPath', 'ContentPath')
+    $pathsToResolve = @('JsonPath', 'ZipPath', 'PackageRootPath', 'MediaRootPath')
     foreach ($path in $pathsToResolve)
     {
         if ($PSBoundParameters.ContainsKey($path))
@@ -1642,13 +1646,33 @@ function Update-Submission
         }
     }
 
-    $isContentPathTemporary = $false
-
-    if ((-not [String]::IsNullOrWhiteSpace($ZipPath)) -and (-not [String]::IsNullOrWhiteSpace($ContentPath)))
+    $expandedZipPath = [string]::Empty
+    if (([String]::IsNullOrWhiteSpace($ZipPath))) 
     {
-        $message = "You should specify either ZipPath OR ContentPath.  Not both."
-        Write-Log -Message $message -Level Error
-        throw $message
+        if (([String]::IsNullOrWhiteSpace($PackageRootPath)) -or ([String]::IsNullOrWhiteSpace($MediaRootPath)))
+        {
+            $message = "If ZipPath is not specified then you should specify both PackageRootPath and MediaRootPath."
+            Write-Log -Message $message -Level Error
+            throw $message
+        }
+    }
+    else 
+    {
+        if ((-not [String]::IsNullOrWhiteSpace($PackageRootPath)) -or (-not [String]::IsNullOrWhiteSpace($MediaRootPath)))
+        {
+            $message = "If ZipPath is specified, then neither PackageRootPath nor MediaRootPath can be specified."
+            Write-Log -Message $message -Level Error
+            throw $message
+        }
+    }
+
+    if ([String]::IsNullOrWhiteSpace($PackageRootPath))
+    {
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        $expandedZipPath = New-TemporaryDirectory
+        Write-Log -Message "Unzipping archive (Item: $ZipPath) to (Target: $expandedZipPath)." -Level Verbose
+        [System.IO.Compression.ZipFile]::ExtractToDirectory($ZipPath, $expandedZipPath)
+        Write-Log -Message "Unzip complete." -Level Verbose
     }
 
     if ($Force -and (-not [System.String]::IsNullOrEmpty($SubmissionId)))
@@ -1773,6 +1797,7 @@ function Update-Submission
     # switch was provided by the user
     if ((-not $AddPackages) -and
         (-not $ReplacePackages) -and
+        (-not $UpdatePackages) -and 
         (-not $UpdateListingText) -and
         (-not $UpdateImagesAndCaptions) -and
         (-not $UpdatePublishModeAndVisibility) -and
@@ -1837,48 +1862,47 @@ function Update-Submission
             # If we know that we'll be doing anything with binary content, ensure that it's accessible unzipped.
             if ($UpdateListingText -or $UpdateImagesAndCaptions -or $UpdateVideos -or $AddPackages -or $ReplacePackages -or $UpdatePackages)
             {
-                if ([String]::IsNullOrEmpty($ContentPath))
+                $packageParams = $commonParams.PSObject.Copy() # Get a new instance, not a reference
+                $packageParams.Add('SubmissionData', $jsonSubmission)
+                if ([string]::IsNullOrEmpty($ZipPath))
                 {
-                    Add-Type -AssemblyName System.IO.Compression.FileSystem
-                    $isContentPathTemporary = $true
-                    $ContentPath = New-TemporaryDirectory
-                    Write-Log -Message "Unzipping archive (Item: $ZipPath) to (Target: $ContentPath)." -Level Verbose
-                    [System.IO.Compression.ZipFile]::ExtractToDirectory($ZipPath, $ContentPath)
-                    Write-Log -Message "Unzip complete." -Level Verbose
+                    $packageParams.Add('PackageRootPath', $PackageRootPath)
+                }
+                else 
+                {
+                    $packageParams.Add('PackageRootPath', $expandedZipPath)
+                }
+                if ($AddPackages) { $packageParams.Add('AddPackages', $AddPackages) }
+                if ($ReplacePackages) { $packageParams.Add('ReplacePackages', $ReplacePackages) }
+                if ($UpdatePackages) {
+                    $packageParams.Add('UpdatePackages', $UpdatePackages)
+                    $packageParams.Add('RedundantPackagesToKeep', $RedundantPackagesToKeep)
+                }
+                $null = Update-ProductPackage @packageParams
+
+                $listingParams = $commonParams.PSObject.Copy() # Get a new instance, not a reference
+                $listingParams.Add('SubmissionData', $jsonSubmission)
+                if ([string]::IsNullOrWhiteSpace($ZipPath))
+                {
+                    $listingParams.Add('MediaRootPath', $MediaRootPath)
+                }
+                else 
+                {
+                    $listingParams.Add('MediaRootPath', $expandedZipPath)
                 }
 
-                if ($AddPackages -or $ReplacePackages -or $UpdatePackages)
-                {
-                    $packageParams = $commonParams.PSObject.Copy() # Get a new instance, not a reference
-                    $packageParams.Add('SubmissionData', $jsonSubmission)
-                    $packageParams.Add('ContentPath', $ContentPath)
-                    if ($AddPackages) { $packageParams.Add('AddPackages', $AddPackages) }
-                    if ($ReplacePackages) { $packageParams.Add('ReplacePackages', $ReplacePackages) }
-                    if ($UpdatePackages) {
-                        $packageParams.Add('UpdatePackages', $UpdatePackages)
-                        $packageParams.Add('RedundantPackagesToKeep', $RedundantPackagesToKeep)
-                    }
-                    $null = Update-ProductPackage @packageParams
-                }
-
-                if ($UpdateListingText -or $UpdateImagesAndCaptions -or $UpdateVideos)
-                {
-                    $listingParams = $commonParams.PSObject.Copy() # Get a new instance, not a reference
-                    $listingParams.Add('SubmissionData', $jsonSubmission)
-                    $listingParams.Add('ContentPath', $ContentPath)
-                    $listingParams.Add('UpdateListingText', $UpdateListingText)
-                    $listingParams.Add('UpdateImagesAndCaptions', $UpdateImagesAndCaptions)
-                    $listingParams.Add('UpdateVideos', $UpdateVideos)
-                    $listingParams.Add('IsMinimalObject', $IsMinimalObject)
-                    $null = Update-Listing @listingParams
-                }
+                $listingParams.Add('UpdateImagesAndCaptions', $UpdateImagesAndCaptions)
+                $listingParams.Add('UpdateListingText', $UpdateListingText)
+                $listingParams.Add('UpdateVideos', $UpdateVideos)
+                $listingParams.Add('IsMinimalObject', $IsMinimalObject)
+                $null = Update-Listing @listingParams
             }
+
 
             if ($UpdateAppProperties -or $UpdateGamingOptions)
             {
                 $propertyParams = $commonParams.PSObject.Copy() # Get a new instance, not a reference
                 $propertyParams.Add('SubmissionData', $jsonSubmission)
-                $propertyParams.Add('ContentPath', $ContentPath)
                 $propertyParams.Add('UpdateCategoryFromSubmissionData', $UpdateAppProperties)
                 $propertyParams.Add('UpdatePropertiesFromSubmissionData', $UpdateAppProperties)
                 $propertyParams.Add('IsMinimalObject', $IsMinimalObject)
@@ -1926,6 +1950,7 @@ function Update-Submission
                 $rolloutParams.Add('State', [StoreBrokerRolloutState]::Initialized)
                 $rolloutParams.Add('Percentage', $PackageRolloutPercentage)
                 $rolloutParams.Add('Enabled', $true)
+                $rolloutParams.Add('SeekEnabled', $SeekEnabled)
 
                 $null = Update-SubmissionRollout @rolloutParams
             }
@@ -1950,7 +1975,6 @@ function Update-Submission
             Write-Log -Message "User requested -AutoSubmit.  Ensuring that all packages have been processed and submission validation has completed before submitting the submission." -Level Verbose
             Wait-ProductPackageProcessed @commonParams
             $validation = Get-SubmissionValidation @commonParams -WaitForCompletion
-
             if ($null -eq $validation)
             {
                 Write-Log -Message "No issues found during validation." -Level Verbose
@@ -1992,7 +2016,8 @@ function Update-Submission
             [StoreBrokerTelemetryProperty]::SandboxId = $SandboxId
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
             [StoreBrokerTelemetryProperty]::ZipPath = (Get-PiiSafeString -PlainText $ZipPath)
-            [StoreBrokerTelemetryProperty]::ContentPath = (Get-PiiSafeString -PlainText $ContentPath)
+            [StoreBrokerTelemetryProperty]::PackageRootPath = (Get-PiiSafeString -PlainText $PackageRootPath)
+            [StoreBrokerTelemetryProperty]::MediaRootPath = (Get-PiiSafeString -PlainText $MediaRootPath)
             [StoreBrokerTelemetryProperty]::AutoSubmit = ($AutoSubmit -eq $true)
             [StoreBrokerTelemetryProperty]::Force = ($Force -eq $true)
             [StoreBrokerTelemetryProperty]::PackageRolloutPercentage = $PackageRolloutPercentage
@@ -2013,6 +2038,7 @@ function Update-Submission
             [StoreBrokerTelemetryProperty]::IsMinimalObject = ($IsMinimalObject -eq $true)
             [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
             [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::SeekEnabled = $SeekEnabled
         }
 
         Set-TelemetryEvent -EventName Update-Submission -Properties $telemetryProperties -Metrics $telemetryMetrics
@@ -2025,10 +2051,10 @@ function Update-Submission
     }
     finally
     {
-        if ($isContentPathTemporary -and (-not [String]::IsNullOrWhiteSpace($ContentPath)))
+        if (-not [String]::IsNullOrWhiteSpace($expandedZipPath))
         {
-            Write-Log -Message "Deleting temporary content directory: $ContentPath" -Level Verbose
-            $null = Remove-Item -Force -Recurse $ContentPath -ErrorAction SilentlyContinue
+            Write-Log -Message "Deleting temporary content directory: $expandedZipPath" -Level Verbose
+            $null = Remove-Item -Force -Recurse $expandedZipPath -ErrorAction SilentlyContinue
             Write-Log -Message "Deleting temporary directory complete." -Level Verbose
         }
     }

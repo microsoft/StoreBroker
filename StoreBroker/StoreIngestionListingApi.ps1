@@ -625,7 +625,7 @@ function Update-Listing
         [PSCustomObject] $SubmissionData,
 
         [ValidateScript({if (Test-Path -Path $_ -PathType Container) { $true } else { throw "$_ cannot be found." }})]
-        [string] $ContentPath, # NOTE: The main wrapper should unzip the zip (if there is one), so that all subsequent functions only operate on a Contentpath
+        [string] $MediaRootPath, # NOTE: The main wrapper should unzip the zip (if there is one), so that all subsequent functions only operate on a MediaRootPath
 
         [switch] $UpdateListingText,
 
@@ -661,7 +661,7 @@ function Update-Listing
     {
         $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
-        $ContentPath = Resolve-UnverifiedPath -Path $ContentPath
+        $MediaRootPath = Resolve-UnverifiedPath -Path $MediaRootPath
 
         $commonParams = @{
             'ProductId' = $ProductId
@@ -674,7 +674,7 @@ function Update-Listing
 
         $listingObjectParams = $commonParams.PSObject.Copy() # Get a new instance, not a reference
         $listingObjectParams['SubmissionData'] = $SubmissionData
-        $listingObjectParams['ContentPath'] = $ContentPath
+        $listingObjectParams['MediaRootPath'] = $MediaRootPath
 
         # Determine what our current listings are.
         $currentListings = Get-Listing @commonParams
@@ -868,7 +868,7 @@ function Update-Listing
         $telemetryProperties = @{
             [StoreBrokerTelemetryProperty]::ProductId = $ProductId
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
-            [StoreBrokerTelemetryProperty]::ContentPath = (Get-PiiSafeString -PlainText $ContentPath)
+            [StoreBrokerTelemetryProperty]::MediaRootPath = (Get-PiiSafeString -PlainText $MediaRootPath)
             [StoreBrokerTelemetryProperty]::UpdateListingText = $UpdateListingText
             [StoreBrokerTelemetryProperty]::UpdateImagesAndCaptions = $UpdateImagesAndCaptions
             [StoreBrokerTelemetryProperty]::UpdateVideos = $UpdateVideos

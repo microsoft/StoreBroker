@@ -553,6 +553,143 @@ function Remove-ProductPackage
     }
 }
 
+function Get-PackagesToKeep
+{
+<# 
+    .SYNOPSIS
+        Determine the redundant packages to keep when users specify Update-Packages for packages submissions
+
+    .PARAMETER Package
+        A List of packages from the given submission. This function will determine which packages to keep from this list.
+        Each package is a pscustomobject with several important fields that tell us some key information of this package, such
+        as packageFullName, architecture, target platforms, bundle contents, version, and state. 
+
+    .PARAMETER RedundantPackagesToKeep
+        Number of packages to keep in one flight group
+
+    .OUTPUTS
+        string[]
+        An array of IDs for the packages we want to keep
+
+    .NOTES
+        Here is how we determine which packages to keep:
+        We build a set of unique keys based on the device families, minOS versions, and architecture. We then associate 
+        each package to the key it applies to. For bundles we build the keys based on the bundle's types of applications. 
+        
+        Start the key with target platform and minOS version. So it looks something like: targetplatform1_minversion1
+        We save this as a variable called $uniquePackageTypeKey
+        
+        Looking at all the architectures from the bundleContents. If the bundleContent is empty then we simply grab the
+        architecture field from the package object. Concatenate $uniquePackageTypeKey with the package's architecture. 
+        Otherwise, we look through the app bundles. Each bundle has a unique architecture. Thus for each bundle we create
+        a key by concatnating $uniquePackageTypeKey with the bundle's architecture.
+    
+        Populate a hashtable using the key we derived above and associate it with the current package. We want to make sure
+        that the number of packages we want to keep for each key is less than or equal to $RedundantPackagesToKeep
+#>
+    [CmdletBinding(SupportsShouldProcess)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
+    param(
+        [Parameter(Mandatory)]
+        [AllowEmptyCollection()]
+        [Object[]] $Package,
+
+        [Parameter(Mandatory)]
+        [ValidateRange(1, $([int]::MaxValue))]
+        [int] $RedundantPackagesToKeep
+    )
+
+    # Maximum number of packages allowed in one flight group according to Windows Store
+    Set-Variable -Name MaxPackagesPerGroup -Value 25 -Option Constant -Scope Local -Force
+    
+    if ($RedundantPackagesToKeep -gt $MaxPackagesPerGroup)
+    {
+        Write-Log "You have specified $RedundantPackagesToKeep packages to keep. This exceeds the maximum which is $MaxPackagesPerGroup. We will override this with the max value" -Level Warning
+        $RedundantPackagesToKeep = $MaxPackagesPerGroup
+    }
+
+    $uniquePackageTypeMapping = @{}
+    foreach ($pkg in $Package)
+    {
+        if ($null -eq $pkg.architecture)
+        {
+            $message =  "Package $($pkg.version) doesn't have a valid architecture!"
+            Write-Log -Message $message -Level Error
+            throw $message
+        }
+
+        if ($null -eq $pkg.targetPlatforms)
+        {
+            $message =  "Package $($pkg.version) doesn't have a valid target platform!"
+            Write-Log -Message $message -Level Error
+            throw $message
+        }
+
+        $pkg.targetPlatforms = @($pkg.targetPlatforms | Sort-Object name -CaseSensitive:$false)
+        $appBundles = $pkg.bundleContents | Where-Object contentType -eq 'Application'
+        # Concatenating all the target platforms followed by min version
+        foreach ($targetPlatform in $pkg.targetPlatforms)
+        {
+            $uniquePackageTypeKey = "$($targetPlatform.name)_"
+            if ($null -ne $targetPlatform.minVersion)
+            {
+                $uniquePackageTypeKey += "$($targetPlatform.minVersion)_"
+            }
+
+            # Checking the architectures of all the application bundles
+            if (($null -eq $appBundles) -or ($appBundles.Count -eq 0))
+            {
+                $uniquePackageTypeKey += $pkg.architecture
+                if ($null -eq $uniquePackageTypeMapping[$uniquePackageTypeKey])
+                {
+                    $uniquePackageTypeMapping[$uniquePackageTypeKey] = @()
+                }
+
+                $pkgObj = New-Object -TypeName PSObject -Property @{
+                    id = $pkg.id
+                    version = [System.Version]::Parse($pkg.version)
+                }
+
+                $uniquePackageTypeMapping[$uniquePackageTypeKey] += $pkgObj
+            }
+            else 
+            {
+                foreach ($bundleContent in $appBundles)
+                {
+                    $bundleContentUniqueKey = $uniquePackageTypeKey + $bundleContent.architecture
+                    if ($null -eq $uniquePackageTypeMapping[$bundleContentUniqueKey])
+                    {
+                        $uniquePackageTypeMapping[$bundleContentUniqueKey] = @()
+                    }
+
+                    $pkgObj = New-Object -TypeName PSObject -Property @{
+                        id = $pkg.id
+                        version = [System.Version]::Parse($bundleContent.version)
+                    }
+
+                    $uniquePackageTypeMapping[$bundleContentUniqueKey] += $pkgObj
+                }
+            }
+        }
+    }
+    
+    $packagesToKeepMap = @{}
+
+    foreach ($entry in $uniquePackageTypeMapping.Keys)
+    {
+        $sortedPackageInfo = @($uniquePackageTypeMapping[$entry] | Sort-Object version -Descending)
+        # We map each package type with the versions of the packages, and for each package type, the
+        # maximum number of packages to keep is defined by RedendantPackagesToKeep
+
+        foreach ($pkgObj in $sortedPackageInfo[0..($RedundantPackagesToKeep - 1)])
+        {
+            $packagesToKeepMap[$pkgObj.id] = $true
+        }
+    }
+
+    return $packagesToKeepMap.Keys | ForEach-Object { $_.ToString() }
+}
+
 function Update-ProductPackage
 {
     [CmdletBinding(
@@ -569,7 +706,7 @@ function Update-ProductPackage
         [PSCustomObject] $SubmissionData,
 
         [ValidateScript({if (Test-Path -Path $_ -PathType Container) { $true } else { throw "$_ cannot be found." }})]
-        [string] $ContentPath, # NOTE: The main wrapper should unzip the zip (if there is one), so that all internal helpers only operate on a Contentpath
+        [string] $PackageRootPath, # NOTE: The main wrapper should unzip the zip (if there is one), so that all internal helpers only operate on a PackageRootPath
 
         [Parameter(ParameterSetName="AddPackages")]
         [switch] $AddPackages,
@@ -598,7 +735,7 @@ function Update-ProductPackage
     {
         $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
-        $ContentPath = Resolve-UnverifiedPath -Path $ContentPath
+        $PackageRootPath = Resolve-UnverifiedPath -Path $PackageRootPath
 
         if (($AddPackages -or $ReplacePackages -or $UpdatePackages) -and ($SubmissionData.applicationPackages.Count -eq 0))
         {
@@ -636,9 +773,27 @@ function Update-ProductPackage
         }
         elseif ($UpdatePackages)
         {
-            # TODO -- Better understand the current object model so that we can accurately determine
-            # which packages are redundant.
-            # TODO: BE CAREFUL ABOUT KEEPING PRE-WIN 10 PACKAGES!!!
+            $packages = Get-ProductPackage @params
+            if ($packages.Count -eq 0)
+            {
+                $message =  "Cannot update the packages because the cloned submission is missing its packages."
+                Write-Log -Message $message -Level Error
+                throw $message
+            }
+           
+            $packagesToKeep = Get-PackagesToKeep -Package $packages -RedundantPackagesToKeep $RedundantPackagesToKeep
+            $numberOfPackagesRemoved = 0
+            Write-Log -Message "Cloned submission had [$($packages.Length)] package(s). New submission specified [$($SubmissionData.applicationPackages.Length)] package(s). User requested to keep [$RedundantPackagesToKeep] redundant package(s)." -Level Verbose
+            foreach ($package in $packages)
+            {
+                if (-not $packagesToKeep.Contains($package.id))
+                {
+                    $null = Remove-ProductPackage @params -PackageId ($package.id)
+                    $numberOfPackagesRemoved++
+                }
+            }
+
+            Write-Log -Message "[$numberOfPackagesRemoved] package(s) were removed." -Level Verbose
         }
 
         # Regardless of which method we're following, the last thing that we'll do is get these new
@@ -646,7 +801,7 @@ function Update-ProductPackage
         foreach ($package in $SubmissionData.applicationPackages)
         {
             $packageSubmission = New-ProductPackage @params -FileName (Split-Path -Path $package.fileName -Leaf)
-            $null = Set-StoreFile -FilePath (Join-Path -Path $ContentPath -ChildPath $package.fileName) -SasUri $packageSubmission.fileSasUri -NoStatus:$NoStatus
+            $null = Set-StoreFile -FilePath (Join-Path -Path $PackageRootPath -ChildPath $package.fileName) -SasUri $packageSubmission.fileSasUri -NoStatus:$NoStatus
             $packageSubmission.state = [StoreBrokerFileState]::Uploaded.ToString()
             $null = Set-ProductPackage @params -Object $packageSubmission
         }
@@ -657,7 +812,7 @@ function Update-ProductPackage
         $telemetryProperties = @{
             [StoreBrokerTelemetryProperty]::ProductId = $ProductId
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
-            [StoreBrokerTelemetryProperty]::ContentPath = (Get-PiiSafeString -PlainText $ContentPath)
+            [StoreBrokerTelemetryProperty]::PackageRootPath = (Get-PiiSafeString -PlainText $PackageRootPath)
             [StoreBrokerTelemetryProperty]::AddPackages = ($AddPackages -eq $true)
             [StoreBrokerTelemetryProperty]::ReplacePackages = ($ReplacePackages -eq $true)
             [StoreBrokerTelemetryProperty]::UpdatePackages = ($UpdatePackages -eq $true)

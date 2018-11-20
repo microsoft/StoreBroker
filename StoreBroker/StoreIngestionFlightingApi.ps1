@@ -1583,7 +1583,7 @@ function Patch-ApplicationFlightSubmission
 
         [switch] $UpdateListings,
 
-        [switch] $UpdatePublishModeAndVisibility,
+        [switch] $UpdatePublishMode,
 
         [switch] $UpdatePricingAndAvailability,
 

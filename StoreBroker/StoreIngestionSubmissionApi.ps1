@@ -155,6 +155,7 @@ function Get-Submission
     [CmdletBinding(
         SupportsShouldProcess,
         DefaultParametersetName="Search")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
     param(
         [Parameter(Mandatory)]
         [ValidateScript({if ($_.Length -le 12) { throw "It looks like you supplied an AppId instead of a ProductId.  Use Get-Product with -AppId to find the ProductId for this AppId." } else { $true }})]
@@ -383,7 +384,7 @@ function New-Submission
         ceates a new submission that is cloned from the previous submission.  Does not return until
         all of the resources for the submission are ready.
 #>
-        [CmdletBinding(
+    [CmdletBinding(
         SupportsShouldProcess,
         DefaultParameterSetName='Retail')]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
@@ -802,6 +803,7 @@ function Get-SubmissionDetail
         Gets the details for the specified Submission.
 #>
     [CmdletBinding(SupportsShouldProcess)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
     param(
         [Parameter(Mandatory)]
         [ValidateScript({if ($_.Length -le 12) { throw "It looks like you supplied an AppId instead of a ProductId.  Use Get-Product with -AppId to find the ProductId for this AppId." } else { $true }})]
@@ -1322,6 +1324,7 @@ function Publish-Submission
 function Get-SubmissionReport
 {
     [CmdletBinding(SupportsShouldProcess)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
     param(
         [Parameter(Mandatory)]
         [ValidateScript({if ($_.Length -le 12) { throw "It looks like you supplied an AppId instead of a ProductId.  Use Get-Product with -AppId to find the ProductId for this AppId." } else { $true }})]
@@ -1453,6 +1456,8 @@ function Submit-Submission
 function Get-SubmissionValidation
 {
     [CmdletBinding(SupportsShouldProcess)]
+    [OutputType([Object[]])]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
     param(
         [Parameter(Mandatory)]
         [ValidateScript({if ($_.Length -le 12) { throw "It looks like you supplied an AppId instead of a ProductId.  Use Get-Product with -AppId to find the ProductId for this AppId." } else { $true }})]
@@ -1647,7 +1652,7 @@ function Update-Submission
     }
 
     $expandedZipPath = [string]::Empty
-    if (([String]::IsNullOrWhiteSpace($ZipPath))) 
+    if (([String]::IsNullOrWhiteSpace($ZipPath)))
     {
         if (([String]::IsNullOrWhiteSpace($PackageRootPath)) -or ([String]::IsNullOrWhiteSpace($MediaRootPath)))
         {
@@ -1656,7 +1661,7 @@ function Update-Submission
             throw $message
         }
     }
-    else 
+    else
     {
         if ((-not [String]::IsNullOrWhiteSpace($PackageRootPath)) -or (-not [String]::IsNullOrWhiteSpace($MediaRootPath)))
         {
@@ -1797,7 +1802,7 @@ function Update-Submission
     # switch was provided by the user
     if ((-not $AddPackages) -and
         (-not $ReplacePackages) -and
-        (-not $UpdatePackages) -and 
+        (-not $UpdatePackages) -and
         (-not $UpdateListingText) -and
         (-not $UpdateImagesAndCaptions) -and
         (-not $UpdatePublishModeAndVisibility) -and
@@ -1868,7 +1873,7 @@ function Update-Submission
                 {
                     $packageParams.Add('PackageRootPath', $PackageRootPath)
                 }
-                else 
+                else
                 {
                     $packageParams.Add('PackageRootPath', $expandedZipPath)
                 }
@@ -1886,7 +1891,7 @@ function Update-Submission
                 {
                     $listingParams.Add('MediaRootPath', $MediaRootPath)
                 }
-                else 
+                else
                 {
                     $listingParams.Add('MediaRootPath', $expandedZipPath)
                 }

@@ -16,6 +16,7 @@ function Get-ProductPackage
     [CmdletBinding(
         SupportsShouldProcess,
         DefaultParametersetName="Search")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
     param(
         [Parameter(Mandatory)]
         [ValidateScript({if ($_.Length -le 12) { throw "It looks like you supplied an AppId instead of a ProductId.  Use Get-Product with -AppId to find the ProductId for this AppId." } else { $true }})]
@@ -183,6 +184,7 @@ function Wait-ProductPackageProcessed
         processing, or will throw an exception if it has failed processing.
 #>
     [CmdletBinding(SupportsShouldProcess)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
     param(
         [Parameter(Mandatory)]
         [ValidateScript({if ($_.Length -le 12) { throw "It looks like you supplied an AppId instead of a ProductId.  Use Get-Product with -AppId to find the ProductId for this AppId." } else { $true }})]
@@ -290,6 +292,7 @@ function New-ProductPackage
     [CmdletBinding(
         SupportsShouldProcess,
         DefaultParametersetName="Object")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
     param(
         [Parameter(Mandatory)]
         [ValidateScript({if ($_.Length -le 12) { throw "It looks like you supplied an AppId instead of a ProductId.  Use Get-Product with -AppId to find the ProductId for this AppId." } else { $true }})]
@@ -375,6 +378,7 @@ function Set-ProductPackage
     [CmdletBinding(
         SupportsShouldProcess,
         DefaultParametersetName="Object")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
     param(
         [Parameter(Mandatory)]
         [ValidateScript({if ($_.Length -le 12) { throw "It looks like you supplied an AppId instead of a ProductId.  Use Get-Product with -AppId to find the ProductId for this AppId." } else { $true }})]
@@ -487,6 +491,7 @@ function Remove-ProductPackage
 {
     [Alias('Delete-ProductPackage')]
     [CmdletBinding(SupportsShouldProcess)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
     param(
         [Parameter(Mandatory)]
         [ValidateScript({if ($_.Length -le 12) { throw "It looks like you supplied an AppId instead of a ProductId.  Use Get-Product with -AppId to find the ProductId for this AppId." } else { $true }})]
@@ -555,14 +560,14 @@ function Remove-ProductPackage
 
 function Get-PackagesToKeep
 {
-<# 
+<#
     .SYNOPSIS
         Determine the redundant packages to keep when users specify Update-Packages for packages submissions
 
     .PARAMETER Package
         A List of packages from the given submission. This function will determine which packages to keep from this list.
         Each package is a pscustomobject with several important fields that tell us some key information of this package, such
-        as packageFullName, architecture, target platforms, bundle contents, version, and state. 
+        as packageFullName, architecture, target platforms, bundle contents, version, and state.
 
     .PARAMETER RedundantPackagesToKeep
         Number of packages to keep in one flight group
@@ -573,17 +578,17 @@ function Get-PackagesToKeep
 
     .NOTES
         Here is how we determine which packages to keep:
-        We build a set of unique keys based on the device families, minOS versions, and architecture. We then associate 
-        each package to the key it applies to. For bundles we build the keys based on the bundle's types of applications. 
-        
+        We build a set of unique keys based on the device families, minOS versions, and architecture. We then associate
+        each package to the key it applies to. For bundles we build the keys based on the bundle's types of applications.
+
         Start the key with target platform and minOS version. So it looks something like: targetplatform1_minversion1
         We save this as a variable called $uniquePackageTypeKey
-        
+
         Looking at all the architectures from the bundleContents. If the bundleContent is empty then we simply grab the
-        architecture field from the package object. Concatenate $uniquePackageTypeKey with the package's architecture. 
+        architecture field from the package object. Concatenate $uniquePackageTypeKey with the package's architecture.
         Otherwise, we look through the app bundles. Each bundle has a unique architecture. Thus for each bundle we create
         a key by concatnating $uniquePackageTypeKey with the bundle's architecture.
-    
+
         Populate a hashtable using the key we derived above and associate it with the current package. We want to make sure
         that the number of packages we want to keep for each key is less than or equal to $RedundantPackagesToKeep
 #>
@@ -601,7 +606,7 @@ function Get-PackagesToKeep
 
     # Maximum number of packages allowed in one flight group according to Windows Store
     Set-Variable -Name MaxPackagesPerGroup -Value 25 -Option Constant -Scope Local -Force
-    
+
     if ($RedundantPackagesToKeep -gt $MaxPackagesPerGroup)
     {
         Write-Log "You have specified $RedundantPackagesToKeep packages to keep. This exceeds the maximum which is $MaxPackagesPerGroup. We will override this with the max value" -Level Warning
@@ -652,7 +657,7 @@ function Get-PackagesToKeep
 
                 $uniquePackageTypeMapping[$uniquePackageTypeKey] += $pkgObj
             }
-            else 
+            else
             {
                 foreach ($bundleContent in $appBundles)
                 {
@@ -672,7 +677,7 @@ function Get-PackagesToKeep
             }
         }
     }
-    
+
     $packagesToKeepMap = @{}
 
     foreach ($entry in $uniquePackageTypeMapping.Keys)
@@ -780,7 +785,7 @@ function Update-ProductPackage
                 Write-Log -Message $message -Level Error
                 throw $message
             }
-           
+
             $packagesToKeep = Get-PackagesToKeep -Package $packages -RedundantPackagesToKeep $RedundantPackagesToKeep
             $numberOfPackagesRemoved = 0
             Write-Log -Message "Cloned submission had [$($packages.Length)] package(s). New submission specified [$($SubmissionData.applicationPackages.Length)] package(s). User requested to keep [$RedundantPackagesToKeep] redundant package(s)." -Level Verbose

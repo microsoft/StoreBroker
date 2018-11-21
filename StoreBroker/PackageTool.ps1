@@ -2167,9 +2167,9 @@ function Read-AppxUploadMetadata
             {
                 Report-UnsupportedFile -Path $AppxuploadPath
 
-                $error = $throwFormat -f ".appx"
-                Write-Log -Message $error -Level Error
-                throw $error
+                $out = $throwFormat -f ".appx"
+                Write-Log -Message $out -Level Error
+                throw $out
             }
             else
             {
@@ -2183,9 +2183,9 @@ function Read-AppxUploadMetadata
         {
             Report-UnsupportedFile -Path $AppxuploadPath
 
-            $error = $throwFormat -f ".appx or .appxbundle"
-            Write-Log -Message $error -Level Error
-            throw $error
+            $out = $throwFormat -f ".appx or .appxbundle"
+            Write-Log -Message $out -Level Error
+            throw $out
         }
         else
         {
@@ -2617,6 +2617,7 @@ function Remove-DeprecatedProperties
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification="This is intended to be where all deprecated properties are removed.  It's an accurate name.")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "", Justification="Does not cause any change to system state. No value gained from ShouldProcess in this specific instance.")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingCmdletAliases", "DeepCopy-Object", Justification="This is a better function name for what we're doing.")]
     param(
         [Parameter(Mandatory)]
         [PSCustomObject] $SubmissionRequestBody

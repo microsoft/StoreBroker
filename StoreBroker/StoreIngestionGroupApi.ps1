@@ -14,6 +14,7 @@ Add-Type -TypeDefinition @"
 function Get-Group
 {
     [CmdletBinding(SupportsShouldProcess)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
     param(
         [string] $GroupId,
 
@@ -77,6 +78,7 @@ function New-Group
     [CmdletBinding(
         SupportsShouldProcess,
         DefaultParametersetName="Object")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
     param(
         [Parameter(
             Mandatory,
@@ -155,6 +157,7 @@ function Set-Group
     [CmdletBinding(
         SupportsShouldProcess,
         DefaultParametersetName="Object")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
     param(
         [Parameter(
             Mandatory,

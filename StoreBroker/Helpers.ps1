@@ -1097,6 +1097,7 @@ function Convert-EnumToString
         hashtables or enum values.
 #>
     [CmdletBinding()]
+    [OutputType([Object[]])]
     param(
         [Parameter(
             ValueFromPipeline,
@@ -1199,7 +1200,7 @@ function Test-PropertyExists
 
     .EXAMPLE
         Test-PropertyExists -InputObject $listing -Name 'title'
-        
+
         Returns $true if $listing is non-null and has a property named 'title'.
         Returns $false otherwise.
 
@@ -1208,6 +1209,7 @@ function Test-PropertyExists
 #>
     [CmdletBinding()]
     [OutputType([bool])]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification="This is gramatically correct.")]
     param(
         [Parameter(Mandatory)]
         [AllowNull()]
@@ -1261,20 +1263,20 @@ function Set-ObjectProperty
 
     .EXAMPLE
         Set-ObjectProperty -InputObject $listing -Name 'title' -Value 'Photos'
-        
+
         Sets the title of $listing.title = 'Photos', adding the 'title' property to $listing
         if it didn't already exist.
 
     .EXAMPLE
         Set-ObjectProperty -InputObject $listing -Name 'title' -SourceObject $suppliedListing -SourceName 'title'
-        
+
         Sets the title of $listing.title = $suppliedListing.title, adding the 'title' property to
         $listing if it didn't already exist.
 
     .EXAMPLE
         Set-ObjectProperty -InputObject $listing -Name 'title' -SourceObject $suppliedListing -SourceName 'title' -SkipIfNotDefined
-        
-        If $suppliedListing is not null, and it has a property called 'title', then it will 
+
+        If $suppliedListing is not null, and it has a property called 'title', then it will
         set the title of $listing.title = $suppliedListing.title, adding the 'title' property to
         $listing if it didn't already exist.  Otherwise, it will do nothing.
 
@@ -1282,6 +1284,7 @@ function Set-ObjectProperty
         Internal-only helper method.
 #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "", Justification="This module's use case precludes the need to support ShouldProcess on this function.")]
     param(
         [Parameter(Mandatory)]
         [PSCustomObject] $InputObject,

@@ -1398,7 +1398,8 @@ function Start-SubmissionMonitor
                     $shouldMonitor = $false
                 }
 
-                if ($lastSubState -eq [StoreBrokerSubmissionSubState]::ReadyToPublish)
+                if (($lastSubState -eq [StoreBrokerSubmissionSubState]::ReadyToPublish) -and
+                    ($detail.isManualPublish -or ((Get-Date) -lt (Get-Date -Date $detail.releaseTimeInUtc))))
                 {
                     $body += ""
                     $body += "*** Your submission is ready for publishing.  Monitoring will now end."
@@ -2441,6 +2442,7 @@ function Invoke-SBRestMethodMultipleResultOld
 function Invoke-SBRestMethodMultipleResult
 {
     [CmdletBinding(SupportsShouldProcess)]
+    [OutputType([Object[]])]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
     param(
         [Parameter(Mandatory)]
@@ -2543,6 +2545,7 @@ function Test-ResourceType
 function Get-CorrelationId
 {
     [CmdletBinding()]
+    [OutputType([String])]
     param(
         [string] $CorrelationId,
 

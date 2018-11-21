@@ -1644,6 +1644,7 @@ function ConvertFrom-Listing
 function Get-AssetMedia
 {
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification="Media can represent a single item or multiple items.")]
     param(
         [AllowNull()]
         [PSCustomObject[]] $Assets,

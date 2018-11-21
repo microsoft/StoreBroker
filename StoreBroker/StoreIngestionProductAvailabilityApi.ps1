@@ -36,7 +36,7 @@ function Get-ProductAvailability
         [switch] $NoStatus
     )
 
-    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
+    Write-InvocationLog
 
     try
     {
@@ -127,7 +127,7 @@ function New-ProductAvailability
         [switch] $NoStatus
     )
 
-    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
+    Write-InvocationLog
 
     try
     {
@@ -235,7 +235,7 @@ function Set-ProductAvailability
         [switch] $NoStatus
     )
 
-    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
+    Write-InvocationLog
 
     try
     {
@@ -333,7 +333,7 @@ function Update-ProductAvailability
         [switch] $NoStatus
     )
 
-    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
+    Write-InvocationLog
 
     try
     {

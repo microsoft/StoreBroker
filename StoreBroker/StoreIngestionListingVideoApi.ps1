@@ -52,7 +52,7 @@ function Get-ListingVideo
         [switch] $NoStatus
     )
 
-    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
+    Write-InvocationLog
 
     try
     {
@@ -158,7 +158,7 @@ function New-ListingVideo
         [switch] $NoStatus
     )
 
-    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
+    Write-InvocationLog
 
     try
     {
@@ -283,7 +283,7 @@ function Remove-ListingVideo
         [switch] $NoStatus
     )
 
-    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
+    Write-InvocationLog
 
     try
     {
@@ -387,7 +387,7 @@ function Set-ListingVideo
         [switch] $NoStatus
     )
 
-    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
+    Write-InvocationLog
 
     try
     {
@@ -495,7 +495,7 @@ function Update-ListingVideo
         [switch] $NoStatus
     )
 
-    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
+    Write-InvocationLog
 
     try
     {

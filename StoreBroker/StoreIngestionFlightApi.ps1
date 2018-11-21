@@ -42,7 +42,7 @@ function Get-Flight
         [switch] $NoStatus
     )
 
-    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
+    Write-InvocationLog
 
     try
     {
@@ -125,7 +125,7 @@ function New-Flight
         [switch] $NoStatus
     )
 
-    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
+    Write-InvocationLog
 
     try
     {
@@ -201,7 +201,7 @@ function Remove-Flight
         [switch] $NoStatus
     )
 
-    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
+    Write-InvocationLog
 
     try
     {
@@ -281,7 +281,7 @@ function Set-Flight
         [switch] $NoStatus
     )
 
-    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
+    Write-InvocationLog
 
     try
     {
@@ -369,7 +369,7 @@ function Update-Flight
         [switch] $NoStatus
     )
 
-    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
+    Write-InvocationLog
 
     try
     {

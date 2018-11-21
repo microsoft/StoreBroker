@@ -42,7 +42,7 @@ function Get-FeatureAvailability
         [switch] $NoStatus
     )
 
-    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
+    Write-InvocationLog
 
     try
     {
@@ -143,7 +143,7 @@ function New-FeatureAvailability
         [switch] $NoStatus
     )
 
-    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
+    Write-InvocationLog
 
     try
     {
@@ -225,7 +225,7 @@ function Set-FeatureAvailability
         [switch] $NoStatus
     )
 
-    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
+    Write-InvocationLog
 
     try
     {

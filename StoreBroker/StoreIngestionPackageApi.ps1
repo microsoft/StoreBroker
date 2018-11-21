@@ -47,7 +47,7 @@ function Get-ProductPackage
         [switch] $NoStatus
     )
 
-    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
+    Write-InvocationLog
 
     $singleQuery = (-not [String]::IsNullOrWhiteSpace($PackageId))
     $telemetryProperties = @{
@@ -211,7 +211,7 @@ function Wait-ProductPackageProcessed
         [switch] $NoStatus
     )
 
-    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
+    Write-InvocationLog
 
     $CorrelationId = Get-CorrelationId -CorrelationId $CorrelationId -Identifier 'Wait-ProductPackageProcessed'
 
@@ -321,7 +321,7 @@ function New-ProductPackage
         [switch] $NoStatus
     )
 
-    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
+    Write-InvocationLog
 
     $telemetryProperties = @{
         [StoreBrokerTelemetryProperty]::ProductId = $ProductId
@@ -419,7 +419,7 @@ function Set-ProductPackage
         [switch] $NoStatus
     )
 
-    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
+    Write-InvocationLog
 
     try
     {
@@ -514,7 +514,7 @@ function Remove-ProductPackage
         [switch] $NoStatus
     )
 
-    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
+    Write-InvocationLog
 
     try
     {
@@ -734,7 +734,7 @@ function Update-ProductPackage
         [switch] $NoStatus
     )
 
-    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
+    Write-InvocationLog
 
     try
     {

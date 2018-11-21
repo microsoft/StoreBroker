@@ -557,7 +557,7 @@ function Set-TelemetryEvent
         return
     }
 
-    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
+    Write-InvocationLog -ExcludeParameter @('Properties', 'Metrics')
 
     try
     {
@@ -660,7 +660,7 @@ function Set-TelemetryException
         return
     }
 
-    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
+    Write-InvocationLog -ExcludeParameter @('Exception', 'Properties', 'NoFlush')
 
     try
     {
@@ -738,7 +738,7 @@ function Flush-TelemetryClient
         return
     }
 
-    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
+    Write-InvocationLog
 
     $telemetryClient = Get-TelemetryClient -NoStatus:$NoStatus
 

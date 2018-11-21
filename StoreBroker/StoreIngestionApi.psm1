@@ -263,7 +263,7 @@ function Set-StoreBrokerAuthentication
         [string] $TenantName = $null
     )
 
-    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
+    Write-InvocationLog
 
     if ($UseProxy)
     {
@@ -369,7 +369,7 @@ function Clear-StoreBrokerAuthentication
 
     Set-TelemetryEvent -EventName Clear-StoreBrokerAuthentication
 
-    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
+    Write-InvocationLog
 
     if ($PSCmdlet.ShouldProcess("", "Clear tenantId"))
     {
@@ -843,7 +843,7 @@ function Set-StoreFile
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::FilePath = (Get-PiiSafeString -PlainText $FilePath) }
 
-    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
+    Write-InvocationLog
 
     Write-Log -Message "Attempting to upload the file ($FilePath) to $SasUri..." -Level Verbose
 
@@ -1038,7 +1038,7 @@ function Get-StoreFile
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::FilePath = (Get-PiiSafeString -PlainText $FilePath) }
 
-    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
+    Write-InvocationLog
 
     Write-Log -Message "Attempting to download the contents of $SasUri to $FilePath..." -Level Verbose
 
@@ -1279,7 +1279,7 @@ function Start-SubmissionMonitor
         [switch] $PassThru
     )
 
-    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
+    Write-InvocationLog
 
     # Telemetry-related
     $telemetryProperties = @{

@@ -151,7 +151,7 @@ function ConvertFrom-ExistingSubmission
         [switch] $NoStatus
     )
 
-    Write-Log -Message "[$($MyInvocation.MyCommand.Module.Version)] Executing: $($MyInvocation.Line.Trim())" -Level Verbose
+    Write-InvocationLog
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
     try

@@ -1771,7 +1771,7 @@ function Show-AssetFileNames
     $assetRoot = Join-Path -Path (Join-Path -Path '<MediaRootPath>' -ChildPath $Release) -ChildPath '<langCode>\...'
     Write-Log -Message @(
         "You now need to find all of your assets and place them here: $assetRoot",
-        "  where <ImagesRootPath> is the path defined in your config file,",
+        "  where <MediaRootPath> is the path defined in your config file,",
         "  and <langcode> is the same langcode for the directory of the PDP file referencing those assets.")
 
     # Quick analysis to help teams out if they need to do anything special with their PDP's

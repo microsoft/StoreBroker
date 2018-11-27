@@ -137,7 +137,7 @@ function Format-InAppProducts
         [PSCustomObject] $IapData
     )
 
-    Begin
+    begin
     {
         Set-TelemetryEvent -EventName Format-InAppProducts
 
@@ -150,12 +150,12 @@ function Format-InAppProducts
         $iaps = @()
     }
 
-    Process
+    process
     {
         $iaps += $IapData
     }
 
-    End
+    end
     {
         Write-Log -Message $($iaps | Sort-Object productId | Format-Table id, productId, productType, $publishedSubmissionField, $pendingSubmissionField, $applicationsField | Out-String)
     }
@@ -272,7 +272,7 @@ function Format-InAppProduct
         [PSCustomObject] $IapData
     )
 
-    Begin
+    begin
     {
         Set-TelemetryEvent -EventName Format-InAppProduct
 
@@ -282,7 +282,7 @@ function Format-InAppProduct
         $output = @()
     }
 
-    Process
+    process
     {
         $output += ""
         $output += "Id                        : $($IapData.id)"
@@ -294,7 +294,7 @@ function Format-InAppProduct
         $output += "Pending Submission        : {0}" -f $(if (($null -eq $IapData.pendingInAppProductSubmission.id) -or ($_.pendingInAppProductSubmission.id -eq "0")) { "---" } else { $IapData.pendingInAppProductSubmission.id } )
     }
 
-    End
+    end
     {
         Write-Log -Message $output
     }
@@ -446,7 +446,7 @@ function Format-ApplicationInAppProducts
         [PSCustomObject] $ApplicationIapData
     )
 
-    Begin
+    begin
     {
         Set-TelemetryEvent -EventName Format-ApplicationInAppProducts
 
@@ -455,12 +455,12 @@ function Format-ApplicationInAppProducts
         $iaps = @()
     }
 
-    Process
+    process
     {
         $iaps += $ApplicationIapData
     }
 
-    End
+    end
     {
         Write-Log -Message $($iaps | Format-Table inAppProductId | Out-String)
     }
@@ -746,7 +746,7 @@ function Format-InAppProductSubmission
         [PSCustomObject] $IapSubmissionData
     )
 
-    Begin
+    begin
     {
         Set-TelemetryEvent -EventName Format-InAppProductSubmission
 
@@ -756,7 +756,7 @@ function Format-InAppProductSubmission
         $output = @()
     }
 
-    Process
+    process
     {
         $output += ""
         $output += "Submission Id                       : $($IapSubmissionData.id)"
@@ -852,7 +852,7 @@ function Format-InAppProductSubmission
         }
     }
 
-    End
+    end
     {
         Write-Log -Message $output
     }

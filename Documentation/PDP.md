@@ -138,12 +138,12 @@ A key attribute to be aware of is the `Release` attribute that is part of the pr
 `ProductDescription` node.  The value for `Release` is directly used by `New-SubmissionPackage`
 to find the screenshots referenced by the PDP.
 
-The expected folder structure layout for screenshots is as follows:
+The expected folder structure layout for media (screenshots, trailers, etc.) is as follows:
 
-    <ImagesRootPath>\<Release>\<lang-code>\...\img.png
+    <MediaRootPath>\<Release>\<lang-code>\...\img.png
 
 where:
- * `ImagesRootPath`: specified in your config file or at the commandline
+ * `MediaRootPath`: specified in your config file or at the commandline
  * `Release`: this is the attribute being discussed
  * `lang-code`: the langCode for the language matching that of the PDP
  * `...`: any number of sub-folders ... we don't care about these...at this point, we're just
@@ -235,8 +235,8 @@ that the filename will be found within the defined [folder structure](#folder-st
 ### Fallback Language Support
 
 PDP files are language-specific, and as we saw in the [Folder Structure](#folder-structure) section,
-any screenhots or icons that are referenced by a PDP are only searched for within that same language's
-media sub-folder within `ImagesRootPath`.
+any screenshots or icons that are referenced by a PDP are only searched for within that same language's
+media sub-folder within `MediaRootPath`.
 
 There are situations however where you might want to share an image/media file across more than one language.
 For instance: maybe you want all Spanish language PDP's to use the images from `es-es`.

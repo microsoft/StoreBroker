@@ -158,7 +158,7 @@ following the instructions in [SETUP.md](SETUP.md):
 
 Generating the submission request JSON/zip package is done with
 
-    New-SubmissionPackage -ConfigPath <config-path> -PDPRootPath <path> [[-Release] <string>] -PDPInclude <filename> [-PDPExclude <filename>] -ImagesRootPath <path> -AppxPath <full-path>[, <additional-path>]+ -OutPath <output-dir> -OutName <output-name>
+    New-SubmissionPackage -ConfigPath <config-path> -PDPRootPath <path> [[-Release] <string>] -PDPInclude <filename> [-PDPExclude <filename>] -MediaRootPath <path> -PackagePath <full-path>[, <additional-path>]+ -OutPath <output-dir> -OutName <output-name>
 
 > Items in brackets ('[]') are optional.
 
@@ -742,7 +742,7 @@ following the instructions in [SETUP.md](SETUP.md):
 
 Generating the submission request JSON/zip package is done with
 
-    New-InAppProductSubmissionPackage -ConfigPath <config-path> -PDPRootPath <path> [[-Release] <string>] -PDPInclude <filename> [-PDPExclude <filename>] -ImagesRootPath <path> -OutPath <output-dir> -OutName <output-name>
+    New-InAppProductSubmissionPackage -ConfigPath <config-path> -PDPRootPath <path> [[-Release] <string>] -PDPInclude <filename> [-PDPExclude <filename>] -MediaRootPath <path> -OutPath <output-dir> -OutName <output-name>
 
 > Items in brackets ('[]') are optional.
 

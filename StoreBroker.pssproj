@@ -51,11 +51,13 @@
     <Compile Include="PDP\ProductDescription.xml" />
     <Compile Include="PDP\ProductDescription.xsd" />
     <Compile Include="README.md" />
-    <Compile Include="StoreBroker\AppConfigTemplate.json" />
+    <Compile Include="StoreBroker\AppConfigTemplate.ps1" />
     <Compile Include="StoreBroker\Helpers.ps1" />
-    <Compile Include="StoreBroker\IapConfigTemplate.json" />
+    <Compile Include="StoreBroker\IapConfigTemplate.ps1" />
     <Compile Include="StoreBroker\NugetTools.ps1" />
+    <Compile Include="StoreBroker\PackageConfig.ps1" />
     <Compile Include="StoreBroker\PackageTool.ps1" />
+    <Compile Include="StoreBroker\MigrateTool.ps1" />
     <Compile Include="StoreBroker\StoreBroker.psd1" />
     <Compile Include="StoreBroker\StoreIngestionApi.psm1" />
     <Compile Include="StoreBroker\StoreIngestionApplicationApi.ps1" />

@@ -57,7 +57,7 @@ potential confusion. At a high level, all you're doing is:
 The following section describes how to configure your system for use with StoreBroker,
 and lists the available options for installing the module contents.
 
-### ExecutionPolicy 
+### ExecutionPolicy
 
 Update the `PowerShell ExecutionPolicy` to be `RemoteSigned` (which means
 that PowerShell scripts that are local to your machine don't need to be signed in order to execute).
@@ -205,7 +205,7 @@ To initially configure StoreBroker with your Developer Account:
 
   2. You must [associate your AAD with your Dev Center account](https://msdn.microsoft.com/windows/uwp/monetize/create-and-manage-submissions-using-windows-store-services#associate-an-azure-ad-application-with-your-windows-dev-center-account)
      to obtain the credentials to allow StoreBroker to access your account and perform actions on
-     your behalf. 
+     your behalf.
 
   3. The app you want to publish must already exist. The Windows Store Submission API can only
      publish updates to existing applications. You can
@@ -217,7 +217,7 @@ To initially configure StoreBroker with your Developer Account:
      submission, the Update attempt will fail.
 
 
-> These prerequisites come directly from the 
+> These prerequisites come directly from the
 > [API Documentation](https://msdn.microsoft.com/windows/uwp/monetize/create-and-manage-submissions-using-windows-store-services).
 > Refer to that documentation for additional prerequisites.
 
@@ -248,10 +248,10 @@ To get those values:
    account, and assign it the **Manager** role. If this application already exists in your AAD,
    you can select it on the **Add Azure AD applications** page to add it to your Dev Center account.
    Otherwise, you can create a new AAD application on the **Add Azure AD applications** page.
-   For more information, see [Add and manage Azure AD applications](https://msdn.microsoft.com/windows/uwp/publish/manage-account-users#add-and-manage-azure-ad-applications). 
+   For more information, see [Add and manage Azure AD applications](https://msdn.microsoft.com/windows/uwp/publish/manage-account-users#add-and-manage-azure-ad-applications).
 
 3. Return to the **Manage users** page, click the name of your Azure AD application to go to the
-   application settings, and copy the **Tenant ID** and **Client ID** values. 
+   application settings, and copy the **Tenant ID** and **Client ID** values.
 
 4. Click **Add new key**. On the following screen, copy the **Key** value, which corresponds to the
    **Client secret**. You *will not* be able to access this info again after you leave this page,
@@ -292,12 +292,12 @@ One way to do this would be the following:
   3. Now you can store the password somewhere on disk securely.  Doing this will encrypt the
      password into a plain-text file, and only the same user logged-in to the exact same computer
      will be able to decrypt it.
-          
+
          $cred.Password | ConvertFrom-SecureString | Set-Content -Path (Join-Path -Path ([System.Environment]::GetFolderPath('MyDocuments')) -ChildPath 'clientSecret.txt')
 
   4. When you want to create the credentials yourself later on and authenticate (being sure to
      replace `<tenantId>` and `<clientId>` with the proper values):
- 
+
          $clientSecret = Get-Content -Path (Join-Path -Path ([System.Environment]::GetFolderPath('MyDocuments')) -ChildPath 'clientSecret.txt') | ConvertTo-SecureString
          $cred = New-Object System.Management.Automation.PSCredential "<clientId>", $clientSecret
          Set-StoreBrokerAuthentication -TenantId <tenantId> -Credential $cred
@@ -348,7 +348,7 @@ That setting (being configured to use the proxy) will be stored for the duration
 > the profile for you. Then, just add those 3 lines of code from Step 4 into your profile.
 
 To stop authenticating with the proxy, at any time simply close your PowerShell console window, or
-call: 
+call:
 
     Clear-StoreBrokerAuthentication
 
@@ -403,7 +403,7 @@ started by generating your app's PDP files based on your current published submi
 
 Where:
   * `<appId>` is your app's ID.
-  
+
   * `<release>` is the name of this release.  Many teams name their releases as `YYMM`
     (depending on how often they release).  This value will be added to each of the PDP's that are
     generated, and will impact the expected location of the screenshots being referenced.  More on
@@ -453,7 +453,7 @@ Every project should have its own StoreBroker config file.  The config file has 
      dynamically during your build from a localization service/process, leave both blank and
      only specify `PDPRootPath` at the commandline so that you can use environment variables
      to reference the local path, and move on to "**ii**".
- 
+
      Otherwise, it's necessary for you to provide the path that the PDP's can be found.
      You'll do this with a combination of these two config values.  The general idea
      is that you have a root folder for PDP's that contains sub-folders named after each
@@ -480,7 +480,7 @@ Every project should have its own StoreBroker config file.  The config file has 
     be updated with the most recent PDP's, use the first method.  If you _will_ be using
     release-named sub-folders to organize your PDP's, then you may wish to use the second
     option, and you can either choose to update your config file with the new release name
-    every time it changes, or provide it at the commandline instead. Your choice. 
+    every time it changes, or provide it at the commandline instead. Your choice.
 
     > Remember that you have to escape any backslashes used in the config file.
 
@@ -494,7 +494,7 @@ Every project should have its own StoreBroker config file.  The config file has 
     since that's commonly in the loc output for Microsoft builds, but doesn't represent a real
     language (these sub-folders need to use the same lang-codes that the Store uses).
 
-    v. `ImagesRootPath` - Point this to where your app screenshots are stored.  Please note that
+    v. `MediaRootPath` - Point this to where your app screenshots are stored.  Please note that
     this should point to a root location for the screenshots, and we expect there to be
     sub-folders for each release within here.
 
@@ -507,14 +507,14 @@ Every project should have its own StoreBroker config file.  The config file has 
                    Screenshot1.png
                    Screenshot2.png
 
-    you would specify `\\share\MyApp\Images\` as your `ImagesRootPath`, and your PDP file
-    would set `201605` as the `Release` attribute (at the very top of the file). 
+    you would specify `\\share\MyApp\Images\` as your `MediaRootPath`, and your PDP file
+    would set `201605` as the `Release` attribute (at the very top of the file).
     `New-SubmissionPackage` would then combine those together at runtime to get the
     full path to these images.
 
-    > Remember that you have to escape any backslashes used in the config file. 
+    > Remember that you have to escape any backslashes used in the config file.
 
-    vi. `AppxPath` - Follow the guidance in the help comments to correctly specify where the appx
+    vi. `PackagePath` - Follow the guidance in the help comments to correctly specify where the appx
     packages for your app will be found.  Since this is likely part of your build output, you'll
     likely specify this at the commandline with environment variables, as opposed to setting a
     path in the config file.
@@ -575,7 +575,7 @@ started by generating your IAP's PDP files based on your current published (or p
 
 Where:
   * `<iapId>` is your IAP's ID.
-  
+
   * `<release>` is the name of this release.  Many teams name their releases as `YYMM`
     (depending on how often they release).  This value will be added to each of the PDP's that are
     generated, and will impact the expected location of the screenshots being referenced.  More on

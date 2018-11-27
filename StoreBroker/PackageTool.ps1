@@ -1,10 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-# Default file name of the AppConfig in the module folder
-$script:defaultConfigFileName = "AppConfigTemplate.json"
-$script:defaultIapConfigFileName = "IapConfigTemplate.json"
-
 # Images will be placed in the .zip folder under the $packageImageFolderName subfolder
 $script:packageImageFolderName = "Assets"
 
@@ -20,8 +16,8 @@ $script:s_Release = "Release"
 $script:s_PDPInclude = "PDPInclude"
 $script:s_PDPExclude = "PDPExclude"
 $script:s_LanguageExclude = "LanguageExclude"
-$script:s_ImagesRootPath = "ImagesRootPath"
-$script:s_AppxPath = "AppxPath"
+$script:s_MediaRootPath = "MediaRootPath"
+$script:s_PackagePath = "PackagePath"
 $script:s_OutPath = "OutPath"
 $script:s_OutName = "OutName"
 $script:s_DisableAutoPackageNameFormatting = "DisableAutoPackageNameFormatting"
@@ -49,408 +45,6 @@ $script:minVersionFormatString = "{0} min version {1}"
 $script:appSchemaVersion = 3
 $script:iapSchemaVersion = 2
 $script:schemaPropertyName = 'sbSchema'
-
-function Get-StoreBrokerConfigFileContentForIapId
-{
-<#
-    .SYNOPSIS
-        Updates the default IAP configuration file template with the values from the
-        indicated IAP's most recent submission.
-
-    .DESCRIPTION
-        Updates the default IAP configuration file template with the values from the
-        indicated IAP's most recent submission.
-
-        The Git repo for this module can be found here: https://aka.ms/StoreBroker
-
-    .PARAMETER ConfigContent
-        The content of the config file template as a simple string.
-
-    .PARAMETER IapId
-        The IapId whose most recent submission should be retrieved and used to fill
-        in the default values of the template content.
-
-    .EXAMPLE
-        Get-StoreBrokerConfigFileContentForIapId -ConfigContent $template -IapId 0ABCDEF12345
-
-        Assuming that $template has the content of the template file read in from disk and
-        merged into a single string, this then gets the most recent IAP submission for
-        IapId 0ABCDEF12345 and replaces the default values in the template with those from
-        that submission.
-
-    .OUTPUTS
-        System.String - The template content modified with the values from the
-                        most recent IAP submission.
-
-    .NOTES
-        We use regular expression matching within the implementation rather than operating
-        on the content as a JSON object, because we want to retain all of the comments that
-        are part of the template content.
-#>
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)]
-        [string] $ConfigContent,
-
-        [Parameter(Mandatory)]
-        [string] $IapId
-    )
-
-    $updated = $ConfigContent
-
-    try
-    {
-        $iap = Get-InAppProduct -IapId $IapId
-
-        $submissionId = $iap.lastPublishedInAppProductSubmission.id
-        if ([String]::IsNullOrEmpty($submissionId))
-        {
-            $submissionId = $iap.pendingInAppProductSubmission.id
-            Write-Log -Message "No published submission exists for this In-App Product.  Using the current pending submission." -Level Warning
-        }
-
-        $sub = Get-InAppProductSubmission -IapId $IapId -SubmissionId $submissionId
-
-        $updated = $updated -replace '"iapId": "",', "`"iapId`": `"$IapId`","
-
-        # PUBLISH MODE AND VISIBILITY
-        $updated = $updated -replace '"targetPublishMode": ".*",', "`"targetPublishMode`": `"$($sub.targetPublishMode)`","
-        $updated = $updated -replace '"targetPublishDate": .*,', "`"targetPublishDate`": `"$($sub.targetPublishDate)`","
-        $updated = $updated -replace '"visibility": ".*",', "`"visibility`": `"$($sub.visibility)`","
-
-        # PRICING AND AVAILABILITY
-        $updated = $updated -replace '"priceId": ".*",', "`"priceId`": `"$($sub.pricing.priceId)`","
-
-        $marketSpecificPricings = $sub.pricing.marketSpecificPricings | ConvertTo-Json -Depth $script:jsonConversionDepth
-        $updated = $updated -replace '(\s+)"marketSpecificPricings": {.*(\r|\n)+\s*}', "`$1`"marketSpecificPricings`": $marketSpecificPricings"
-
-        # PROPERTIES
-        $updated = $updated -replace '"lifetime": ".*",', "`"lifetime`": `"$($sub.lifetime)`","
-        $updated = $updated -replace '"contentType": ".*",', "`"contentType`": `"$($sub.contentType)`","
-
-        $tag = Get-EscapedJsonValue -Value $sub.tag
-        $updated = $updated -replace '"tag": ""', "`"tag`": `"$tag`""
-
-        $keywords = $sub.keywords | ConvertTo-Json -Depth $script:jsonConversionDepth
-        if ($null -eq $keywords) { $keywords = "[ ]" }
-        $updated = $updated -replace '(\s+)"keywords": \[.*(\r|\n)+\s*\]', "`$1`"keywords`": $keywords"
-
-        # NOTES FOR CERTIFICATION
-        $notesForCertification = Get-EscapedJsonValue -Value $sub.notesForCertification
-        $updated = $updated -replace '"notesForCertification": ""', "`"notesForCertification`": `"$notesForCertification`""
-
-        return $updated
-    }
-    catch
-    {
-        Write-Log -Message "Encountered problems getting current In-App Product submission values:" -Exception $_ -Level Error
-        throw
-    }
-}
-
-function New-StoreBrokerInAppProductConfigFile
-{
-<#
-    .SYNOPSIS
-        Creates a new configuration file as a template for an In-App Product submission.
-
-    .DESCRIPTION
-        Creates a new configuration file as a template for an In-App Product submission.
-        The full path to the new file can be provided by the -Path parameter.
-
-        The Git repo for this module can be found here: https://aka.ms/StoreBroker
-
-    .PARAMETER Path
-        A full path specifying where the new config file will go and what it will be
-        named.  It is recommended to use the .json file extension.
-
-    .PARAMETER IapId
-        If specified, this will pre-populate the Iap config portion of the
-        configuration file with the values from the most recent submission for this
-        IapId.
-
-    .EXAMPLE
-        New-StoreBrokerConfigFile -Path "C:\users\alias\NewIapConfig.json"
-
-        Creates the config file template "NewIapConfig.json" under "C:\users\alias"
-
-    .EXAMPLE
-        New-StoreBrokerInAppProductConfigFile -Path "C:\users\alias\NewIapConfig.json" -WhatIf
-
-        This example is the same as Example 1 except no config file will be created.  The
-        function will report on the actions it would have taken, instead.
-
-    .EXAMPLE
-        New-StoreBrokerInAppProductConfigFile -Path "C:\users\alias\NewIapConfig.json" -AppId 0ABCDEF12345
-
-        Creates the config file template "NewIapConfig.json" under "C:\users\alias", but sets
-        the values for the app config portion to be those from the most recent submission for
-        IapId 0ABCDEF12345.
-#>
-    [CmdletBinding(SupportsShouldProcess)]
-    [Alias('New-StoreBrokerIapConfigFile')]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
-    param(
-        [Parameter(Mandatory)]
-        [ValidateScript({ if ((Split-Path -Leaf $_) -like "*.*") { $true } else { throw "Path must include filename." } })]
-        [string] $Path,
-
-        [string] $IapId = ""
-    )
-
-    $dir = Split-Path -Parent -Path $Path
-    if (-not (Test-Path -PathType Container -Path $dir -ErrorAction Ignore))
-    {
-        Write-Log -Message "Creating directory: $dir" -Level Verbose
-        New-Item -Force -ItemType Directory -Path $dir | Out-Null
-        Write-Log -Message "Created directory." -Level Verbose
-    }
-
-    $sourcePath = Join-Path -Path $PSScriptRoot -ChildPath $script:defaultIapConfigFileName
-
-    # Get-Content returns an array of lines.... using Out-String gives us back the linefeeds.
-    $template = (Get-Content -Path $sourcePath -Encoding UTF8) | Out-String
-
-    if (-not ([String]::IsNullOrEmpty($IapId)))
-    {
-        $template = Get-StoreBrokerConfigFileContentForIapId -ConfigContent $template -IapId $IapId
-    }
-
-    Write-Log -Message "Copying (Item: $sourcePath) to (Target: $Path)." -Level Verbose
-    Set-Content -Path $Path -Value $template -Encoding UTF8 -Force
-    Write-Log -Message "Copy complete." -Level Verbose
-
-    $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::IapId = $IapId }
-    Set-TelemetryEvent -EventName New-StoreBrokerIapConfigFile -Properties $telemetryProperties
-}
-
-function Get-StoreBrokerConfigFileContentForAppId
-{
-<#
-    .SYNOPSIS
-        Updates the default configuration file template with the values from the
-        indicated App's most recent published submission.
-
-    .DESCRIPTION
-        Updates the default configuration file template with the values from the
-        indicated App's most recent published submission.
-
-        The Git repo for this module can be found here: https://aka.ms/StoreBroker
-
-    .PARAMETER ConfigContent
-        The content of the config file template as a simple string.
-
-    .PARAMETER AppId
-        The AppId whose most recent submission should be retrieved and used to fill
-        in the default values of the template content.
-
-    .EXAMPLE
-        Get-StoreBrokerConfigFileContentForAppId -ConfigContent $template -AppId 0ABCDEF12345
-
-        Assuming that $template has the content of the template file read in from disk and
-        merged into a single string, this then gets the most recent app submission for
-        AppId 0ABCDEF12345 and replaces the default values in the template with those from
-        that submission.
-
-    .OUTPUTS
-        System.String - The template content modified with the values from the
-                        most recent app submission.
-
-    .NOTES
-        We use regular expression matching within the implementation rather than operating
-        on the content as a JSON object, because we want to retain all of the comments that
-        are part of the template content.
-#>
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)]
-        [string] $ConfigContent,
-
-        [Parameter(Mandatory)]
-        [string] $AppId
-    )
-
-    $updated = $ConfigContent
-
-    try
-    {
-        $app = Get-Application -AppId $AppId
-
-        if ([String]::IsNullOrEmpty($app.lastPublishedApplicationSubmission.id))
-        {
-            throw "Specified AppId has no published submission to copy settings from."
-        }
-
-        $sub = Get-ApplicationSubmission -AppId $AppId -SubmissionId $($app.lastPublishedApplicationSubmission.id)
-
-        $updated = $updated -replace '"appId": ".*",', "`"appId`": $($AppId | ConvertTo-Json),"
-
-        # PUBLISH MODE AND VISIBILITY
-        $updated = $updated -replace '"targetPublishMode": ".*",', "`"targetPublishMode`": $($sub.targetPublishMode | ConvertTo-Json),"
-        $updated = $updated -replace '"targetPublishDate": .*,', "`"targetPublishDate`": $($sub.targetPublishDate | ConvertTo-Json),"
-        $updated = $updated -replace '"visibility": ".*",', "`"visibility`": $($sub.visibility | ConvertTo-Json),"
-
-        # PRICING AND AVAILABILITY
-        $updated = $updated -replace '"priceId": ".*",', "`"priceId`": $($sub.pricing.priceId | ConvertTo-Json),"
-        $updated = $updated -replace '"trialPeriod": ".*",', "`"trialPeriod`": $($sub.pricing.trialPeriod | ConvertTo-Json),"
-
-        $marketSpecificPricings = $sub.pricing.marketSpecificPricings | ConvertTo-Json -Depth $script:jsonConversionDepth
-        $updated = $updated -replace '(\s+)"marketSpecificPricings": {.*(\r|\n)+\s*}', "`$1`"marketSpecificPricings`": $marketSpecificPricings"
-
-        $sales = $sub.pricing.sales | ConvertTo-Json -Depth $script:jsonConversionDepth
-        if ($null -eq $sales) { $sales = "[ ]" }
-        $updated = $updated -replace '(\s+)"sales": \[.*(\r|\n)+\s*\]', "`$1`"sales`": $sales"
-
-        $families = $sub.allowTargetFutureDeviceFamilies
-        foreach ($family in ("Xbox", "Team", "Holographic", "Desktop", "Mobile"))
-        {
-            if ($families -match $family)
-            {
-                $updated = $updated -replace "`"$family`": [^,\r\n]*(,)?", "`"$family`": $($families.$family | ConvertTo-Json)`$1"
-            }
-            else
-            {
-                $updated = $updated -replace "`"$family`": [^,\r\n]*(,)?", "// `"$family`": false`$1"
-            }
-        }
-
-        $updated = $updated -replace '"allowMicrosoftDecideAppAvailabilityToFutureDeviceFamilies": .*,', "`"allowMicrosoftDecideAppAvailabilityToFutureDeviceFamilies`": $($sub.allowMicrosoftDecideAppAvailabilityToFutureDeviceFamilies | ConvertTo-Json),"
-        $updated = $updated -replace '"enterpriseLicensing": ".*",', "`"enterpriseLicensing`": $($sub.enterpriseLicensing | ConvertTo-Json),"
-
-        # APP PROPERTIES
-        $updated = $updated -replace '"applicationCategory": ".*",', "`"applicationCategory`": $($sub.applicationCategory | ConvertTo-Json),"
-
-        $hardwarePreferences = $sub.hardwarePreferences | ConvertTo-Json -Depth $script:jsonConversionDepth
-        if ($null -eq $hardwarePreferences) { $hardwarePreferences = "[ ]" }
-        $updated = $updated -replace '(\s+)"hardwarePreferences": \[.*(\r|\n)+\s*\]', "`$1`"hardwarePreferences`": $hardwarePreferences"
-
-        $updated = $updated -replace '"hasExternalInAppProducts": .*,', "`"hasExternalInAppProducts`": $($sub.hasExternalInAppProducts | ConvertTo-Json),"
-        $updated = $updated -replace '"meetAccessibilityGuidelines": .*,', "`"meetAccessibilityGuidelines`": $($sub.meetAccessibilityGuidelines | ConvertTo-Json),"
-        $updated = $updated -replace '"canInstallOnRemovableMedia": .*,', "`"canInstallOnRemovableMedia`": $($sub.canInstallOnRemovableMedia | ConvertTo-Json),"
-        $updated = $updated -replace '"automaticBackupEnabled": .*,', "`"automaticBackupEnabled`": $($sub.automaticBackupEnabled | ConvertTo-Json),"
-        $updated = $updated -replace '"isGameDvrEnabled": .*,', "`"isGameDvrEnabled`": $($sub.isGameDvrEnabled | ConvertTo-Json),"
-
-        # GAMING OPTIONS
-        if ($null -ne $sub.gamingOptions)
-        {
-            $gamingOptionsGenres = $sub.gamingOptions.genres | ConvertTo-Json -Depth $script:jsonConversionDepth
-            if ($null -eq $gamingOptionsGenres) { $gamingOptionsGenres = "[ ]" }
-            $updated = $updated -replace '(\s+)"genres": \[.*(\r|\n)+\s*\]', "`$1`"genres`": $gamingOptionsGenres"
-
-            $updated = $updated -replace '"isLocalMultiplayer": .*,', "`"isLocalMultiplayer`": $($sub.gamingOptions.isLocalMultiplayer | ConvertTo-Json),"
-            $updated = $updated -replace '"isLocalCooperative": .*,', "`"isLocalCooperative`": $($sub.gamingOptions.isLocalCooperative | ConvertTo-Json),"
-            $updated = $updated -replace '"isOnlineMultiplayer": .*,', "`"isOnlineMultiplayer`": $($sub.gamingOptions.isOnlineMultiplayer | ConvertTo-Json),"
-            $updated = $updated -replace '"isOnlineCooperative": .*,', "`"isOnlineCooperative`": $($sub.gamingOptions.isOnlineCooperative | ConvertTo-Json),"
-
-            $localMultiplayerMinPlayers = $sub.gamingOptions.localMultiplayerMinPlayers
-            if ($null -eq $localMultiplayerMinPlayers) { $localMultiplayerMinPlayers = 0 }
-            $updated = $updated -replace '"localMultiplayerMinPlayers": .*,', "`"localMultiplayerMinPlayers`": $localMultiplayerMinPlayers,"
-
-            $localMultiplayerMaxPlayers = $sub.gamingOptions.localMultiplayerMaxPlayers
-            if ($null -eq $localMultiplayerMaxPlayers) { $localMultiplayerMaxPlayers = 0 }
-            $updated = $updated -replace '"localMultiplayerMaxPlayers": .*,', "`"localMultiplayerMaxPlayers`": $localMultiplayerMaxPlayers,"
-
-            $localCooperativeMinPlayers = $sub.gamingOptions.localCooperativeMinPlayers
-            if ($null -eq $localCooperativeMinPlayers) { $localCooperativeMinPlayers = 0 }
-            $updated = $updated -replace '"localCooperativeMinPlayers": .*,', "`"localCooperativeMinPlayers`": $localCooperativeMinPlayers,"
-
-            $localCooperativeMaxPlayers = $sub.gamingOptions.localCooperativeMaxPlayers
-            if ($null -eq $localCooperativeMaxPlayers) { $localCooperativeMaxPlayers = 0 }
-            $updated = $updated -replace '"localCooperativeMaxPlayers": .*,', "`"localCooperativeMaxPlayers`": $localCooperativeMaxPlayers,"
-
-            $updated = $updated -replace '"isBroadcastingPrivilegeGranted": .*,', "`"isBroadcastingPrivilegeGranted`": $($sub.gamingOptions.isBroadcastingPrivilegeGranted | ConvertTo-Json),"
-            $updated = $updated -replace '"isCrossPlayEnabled": .*,', "`"isCrossPlayEnabled`": $($sub.gamingOptions.isCrossPlayEnabled | ConvertTo-Json),"
-            $updated = $updated -replace '"kinectDataForExternal": .*', "`"kinectDataForExternal`": $($sub.gamingOptions.kinectDataForExternal | ConvertTo-Json)"
-        }
-
-        # NOTES FOR CERTIFICATION
-        $notesForCertification = Get-EscapedJsonValue -Value $sub.notesForCertification
-        $updated = $updated -replace '"notesForCertification": ""', "`"notesForCertification`": `"$notesForCertification`""
-
-        return $updated
-    }
-    catch
-    {
-        Write-Log -Message "Encountered problems getting current application submission values:" -Exception $_ -Level Error
-        throw
-    }
-}
-
-function New-StoreBrokerConfigFile
-{
-<#
-    .SYNOPSIS
-        Creates a new configuration file as a template for an app submission.
-
-    .DESCRIPTION
-        Creates a new configuration file as a template for an app submission.
-        The full path to the new file can be provided by the -Path parameter.
-
-        The Git repo for this module can be found here: https://aka.ms/StoreBroker
-
-    .PARAMETER Path
-        A full path specifying where the new config file will go and what it will be
-        named.  It is recommended to use the .json file extension.
-
-    .PARAMETER AppId
-        If specified, this will pre-populate the app config portion of the
-        configuration file with the values from the most recent submission for this
-        AppId.
-
-    .EXAMPLE
-        New-StoreBrokerConfigFile -Path "C:\users\alias\NewAppConfig.json"
-
-        Creates the config file template "NewAppConfig.json" under "C:\users\alias"
-
-    .EXAMPLE
-        New-StoreBrokerConfigFile -Path "C:\users\alias\NewAppConfig.json" -WhatIf
-
-        This example is the same as Example 1 except no config file will be created.  The
-        function will report on the actions it would have taken, instead.
-
-    .EXAMPLE
-        New-StoreBrokerConfigFile -Path "C:\users\alias\NewAppConfig.json" -AppId 0ABCDEF12345
-
-        Creates the config file template "NewAppConfig.json" under "C:\users\alias", but sets
-        the values for the app config portion to be those from the most recent submission for
-        AppId 0ABCDEF12345.
-#>
-    [CmdletBinding(SupportsShouldProcess)]
-    [Alias('New-PackageToolConfigFile')]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
-    param(
-        [Parameter(Mandatory)]
-        [ValidateScript({ if ((Split-Path -Leaf $_) -like "*.*") { $true } else { throw "Path must include filename." } })]
-        [string] $Path,
-
-        [string] $AppId = ""
-    )
-
-    $dir = Split-Path -Parent -Path $Path
-    if (-not (Test-Path -PathType Container -Path $dir -ErrorAction Ignore))
-    {
-        Write-Log -Message "Creating directory: $dir" -Level Verbose
-        New-Item -Force -ItemType Directory -Path $dir | Out-Null
-        Write-Log -Message "Created directory." -Level Verbose
-    }
-
-    $sourcePath = Join-Path -Path $PSScriptRoot -ChildPath $script:defaultConfigFileName
-
-    # Get-Content returns an array of lines.... using Out-String gives us back the linefeeds.
-    $template = (Get-Content -Path $sourcePath -Encoding UTF8) | Out-String
-
-    if (-not ([String]::IsNullOrEmpty($AppId)))
-    {
-        $template = Get-StoreBrokerConfigFileContentForAppId -ConfigContent $template -AppId $AppId
-    }
-
-    Write-Log -Message "Copying (Item: $sourcePath) to (Target: $Path)." -Level Verbose
-    Set-Content -Path $Path -Value $template -Encoding UTF8 -Force
-    Write-Log -Message "Copy complete." -Level Verbose
-
-    $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::AppId = $AppId }
-    Set-TelemetryEvent -EventName New-StoreBrokerConfigFile -Properties $telemetryProperties
-}
 
 function Out-DirectoryToZip
 {
@@ -753,10 +347,10 @@ function Convert-ListingToObject
     .PARAMETER LanguageExclude
         Array of lang-code strings that SHOULD NOT be processed.
 
-    .PARAMETER ImagesRootPath
-        A path to the root path containing the new submission's images.  A screenshot
+    .PARAMETER MediaRootPath
+        A path to the root path containing the new submission's media.  A screenshot
         caption has the potential for relative paths to Desktop, Mobile, and Xbox images.
-        Each relative path is appended to ImagesRootPath to create a full path to the image.
+        Each relative path is appended to MediaRootPath to create a full path to the image.
 
     .PARAMETER XmlFilePath
         A full path to the localized .xml file to be parsed.
@@ -764,7 +358,7 @@ function Convert-ListingToObject
     .PARAMETER MediaFallbackLanguage
         Some apps may not localize all of their metadata media (images, trailers, etc..)
         across all languages.  By default, StoreBroker will look in the PDP langcode's subfolder
-        within ImagesRootPath for that language's media content.  If the requested filename is
+        within MediaRootPath for that language's media content.  If the requested filename is
         not found, StoreBroker packaging will fail. If you specify a fallback language here
         (e.g. 'en-us'), then if the requested file isn't found in the PDP language's media
         subfolder, StoreBroker will then look into the fallback language's media subfolder for
@@ -781,8 +375,7 @@ function Convert-ListingToObject
         [string[]] $LanguageExclude,
 
         [Parameter(Mandatory)]
-        [Alias('MediaRootPath')]
-        [string] $ImagesRootPath,
+        [string] $MediaRootPath,
 
         [Parameter(
             Mandatory,
@@ -911,7 +504,7 @@ function Convert-ListingToObject
 
                                 $params = @{
                                     'Filename' = $imageFileName
-                                    'ImagesRootPath' = $ImagesRootPath
+                                    'MediaRootPath' = $MediaRootPath
                                     'Language' = $language
                                     'Release' = $ProductDescriptionNode.Release
                                     'MediaFallbackLanguage' = $requestedFallbackLanguage
@@ -954,7 +547,7 @@ function Convert-ListingToObject
 
                         $params = @{
                             'Filename' = $imageFileName
-                            'ImagesRootPath' = $ImagesRootPath
+                            'MediaRootPath' = $MediaRootPath
                             'Language' = $language
                             'Release' = $ProductDescriptionNode.Release
                             'MediaFallbackLanguage' = $requestedFallbackLanguage
@@ -1016,10 +609,10 @@ function Convert-TrailersToObject
     .PARAMETER LanguageExclude
         Array of lang-code strings that SHOULD NOT be processed.
 
-    .PARAMETER ImagesRootPath
-        A path to the root path containing the new submission's images.  A screenshot
+    .PARAMETER MediaRootPath
+        A path to the root path containing the new submission's media.  A screenshot
         caption has the potential for relative paths to Desktop, Mobile, and Xbox images.
-        Each relative path is appended to ImagesRootPath to create a full path to the image.
+        Each relative path is appended to MediaRootPath to create a full path to the image.
 
     .PARAMETER XmlFilePath
         A full path to the localized .xml file to be parsed.
@@ -1027,7 +620,7 @@ function Convert-TrailersToObject
     .PARAMETER MediaFallbackLanguage
         Some apps may not localize all of their metadata media (images, trailers, etc..)
         across all languages.  By default, StoreBroker will look in the PDP langcode's subfolder
-        within ImagesRootPath for that language's media content.  If the requested filename is
+        within MediaRootPath for that language's media content.  If the requested filename is
         not found, StoreBroker packaging will fail. If you specify a fallback language here
         (e.g. 'en-us'), then if the requested file isn't found in the PDP language's media
         subfolder, StoreBroker will then look into the fallback language's media subfolder for
@@ -1044,8 +637,7 @@ function Convert-TrailersToObject
         [string[]] $LanguageExclude,
 
         [Parameter(Mandatory)]
-        [Alias('MediaRootPath')]
-        [string] $ImagesRootPath,
+        [string] $MediaRootPath,
 
         [Parameter(
             Mandatory,
@@ -1116,7 +708,7 @@ function Convert-TrailersToObject
 
                         $params = @{
                             'Filename' = $trailerFileName
-                            'ImagesRootPath' = $ImagesRootPath
+                            'MediaRootPath' = $MediaRootPath
                             'Language' = $language
                             'Release' = $ProductDescriptionNode.Release
                             'MediaFallbackLanguage' = $requestedFallbackLanguage
@@ -1136,7 +728,7 @@ function Convert-TrailersToObject
 
                         $params = @{
                             'Filename' = $trailer.Images.Image.FileName
-                            'ImagesRootPath' = $ImagesRootPath
+                            'MediaRootPath' = $MediaRootPath
                             'Language' = $language
                             'Release' = $ProductDescriptionNode.Release
                             'MediaFallbackLanguage' = $requestedFallbackLanguage
@@ -1185,7 +777,7 @@ function Get-LocalizedMediaFile
     .PARAMETER Filename
         The name of the media file that is being looked for.
 
-    .PARAMETER ImagesRootPath
+    .PARAMETER MediaRootPath
         The root path to the directory where this submission's images are located.
 
     .PARAMETER Language
@@ -1193,12 +785,12 @@ function Get-LocalizedMediaFile
 
     .PARAMETER Release
         The Release value from within an individual PDP file, indicating the sub-folder within
-        ImagesRootPath that the lang-code subfolders for media files can be found.
+        MediaRootPath that the lang-code subfolders for media files can be found.
 
     .PARAMETER MediaFallbackLanguage
         Some apps may not localize all of their metadata media (images, trailers, etc..)
         across all languages.  By default, StoreBroker will look in the PDP langcode's subfolder
-        within ImagesRootPath for that language's media content.  If the requested filename is
+        within MediaRootPath for that language's media content.  If the requested filename is
         not found, StoreBroker packaging will fail. If you specify a fallback language here
         (e.g. 'en-us'), then if the requested file isn't found in the PDP language's media
         subfolder, StoreBroker will then look into the fallback language's media subfolder for
@@ -1208,13 +800,13 @@ function Get-LocalizedMediaFile
         System.String.  Relative path to the media file as it will be found within the final StoreBroker package.
 
     .EXAMPLE
-        Get-LocalizedMediaFile -Filename 'foo.png' -ImagesRootPath 'c:\screenshots\' -Language 'fr-fr' -Release '1712'
+        Get-LocalizedMediaFile -Filename 'foo.png' -MediaRootPath 'c:\screenshots\' -Language 'fr-fr' -Release '1712'
 
         Checks to see if c:\screenshots\1712\fr-fr\foo.png exists.  If it does, copies it to $script:tempFolderPath\Assets\fr-fr\foo.png
         and returns 'Assets\fr-fr\foo.png'.  If it doesn't exist, throws an exception.
 
     .EXAMPLE
-        Get-LocalizedMediaFile -Filename 'foo.png' -ImagesRootPath 'c:\screenshots\' -Language 'fr-fr' -Release '1712' -MediaFallbackLanguage 'en-us'
+        Get-LocalizedMediaFile -Filename 'foo.png' -MediaRootPath 'c:\screenshots\' -Language 'fr-fr' -Release '1712' -MediaFallbackLanguage 'en-us'
 
         Checks to see if c:\screenshots\1712\fr-fr\foo.png exists.  If it does, copies it to $script:tempFolderPath\Assets\fr-fr\foo.png
         and returns 'Assets\fr-fr\foo.png'.  If it doesn't exist, checks to see if c:\screenshots\1712\en-us\foo.png exists.  If it does,
@@ -1227,8 +819,7 @@ function Get-LocalizedMediaFile
         [string] $Filename,
 
         [Parameter(Mandatory)]
-        [Alias('MediaRootPath')]
-        [string] $ImagesRootPath,
+        [string] $MediaRootPath,
 
         [Parameter(Mandatory)]
         [string] $Language,
@@ -1242,13 +833,13 @@ function Get-LocalizedMediaFile
     $fileRelativePackagePath = $null
 
     # The folder where we think the media file should be found.
-    $mediaLanguageSourcePath = [System.IO.Path]::Combine($ImagesRootPath, $Release, $Language)
+    $mediaLanguageSourcePath = [System.IO.Path]::Combine($MediaRootPath, $Release, $Language)
 
     # The folder where we think the media file should be found if using the fallback language.
     $mediaFallbackLanguageSourcePath = $null
     if (-not [string]::IsNullOrEmpty($MediaFallbackLanguage) -and ($MediaFallbackLanguage -ne $Language))
     {
-        $mediaFallbackLanguageSourcePath = [System.IO.Path]::Combine($ImagesRootPath, $Release, $MediaFallbackLanguage)
+        $mediaFallbackLanguageSourcePath = [System.IO.Path]::Combine($MediaRootPath, $Release, $MediaFallbackLanguage)
         if (-not (Test-Path -Path $mediaFallbackLanguageSourcePath -PathType Container -ErrorAction Ignore))
         {
             Write-Log -Message "A fallback language was specified [$MediaFallbackLanguage], but a folder for that language does not exist [$mediaFallbackLanguageSourcePath], so media fallback support has been disabled." -Level Warning
@@ -1326,13 +917,13 @@ function Convert-ListingsMetadata
     .PARAMETER LanguageExclude
         Array of lang-code strings that SHOULD NOT be processed.
 
-    .PARAMETER ImagesRootPath
+    .PARAMETER MediaRootPath
         The root path to the directory where this submission's images are located.
 
     .PARAMETER MediaFallbackLanguage
         Some apps may not localize all of their metadata media (images, trailers, etc..)
         across all languages.  By default, StoreBroker will look in the PDP langcode's subfolder
-        within ImagesRootPath for that language's media content.  If the requested filename is
+        within MediaRootPath for that language's media content.  If the requested filename is
         not found, StoreBroker packaging will fail. If you specify a fallback language here
         (e.g. 'en-us'), then if the requested file isn't found in the PDP language's media
         subfolder, StoreBroker will then look into the fallback language's media subfolder for
@@ -1343,7 +934,7 @@ function Convert-ListingsMetadata
                    containing localized data for the app (Description, Notes, Screenshot captions, etc.)
 
     .EXAMPLE
-        Convert-ListingsMetadata -PDPRootPath 'C:\PDP\' -PDPInclude 'ProductDescription.xml' -ImagesRootPath 'C:\AppImages'
+        Convert-ListingsMetadata -PDPRootPath 'C:\PDP\' -PDPInclude 'ProductDescription.xml' -MediaRootPath 'C:\AppImages'
 
         Assumes the folder structure:
         C:\PDP\language1\...\ProductDescription.xml
@@ -1377,8 +968,7 @@ function Convert-ListingsMetadata
         [ValidateScript( {
             if (Test-Path -PathType Container -Path $_ -ErrorAction Ignore) { $true }
             else { throw "'$_' is not a directory or cannot be found." } })]
-        [Alias('MediaRootPath')]
-        [string] $ImagesRootPath,
+        [string] $MediaRootPath,
 
         [string] $MediaFallbackLanguage
     )
@@ -1388,7 +978,7 @@ function Convert-ListingsMetadata
     Write-Log -Message "Converting application listings metadata." -Level Verbose
 
     (Get-ChildItem -File $PDPRootPath -Recurse -Include $PDPInclude -Exclude $PDPExclude).FullName |
-        Convert-ListingToObject -PDPRootPath $PDPRootPath -LanguageExclude $LanguageExclude -ImagesRootPath $ImagesRootPath -MediaFallbackLanguage $MediaFallbackLanguage |
+        Convert-ListingToObject -PDPRootPath $PDPRootPath -LanguageExclude $LanguageExclude -MediaRootPath $MediaRootPath -MediaFallbackLanguage $MediaFallbackLanguage |
         ForEach-Object { $listings[$_."lang"] = $_."listing" }
 
     Write-Log -Message "Conversion complete." -Level Verbose
@@ -1419,13 +1009,13 @@ function Convert-TrailersMetadata
     .PARAMETER LanguageExclude
         Array of lang-code strings that SHOULD NOT be processed.
 
-    .PARAMETER ImagesRootPath
+    .PARAMETER MediaRootPath
         The root path to the directory where this submission's images are located.
 
     .PARAMETER MediaFallbackLanguage
         Some apps may not localize all of their metadata media (images, trailers, etc..)
         across all languages.  By default, StoreBroker will look in the PDP langcode's subfolder
-        within ImagesRootPath for that language's media content.  If the requested filename is
+        within MediaRootPath for that language's media content.  If the requested filename is
         not found, StoreBroker packaging will fail. If you specify a fallback language here
         (e.g. 'en-us'), then if the requested file isn't found in the PDP language's media
         subfolder, StoreBroker will then look into the fallback language's media subfolder for
@@ -1435,7 +1025,7 @@ function Convert-TrailersMetadata
         Array   An array of all the trailers and their associated localized content (title, screenshot and description)
 
     .EXAMPLE
-        Convert-TrailersMetadata -PDPRootPath 'C:\PDP\' -PDPInclude 'ProductDescription.xml' -ImagesRootPath 'C:\AppImages'
+        Convert-TrailersMetadata -PDPRootPath 'C:\PDP\' -PDPInclude 'ProductDescription.xml' -MediaRootPath 'C:\AppImages'
 
         Assumes the folder structure:
         C:\PDP\language1\...\ProductDescription.xml
@@ -1469,8 +1059,7 @@ function Convert-TrailersMetadata
         [ValidateScript( {
             if (Test-Path -PathType Container -Path $_ -ErrorAction Ignore) { $true }
             else { throw "'$_' is not a directory or cannot be found." } })]
-        [Alias('MediaRootPath')]
-        [string] $ImagesRootPath,
+        [string] $MediaRootPath,
 
         [string] $MediaFallbackLanguage
     )
@@ -1480,7 +1069,7 @@ function Convert-TrailersMetadata
     Write-Log -Message "Converting application trailers metadata." -Level Verbose
 
     $dictionaries = (Get-ChildItem -File $PDPRootPath -Recurse -Include $PDPInclude -Exclude $PDPExclude).FullName |
-        Convert-TrailersToObject -PDPRootPath $PDPRootPath -LanguageExclude $LanguageExclude -ImagesRootPath $ImagesRootPath -MediaFallbackLanguage $MediaFallbackLanguage
+        Convert-TrailersToObject -PDPRootPath $PDPRootPath -LanguageExclude $LanguageExclude -MediaRootPath $MediaRootPath -MediaFallbackLanguage $MediaFallbackLanguage
 
     # What we just got back is an array of dictionaries, where each dictionary
     # is the trailer data for a single PDP file.  We actually need that merged
@@ -1551,9 +1140,9 @@ function Convert-InAppProductListingToObject
     .PARAMETER LanguageExclude
         Array of lang-code strings that SHOULD NOT be processed.
 
-    .PARAMETER ImagesRootPath
+    .PARAMETER MediaRootPath
         A path to the root path containing the new submission's images.  Currently, an IAP can have
-        an optional icon associated with it. Each relative path is appended to ImagesRootPath to
+        an optional icon associated with it. Each relative path is appended to MediaRootPath to
         create a full path to the image.
 
     .PARAMETER XmlFilePath
@@ -1562,7 +1151,7 @@ function Convert-InAppProductListingToObject
     .PARAMETER MediaFallbackLanguage
         Some apps may not localize all of their metadata media (images, trailers, etc..)
         across all languages.  By default, StoreBroker will look in the PDP langcode's subfolder
-        within ImagesRootPath for that language's media content.  If the requested filename is
+        within MediaRootPath for that language's media content.  If the requested filename is
         not found, StoreBroker packaging will fail. If you specify a fallback language here
         (e.g. 'en-us'), then if the requested file isn't found in the PDP language's media
         subfolder, StoreBroker will then look into the fallback language's media subfolder for
@@ -1579,8 +1168,7 @@ function Convert-InAppProductListingToObject
         [string[]] $LanguageExclude,
 
         [Parameter(Mandatory)]
-        [Alias('MediaRootPath')]
-        [string] $ImagesRootPath,
+        [string] $MediaRootPath,
 
         [Parameter(
             Mandatory,
@@ -1668,7 +1256,7 @@ function Convert-InAppProductListingToObject
 
                         $params = @{
                             'Filename' = $imageFileName
-                            'ImagesRootPath' = $ImagesRootPath
+                            'MediaRootPath' = $MediaRootPath
                             'Language' = $language
                             'Release' = $InAppProductDescriptionNode.Release
                             'MediaFallbackLanguage' = $requestedFallbackLanguage
@@ -1720,13 +1308,13 @@ function Convert-InAppProductListingsMetadata
     .PARAMETER LanguageExclude
         Array of lang-code strings that SHOULD NOT be processed.
 
-    .PARAMETER ImagesRootPath
+    .PARAMETER MediaRootPath
         The root path to the directory where this submission's images are located.
 
     .PARAMETER MediaFallbackLanguage
         Some apps may not localize all of their metadata media (images, trailers, etc..)
         across all languages.  By default, StoreBroker will look in the PDP langcode's subfolder
-        within ImagesRootPath for that language's media content.  If the requested filename is
+        within MediaRootPath for that language's media content.  If the requested filename is
         not found, StoreBroker packaging will fail. If you specify a fallback language here
         (e.g. 'en-us'), then if the requested file isn't found in the PDP language's media
         subfolder, StoreBroker will then look into the fallback language's media subfolder for
@@ -1737,7 +1325,7 @@ function Convert-InAppProductListingsMetadata
                    containing localized data for the app (Title, Description, Icon, etc.)
 
     .EXAMPLE
-        Convert-InAppProductListingsMetadata -PDPRootPath 'C:\PDP\' -PDPInclude 'InAppProductDescription.xml' -ImagesRootPath 'C:\IapIcons'
+        Convert-InAppProductListingsMetadata -PDPRootPath 'C:\PDP\' -PDPInclude 'InAppProductDescription.xml' -MediaRootPath 'C:\IapIcons'
 
         Assumes the folder structure:
         C:\PDP\language1\...\InAppProductDescription.xml
@@ -1771,8 +1359,7 @@ function Convert-InAppProductListingsMetadata
         [ValidateScript({
             if (Test-Path -PathType Container -Path $_ -ErrorAction Ignore) { $true }
             else { throw "'$_' is not a directory or cannot be found." } })]
-        [Alias('MediaRootPath')]
-        [string] $ImagesRootPath,
+        [string] $MediaRootPath,
 
         [string] $MediaFallbackLanguage
     )
@@ -1782,7 +1369,7 @@ function Convert-InAppProductListingsMetadata
     Write-Log -Message "Converting IAP listings metadata." -Level Verbose
 
     (Get-ChildItem -File $PDPRootPath -Recurse -Include $PDPInclude -Exclude $PDPExclude).FullName |
-        Convert-InAppProductListingToObject -PDPRootPath $PDPRootPath -LanguageExclude $LanguageExclude -ImagesRootPath $ImagesRootPath -MediaFallbackLanguage $MediaFallbackLanguage |
+        Convert-InAppProductListingToObject -PDPRootPath $PDPRootPath -LanguageExclude $LanguageExclude -MediaRootPath $MediaRootPath -MediaFallbackLanguage $MediaFallbackLanguage |
         ForEach-Object { $listings[$_."lang"] = $_."listing" }
 
     Write-Log -Message "Conversion complete." -Level Verbose
@@ -2158,7 +1745,7 @@ function Read-AppxUploadMetadata
         $throwFormat = "`"$AppxuploadPath`" is not a proper .appxupload. There must be exactly one {0} inside the file."
 
         Write-Log -Message "Opening `"$AppxuploadPath`"." -Level Verbose
-        $expandedContainerPath = Open-AppxContainer -AppxContainerPath $AppxPath
+        $expandedContainerPath = Open-AppxContainer -AppxContainerPath $AppxuploadPath
 
         $appxFilePath = (Get-ChildItem -Recurse -Path $expandedContainerPath -Include "*.appx").FullName
         if ($null -ne $appxFilePath)
@@ -2488,7 +2075,7 @@ function Add-AppPackagesMetadata
         Adds a property to the SubmissionObject with metadata about the
         various .appxbundle, .appxupload, or .appx files being submitted.
 
-    .PARAMETER AppxPath
+    .PARAMETER PackagePath
         Array of full paths to the .appxbundle, .appxupload, or .appx
         files that will be uploaded as the new submission.
 
@@ -2505,12 +2092,12 @@ function Add-AppPackagesMetadata
         embeds the application name, version, as well as targeted platform and architecture.
 
     .EXAMPLE
-        Add-AppPackagesMetadata -AppxPath "C:\App.appxbundle" -SubmissionObject $object
+        Add-AppPackagesMetadata -PackagePath "C:\App.appxbundle" -SubmissionObject $object
 
         Adds metadata about "C:\App.appxbundle" to the $object object.
 
     .EXAMPLE
-        $object | Add-AppPackagesMetadata -AppxPath "C:\x86\App_x86.appxbundle"
+        $object | Add-AppPackagesMetadata -PackagePath "C:\x86\App_x86.appxbundle"
 
         Same as Example 1 except the $object object is piped in to the function and the appxbundle
         used is for x86 architecture.
@@ -2529,7 +2116,7 @@ function Add-AppPackagesMetadata
 
             return $true
         })]
-        [string[]] $AppxPath,
+        [string[]] $PackagePath,
 
         [Parameter(
             Mandatory,
@@ -2543,7 +2130,7 @@ function Add-AppPackagesMetadata
 
     $SubmissionObject | Add-Member -MemberType NoteProperty -Name "applicationPackages" -Value ([System.Array]::CreateInstance([Object], 0))
 
-    foreach ($path in $AppxPath)
+    foreach ($path in $PackagePath)
     {
         if ($PSCmdlet.ShouldProcess($path))
         {
@@ -2667,10 +2254,10 @@ function Get-SubmissionRequestBody
     .PARAMETER LanguageExclude
         Array of lang-code strings that SHOULD NOT be processed.
 
-    .PARAMETER ImagesRootPath
+    .PARAMETER MediaRootPath
         Root path to the directory containing release subfolders of images to be packaged.
 
-    .PARAMETER AppxPath
+    .PARAMETER PackagePath
         A list of file paths to be included in the package.
 
     .PARAMETER AppxInfo
@@ -2685,7 +2272,7 @@ function Get-SubmissionRequestBody
     .PARAMETER MediaFallbackLanguage
         Some apps may not localize all of their metadata media (images, trailers, etc..)
         across all languages.  By default, StoreBroker will look in the PDP langcode's subfolder
-        within ImagesRootPath for that language's media content.  If the requested filename is
+        within MediaRootPath for that language's media content.  If the requested filename is
         not found, StoreBroker packaging will fail. If you specify a fallback language here
         (e.g. 'en-us'), then if the requested file isn't found in the PDP language's media
         subfolder, StoreBroker will then look into the fallback language's media subfolder for
@@ -2695,7 +2282,7 @@ function Get-SubmissionRequestBody
         PSCustomObject  An object representing the full application submission request.
 
     .NOTES
-        It is expected that at least one path is missing from the map as 'AppxPath'
+        It is expected that at least one path is missing from the map as 'PackagePath'
         is mutually exclusive with the remaining three path types.
 
     .EXAMPLE
@@ -2705,7 +2292,7 @@ function Get-SubmissionRequestBody
         appxupload located at "C:\App\Appx.appxupload".
 
     .EXAMPLE
-        (Get-Content $ConfigPath -Encoding UTF8 | ConvertFrom-Json) | Get-SubmissionRequestBody -AppxPath "C:\Appx_x86.appxbundle", "C:\Appx_arm.appxbundle" -Release MarchRelease
+        (Get-Content $ConfigPath -Encoding UTF8 | ConvertFrom-Json) | Get-SubmissionRequestBody -PackagePath "C:\Appx_x86.appxbundle", "C:\Appx_arm.appxbundle" -Release MarchRelease
 
         Retrieves the submission request generated using the config file at $ConfigPath and the
         appxbundle files located at "C:\Appx_x86.appxbundle" and "C:\Appx_arm.appxbundle".
@@ -2727,10 +2314,9 @@ function Get-SubmissionRequestBody
 
         [string[]] $LanguageExclude,
 
-        [Alias('MediaRootPath')]
-        [string] $ImagesRootPath,
+        [string] $MediaRootPath,
 
-        [string[]] $AppxPath,
+        [string[]] $PackagePath,
 
         [ref] $AppxInfo,
 
@@ -2742,9 +2328,9 @@ function Get-SubmissionRequestBody
     # Add static properties and metadata about packaged binaries.
     $submissionRequestBody = $ConfigObject.appSubmission
 
-    if ($AppxPath.Count -gt 0)
+    if ($PackagePath.Count -gt 0)
     {
-        $submissionRequestBody | Add-AppPackagesMetadata -AppxPath $AppxPath -AppxInfo $AppxInfo -EnableAutoPackageNameFormatting:(-not $DisableAutoPackageNameFormatting)
+        $submissionRequestBody | Add-AppPackagesMetadata -PackagePath $PackagePath -AppxInfo $AppxInfo -EnableAutoPackageNameFormatting:(-not $DisableAutoPackageNameFormatting)
     }
 
     if (-not [String]::IsNullOrWhiteSpace($PDPRootPath))
@@ -2779,7 +2365,7 @@ function Get-SubmissionRequestBody
             $script:s_PDPInclude = $PDPInclude;
             $script:s_PDPExclude = $PDPExclude;
             $script:s_LanguageExclude = $LanguageExclude;
-            $script:s_ImagesRootPath = $ImagesRootPath;
+            $script:s_MediaRootPath = $MediaRootPath;
             $script:s_MediaFallbackLanguage = $MediaFallbackLanguage;
         }
 
@@ -2832,13 +2418,13 @@ function Get-InAppProductSubmissionRequestBody
     .PARAMETER LanguageExclude
         Array of lang-code strings that SHOULD NOT be processed.
 
-    .PARAMETER ImagesRootPath
+    .PARAMETER MediaRootPath
         Root path to the directory containing release subfolders of images to be packaged.
 
     .PARAMETER MediaFallbackLanguage
         Some apps may not localize all of their metadata media (images, trailers, etc..)
         across all languages.  By default, StoreBroker will look in the PDP langcode's subfolder
-        within ImagesRootPath for that language's media content.  If the requested filename is
+        within MediaRootPath for that language's media content.  If the requested filename is
         not found, StoreBroker packaging will fail. If you specify a fallback language here
         (e.g. 'en-us'), then if the requested file isn't found in the PDP language's media
         subfolder, StoreBroker will then look into the fallback language's media subfolder for
@@ -2874,8 +2460,7 @@ function Get-InAppProductSubmissionRequestBody
 
         [string[]] $LanguageExclude,
 
-        [Alias('MediaRootPath')]
-        [string] $ImagesRootPath,
+        [string] $MediaRootPath,
 
         [string] $MediaFallbackLanguage
     )
@@ -2915,7 +2500,7 @@ function Get-InAppProductSubmissionRequestBody
             $script:s_PDPInclude = $PDPInclude;
             $script:s_PDPExclude = $PDPExclude;
             $script:s_LanguageExclude = $LanguageExclude;
-            $script:s_ImagesRootPath = $ImagesRootPath;
+            $script:s_MediaRootPath = $MediaRootPath;
             $script:s_MediaFallbackLanguage = $MediaFallbackLanguage;
         }
 
@@ -2952,13 +2537,13 @@ function Resolve-PackageParameters
 
     .OUTPUTS
         Hashtable with keys "PDPRootPath", "Release", "PDPInclude", "PDPExclude",
-        "ImagesRootPath", "MediaFallbackLanguage", "AppxPath", "OutPath", and "OutName",
+        "MediaRootPath", "MediaFallbackLanguage", "PackagePath", "OutPath", and "OutName",
         each with validated values.
 
     .EXAMPLE
-        Resolve-PackagePaths -ConfigObject (Convert-AppConfig $ConfigPath) -ParamMap @{"AppxPath"=$null;"OutPath"=$null;"OutPath"=$null;"Release"=$null}
+        Resolve-PackagePaths -ConfigObject (Get-Config $ConfigPath) -ParamMap @{"PackagePath"=$null;"OutPath"=$null;"OutPath"=$null;"Release"=$null}
 
-        Attempts to validate the "AppxPath", "OutPath", "OutName", and "Release" parameters by
+        Attempts to validate the "PackagePath", "OutPath", "OutName", and "Release" parameters by
         checking the config file for values.
 #>
     [CmdletBinding()]
@@ -2983,9 +2568,9 @@ function Resolve-PackageParameters
     # Generic value from config message. Format with parameter name and value
     $fromConfig = "`tUsing config value: {0} = `"{1}`""
 
-    # 'PDPRootPath' and 'ImagesRootPath' are optional.
+    # 'PDPRootPath' and 'MediaRootPath' are optional.
     # Check if there is a runtime or config value.
-    foreach ($param in $script:s_PDPRootPath, $script:s_ImagesRootPath)
+    foreach ($param in $script:s_PDPRootPath, $script:s_MediaRootPath)
     {
         if ([String]::IsNullOrWhiteSpace($ParamMap[$param]))
         {
@@ -3014,14 +2599,14 @@ function Resolve-PackageParameters
         }
     }
 
-    if (($SkipValidation -inotcontains $script:s_PDPRootPath) -and ($SkipValidation -inotcontains $script:s_ImagesRootPath))
+    if (($SkipValidation -inotcontains $script:s_PDPRootPath) -and ($SkipValidation -inotcontains $script:s_MediaRootPath))
     {
-        # If either 'PDPRootPath' or 'ImagesRootPath' is present, both must be present
+        # If either 'PDPRootPath' or 'MediaRootPath' is present, both must be present
         if ((-not [String]::IsNullOrWhiteSpace($ParamMap[$script:s_PDPRootPath])) -xor
-            (-not [String]::IsNullOrWhiteSpace($ParamMap[$script:s_ImagesRootPath])))
+            (-not [String]::IsNullOrWhiteSpace($ParamMap[$script:s_MediaRootPath])))
         {
             $out = @()
-            $out += "Only one of '$script:s_PDPRootPath' and '$script:s_ImagesRootPath' was specified."
+            $out += "Only one of '$script:s_PDPRootPath' and '$script:s_MediaRootPath' was specified."
             $out += "If one of these parameters is specified, then both must be specified."
 
             $newLineOutput = ($out -join [Environment]::NewLine)
@@ -3029,7 +2614,6 @@ function Resolve-PackageParameters
             throw $newLineOutput
         }
     }
-
 
     if ($SkipValidation -inotcontains $script:s_OutPath)
     {
@@ -3053,7 +2637,6 @@ function Resolve-PackageParameters
         # Resolve path parameters to full paths. Necessary in case a path contains '.' or '..'
         $ParamMap[$script:s_OutPath] = Resolve-UnverifiedPath -Path $ParamMap[$script:s_OutPath]
     }
-
 
     if ($SkipValidation -inotcontains $script:s_OutName)
     {
@@ -3112,16 +2695,16 @@ function Resolve-PackageParameters
         Write-Log -Message "`tUsing default value: $script:s_PDPInclude = `"*.xml`"" -Level Verbose
     }
 
-    if ($SkipValidation -inotcontains $script:s_AppxPath)
+    if ($SkipValidation -inotcontains $script:s_PackagePath)
     {
-        # 'AppxPath' is mandatory.
-        if ($ParamMap[$script:s_AppxPath].Count -eq 0)
+        # 'PackagePath' is mandatory.
+        if ($ParamMap[$script:s_PackagePath].Count -eq 0)
         {
             $packagePaths = @()
             $validExtensions = $script:supportedExtensions | ForEach-Object { "*" + $_ }
-            foreach ($path in $ConfigObject.packageParameters.AppxPath)
+            foreach ($path in $ConfigObject.packageParameters.PackagePath)
             {
-                if ((Test-Path -PathType Leaf -Include $validExtensions -Path $path -ErrorAction Ignore) -and ($path -notin $packagePaths))
+                if ((Test-Path -PathType Leaf -Include $validExtensions -Path $path) -and ($path -notin $packagePaths))
                 {
                     $packagePaths += $path
                 }
@@ -3129,7 +2712,7 @@ function Resolve-PackageParameters
                 {
                     $out = @()
                     $out += "`"$path`" is not a file or cannot be found."
-                    $out += "See the `"$script:s_AppxPath`" object in the config file."
+                    $out += "See the `"$script:s_PackagePath`" object in the config file."
 
                     $newLineOutput = ($out -join [Environment]::NewLine)
                     Write-Log -Message $newLineOutput -Level Error
@@ -3157,7 +2740,7 @@ function Resolve-PackageParameters
                     {
                         $out = @()
                         $out += "Could not find a file with a supported extension ($($script:supportedExtensions -join ", ")) using the relative path: '$path'."
-                        $out += "See the `"$script:s_AppxPath`" object in the config file."
+                        $out += "See the `"$script:s_PackagePath`" object in the config file."
 
                         $newLineOutput = ($out -join [Environment]::NewLine)
                         Write-Log -Message $newLineOutput -Level Error
@@ -3166,13 +2749,13 @@ function Resolve-PackageParameters
                 }
             }
 
-            $ParamMap[$script:s_AppxPath] = $packagePaths
+            $ParamMap[$script:s_PackagePath] = $packagePaths
             $quotedVals = $packagePaths | ForEach-Object { "`"$_`"" }
-            Write-Log -Message ($fromConfig -f $script:s_AppxPath, ($quotedVals -join ', ')) -Level Verbose
+            Write-Log -Message ($fromConfig -f $script:s_PackagePath, ($quotedVals -join ', ')) -Level Verbose
         }
 
-        # Resolve AppxPath to a list of full paths.
-        $ParamMap[$script:s_AppxPath] = $ParamMap[$script:s_AppxPath] | ForEach-Object { Resolve-UnverifiedPath -Path $_ }
+        # Resolve PackagePath to a list of full paths.
+        $ParamMap[$script:s_PackagePath] = $ParamMap[$script:s_PackagePath] | ForEach-Object { Resolve-UnverifiedPath -Path $_ }
     }
 
     if ($SkipValidation -inotcontains $script:s_DisableAutoPackageNameFormatting)
@@ -3206,77 +2789,6 @@ function Resolve-PackageParameters
     }
 
     return $ParamMap
-}
-
-
-filter Remove-Comment
-{
-<#
-    .SYNOPSIS
-        Removes in-line comments starting with the comment delimiter
-        (default is two forward-slashes "//"). Also removes any lines
-        with only white-space.
-
-    .PARAMETER CommentDelimiter
-        String specifying the comment delimiter to use.  Default is two
-        forward-slashes, i.e. "//"
-
-    .PARAMETER Line
-        The lines to be filtered.  Normally this filter receives the lines
-        as input from the pipeline.
-
-    .OUTPUTS
-        System.Object[]  The filtered collection of lines
-
-    .EXAMPLE
-        "example", "test // input", "// remove this" | Remove-Comment
-
-        "example", "test "
-#>
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "", Justification="Does not cause any change to system state. No value gained from ShouldProcess in this specific instance.")]
-    param(
-        [string] $CommentDelimiter = "//",
-
-        [Parameter(
-            Mandatory,
-            ValueFromPipeline)]
-        [AllowEmptyString()] # Mandatory parameters usually do not allow empty string, causing an error. Allow them but filter them out.
-        [string[]] $Line
-    )
-
-    # Filter text following the comment delimiter, empty lines, and lines that are only whitespace.
-    $Line |
-        ForEach-Object { ($_ -split $CommentDelimiter)[0] } |
-        Where-Object   {  $_ -notmatch '^\s*$' }
-}
-
-function Convert-AppConfig
-{
-<#
-    .SYNOPSIS
-        Opens the specified config file, removes comments, and returns the contents as a PSCustomObject
-
-    .PARAMETER ConfigPath
-        Full path to a .json file which will be interpreted as the Packaging Tool's config file
-
-    .OUTPUTS
-        PSCustomObject
-
-    .EXAMPLE
-        Convert-AppConfig -ConfigPath 'C:\Some\Path\MapsConfig.json'
-
-        Returns MapsConfig.json represented as a PSCustomObject
-#>
-
-    param(
-        [Parameter(Mandatory)]
-        [ValidateScript({ if (Test-Path -PathType Leaf -Path $_ -ErrorAction Ignore) { $true } else { throw "$_ cannot be found." } })]
-        [string] $ConfigPath
-    )
-
-    $lines = (Get-Content -Path $ConfigPath -Encoding UTF8 | Remove-Comment) -join ''
-
-    return ($lines | ConvertFrom-Json)
 }
 
 function Join-SubmissionPackage
@@ -3479,7 +2991,7 @@ function New-SubmissionPackage
         Creates the JSON body for a submission request.  Localized listing metadata
         is taken from the path specified in the config file.
 
-        The .appxbundle, .appxupload, and .appx files are given via the [-AppxPath] parameter.
+        The .appxbundle, .appxupload, and .appx files are given via the [-PackagePath] parameter.
 
         In the process of creating the JSON, the packaging tool also copies any specified
         images and .appx files to a .zip file.
@@ -3527,14 +3039,14 @@ function New-SubmissionPackage
     .PARAMETER LanguageExclude
         Array of lang-code strings that SHOULD NOT be processed.
 
-    .PARAMETER ImagesRootPath
+    .PARAMETER MediaRootPath
         Your store screenshots must be placed with this structure:
-            <ImagesRootPath>\<Release>\<lang-code>\...\img.png
+            <MediaRootPath>\<Release>\<lang-code>\...\img.png
 
         The 'Release' that will be used is NOT the value specified to StoreBroker,
         it is the 'Release' value found in the corresponding PDP file.
 
-    .PARAMETER AppxPath
+    .PARAMETER PackagePath
         Array of full paths to the architecture-neutral .appxbundle, .appxupload, or .appx
         files that will be uploaded as the new submission.
 
@@ -3553,39 +3065,42 @@ function New-SubmissionPackage
     .PARAMETER MediaFallbackLanguage
         Some apps may not localize all of their metadata media (images, trailers, etc..)
         across all languages.  By default, StoreBroker will look in the PDP langcode's subfolder
-        within ImagesRootPath for that language's media content.  If the requested filename is
+        within MediaRootPath for that language's media content.  If the requested filename is
         not found, StoreBroker packaging will fail. If you specify a fallback language here
         (e.g. 'en-us'), then if the requested file isn't found in the PDP language's media
         subfolder, StoreBroker will then look into the fallback language's media subfolder for
         the exactly same-named image, and only fail then if it still cannot be found.
 
     .EXAMPLE
-        New-SubmissionPackage -ConfigPath 'C:\Config\StoreBrokerConfig.json' -OutPath 'C:\Out\Path\' -OutName 'Upload' -Release MarchRelease -AppxPath 'C:\bin\App.appxbundle'
+        New-SubmissionPackage -ConfigPath 'C:\Config\StoreBrokerConfig.json' -OutPath 'C:\Out\Path\' -OutName 'Upload' -Release MarchRelease -PackagePath 'C:\bin\App.appxbundle'
 
         This example creates the submission request body and .zip file for the architecture-neutral
         '.appxbundle' located at 'C:\bin\App.appxbundle'.  Two files will be placed under 'C:\Out\Path\',
         'Upload.json' and 'Upload.zip'
 
     .EXAMPLE
-        New-SubmissionPackage -ConfigPath 'C:\Config\StoreBrokerConfig.json' -OutPath 'C:\Out\Path\' -OutName 'Upload' -Release MarchRelease -AppxPath 'C:\bin\App.appxbundle' -Verbose
+        New-SubmissionPackage -ConfigPath 'C:\Config\StoreBrokerConfig.json' -OutPath 'C:\Out\Path\' -OutName 'Upload' -Release MarchRelease -PackagePath 'C:\bin\App.appxbundle' -Verbose
 
         This example is the same except it specifies Verbose logging and the function will output a
         detailed report of its actions.
 
     .EXAMPLE
-        New-SubmissionPackage -ConfigPath 'C:\Config\StoreBrokerConfig.json' -OutPath 'C:\Out\Path\' -OutName 'Upload' -Release MarchRelease -AppxPath 'C:\bin\x86\App_x86.appxupload', 'C:\Other\Path\Arm\App_arm.appxupload'
+        New-SubmissionPackage -ConfigPath 'C:\Config\StoreBrokerConfig.json' -OutPath 'C:\Out\Path\' -OutName 'Upload' -Release MarchRelease -PackagePath 'C:\bin\x86\App_x86.appxupload', 'C:\Other\Path\Arm\App_arm.appxupload'
 
         This example is the same except it specifies an x86 and Arm build.  Multiple files to
-        include can be passed to 'AppxPath' by separating with a comma.
+        include can be passed to 'PackagePath' by separating with a comma.
 #>
-
     [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter(Mandatory)]
-        [ValidateScript({ if (Test-Path -PathType Leaf -Path $_ -ErrorAction Ignore) { $true } else { throw "$_ cannot be found." } })]
+        [ValidateScript({
+            if (Test-Path -PathType Leaf -Path $_ -ErrorAction Ignore) { return $true }
+            else { throw "ConfigPath is not a file or cannot be found: [$_]." } })]
         [string] $ConfigPath,
 
-        [ValidateScript({ if (Test-Path -PathType Container -Path $_ -ErrorAction Ignore) { $true } else { throw "$_ cannot be found." } })]
+        [ValidateScript({
+            if (Test-Path -PathType Container -Path $_ -ErrorAction Ignore) { return $true }
+            else { throw "PDPRootPath is not a directory or cannot be found: [$_]." } })]
         [string] $PDPRootPath,
 
         [string] $Release,
@@ -3596,9 +3111,11 @@ function New-SubmissionPackage
 
         [string[]] $LanguageExclude,
 
-        [ValidateScript({ if (Test-Path -PathType Container -Path $_ -ErrorAction Ignore) { $true } else { throw "$_ cannot be found." } })]
-        [Alias('MediaRootPath')]
-        [string] $ImagesRootPath,
+        [ValidateScript({
+            if (Test-Path -PathType Container $_ -ErrorAction Ignore) { return $true }
+            else { throw "MediaRootPath is not a directory or cannot be found: [$_]." } })]
+        [Alias('ImagesRootPath')]
+        [string] $MediaRootPath,
 
         [ValidateScript({
             foreach ($path in $_)
@@ -3611,7 +3128,7 @@ function New-SubmissionPackage
 
             return $true
         })]
-        [string[]] $AppxPath,
+        [string[]] $PackagePath,
 
         [string] $OutPath,
 
@@ -3636,7 +3153,7 @@ function New-SubmissionPackage
         # Resolve-PackageParameters will take care of validating the values, we only need
         # to avoid splatting null values as this will generate a runtime exception.
         # Log the value of each parameter.
-        $validationSet = $script:s_PDPRootPath, $script:s_Release, $script:s_PDPInclude, $script:s_PDPExclude, $script:s_LanguageExclude, $script:s_ImagesRootPath, $script:s_AppxPath, $script:s_OutPath, $script:s_OutName, $script:s_DisableAutoPackageNameFormatting, $script:s_MediaFallbackLanguage
+        $validationSet = $script:s_PDPRootPath, $script:s_Release, $script:s_PDPInclude, $script:s_PDPExclude, $script:s_LanguageExclude, $script:s_MediaRootPath, $script:s_PackagePath, $script:s_OutPath, $script:s_OutName, $script:s_DisableAutoPackageNameFormatting, $script:s_MediaFallbackLanguage
         $packageParams = @{}
         foreach ($param in $validationSet)
         {
@@ -3658,7 +3175,9 @@ function New-SubmissionPackage
         }
 
         # Convert the Config.json
-        $config = Convert-AppConfig -ConfigPath $ConfigPath
+        $config = Get-Config -ConfigPath $ConfigPath `
+                             -MinSupportedVersion $script:minAppConfigSchemaVersion `
+                             -MaxSupportedVersion $script:maxAppConfigSchemaVersion
 
         # Check that all parameters are provided or specified in the config
         $validatedParams = Resolve-PackageParameters -ConfigObject $config -ParamMap $packageParams
@@ -3676,7 +3195,7 @@ function New-SubmissionPackage
                                    (Test-Path -PathType Container -Path $script:tempFolderPath -ErrorAction Ignore)
 
         # Get the submission request object
-        $resourceParams = $script:s_PDPRootPath, $script:s_Release, $script:s_PDPInclude, $script:s_PDPExclude, $script:s_LanguageExclude, $script:s_ImagesRootPath, $script:s_AppxPath, $script:s_DisableAutoPackageNameFormatting, $script:s_MediaFallbackLanguage
+        $resourceParams = $script:s_PDPRootPath, $script:s_Release, $script:s_PDPInclude, $script:s_PDPExclude, $script:s_LanguageExclude, $script:s_MediaRootPath, $script:s_PackagePath, $script:s_DisableAutoPackageNameFormatting, $script:s_MediaFallbackLanguage
 
         # Note: PSScriptAnalyzer falsely flags this next line as PSUseDeclaredVarsMoreThanAssignment due to:
         # https://github.com/PowerShell/PSScriptAnalyzer/issues/699
@@ -3797,9 +3316,9 @@ function New-InAppProductSubmissionPackage
     .PARAMETER LanguageExclude
         Array of lang-code strings that SHOULD NOT be processed.
 
-    .PARAMETER ImagesRootPath
+    .PARAMETER MediaRootPath
         Your icons must be placed with this structure:
-            <ImagesRootPath>\<Release>\<lang-code>\...\icon.png
+            <MediaRootPath>\<Release>\<lang-code>\...\icon.png
 
         The 'Release' that will be used is NOT the value specified to StoreBroker,
         it is the 'Release' value found in the corresponding PDP file.
@@ -3814,7 +3333,7 @@ function New-InAppProductSubmissionPackage
     .PARAMETER MediaFallbackLanguage
         Some apps may not localize all of their metadata media (images, trailers, etc..)
         across all languages.  By default, StoreBroker will look in the PDP langcode's subfolder
-        within ImagesRootPath for that language's media content.  If the requested filename is
+        within MediaRootPath for that language's media content.  If the requested filename is
         not found, StoreBroker packaging will fail. If you specify a fallback language here
         (e.g. 'en-us'), then if the requested file isn't found in the PDP language's media
         subfolder, StoreBroker will then look into the fallback language's media subfolder for
@@ -3837,10 +3356,14 @@ function New-InAppProductSubmissionPackage
     [Alias('New-IapSubmissionPackage')]
     param(
         [Parameter(Mandatory)]
-        [ValidateScript({ if (Test-Path -PathType Leaf -Path $_ -ErrorAction Ignore) { $true } else { throw "$_ cannot be found." } })]
+        [ValidateScript({
+            if (Test-Path -PathType Leaf -Path $_ -ErrorAction Ignore) { $true }
+            else { throw "ConfigPath is not a file or cannot be found: [$_]." } })]
         [string] $ConfigPath,
 
-        [ValidateScript({ if (Test-Path -PathType Container -Path $_ -ErrorAction Ignore) { $true } else { throw "$_ cannot be found." } })]
+        [ValidateScript({
+            if (Test-Path -PathType Container -Path $_ -ErrorAction Ignore) { return $true }
+            else { throw "PDPRootPath is not a directory or cannot be found: [$_]." } })]
         [string] $PDPRootPath,
 
         [string] $Release,
@@ -3851,9 +3374,11 @@ function New-InAppProductSubmissionPackage
 
         [string[]] $LanguageExclude,
 
-        [ValidateScript({ if (Test-Path -PathType Container -Path $_ -ErrorAction Ignore) { $true } else { throw "$_ cannot be found." } })]
-        [Alias('MediaRootPath')]
-        [string] $ImagesRootPath,
+        [ValidateScript({
+            if (Test-Path -PathType Container $_ -ErrorAction Ignore) { return $true }
+            else { throw "MediaRootPath is not a directory or cannot be found: [$_]." } })]
+        [Alias('ImagesRootPath')]
+        [string] $MediaRootPath,
 
         [string] $OutPath,
 
@@ -3876,7 +3401,7 @@ function New-InAppProductSubmissionPackage
         # Resolve-PackageParameters will take care of validating the values, we only need
         # to avoid splatting null values as this will generate a runtime exception.
         # Log the value of each parameter.
-        $validationSet = $script:s_PDPRootPath, $script:s_Release, $script:s_PDPInclude, $script:s_PDPExclude, $script:s_LanguageExclude, $script:s_ImagesRootPath, $script:s_OutPath, $script:s_OutName, $script:s_MediaFallbackLanguage
+        $validationSet = $script:s_PDPRootPath, $script:s_Release, $script:s_PDPInclude, $script:s_PDPExclude, $script:s_LanguageExclude, $script:s_MediaRootPath, $script:s_OutPath, $script:s_OutName, $script:s_MediaFallbackLanguage
         $packageParams = @{}
         foreach ($param in $validationSet)
         {
@@ -3898,10 +3423,12 @@ function New-InAppProductSubmissionPackage
         }
 
         # Convert the Config.json
-        $config = Convert-AppConfig -ConfigPath $ConfigPath
+        $config = Get-Config -ConfigPath $ConfigPath `
+                             -MinSupportedVersion $script:minIapConfigSchemaVersion `
+                             -MaxSupportedVersion $script:maxIapConfigSchemaVersion
 
         # Check that all parameters are provided or specified in the config
-        $validatedParams = Resolve-PackageParameters -ConfigObject $config -ParamMap $packageParams -SkipValidation @($script:s_DisableAutoPackageNameFormatting, $script:s_AppxPath)
+        $validatedParams = Resolve-PackageParameters -ConfigObject $config -ParamMap $packageParams -SkipValidation @($script:s_DisableAutoPackageNameFormatting, $script:s_PackagePath)
 
         # Assign final, validated params
         $validationSet |
@@ -3916,7 +3443,7 @@ function New-InAppProductSubmissionPackage
                                    (Test-Path -PathType Container -Path $script:tempFolderPath -ErrorAction Ignore)
 
         # Get the submission request object
-        $resourceParams = $script:s_PDPRootPath, $script:s_Release, $script:s_PDPInclude, $script:s_PDPExclude, $script:s_LanguageExclude, $script:s_ImagesRootPath, $script:s_MediaFallbackLanguage
+        $resourceParams = $script:s_PDPRootPath, $script:s_Release, $script:s_PDPInclude, $script:s_PDPExclude, $script:s_LanguageExclude, $script:s_MediaRootPath, $script:s_MediaFallbackLanguage
 
         # Note: PSScriptAnalyzer falsely flags this next line as PSUseDeclaredVarsMoreThanAssignment due to:
         # https://github.com/PowerShell/PSScriptAnalyzer/issues/699

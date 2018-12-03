@@ -1864,8 +1864,7 @@ function Update-Submission
 
         if ($PSCmdlet.ShouldProcess("Update Submission elements"))
         {
-            # If we know that we'll be doing anything with binary content, ensure that it's accessible unzipped.
-            if ($UpdateListingText -or $UpdateImagesAndCaptions -or $UpdateVideos -or $AddPackages -or $ReplacePackages -or $UpdatePackages)
+            if ($AddPackages -or $ReplacePackages -or $UpdatePackages)
             {
                 $packageParams = $commonParams.PSObject.Copy() # Get a new instance, not a reference
                 $packageParams.Add('SubmissionData', $jsonSubmission)
@@ -1884,7 +1883,10 @@ function Update-Submission
                     $packageParams.Add('RedundantPackagesToKeep', $RedundantPackagesToKeep)
                 }
                 $null = Update-ProductPackage @packageParams
+            }
 
+            if ($UpdateListingText -or $UpdateImagesAndCaptions -or $UpdateVideos)
+            {
                 $listingParams = $commonParams.PSObject.Copy() # Get a new instance, not a reference
                 $listingParams.Add('SubmissionData', $jsonSubmission)
                 if ([string]::IsNullOrWhiteSpace($ZipPath))
@@ -1902,7 +1904,6 @@ function Update-Submission
                 $listingParams.Add('IsMinimalObject', $IsMinimalObject)
                 $null = Update-Listing @listingParams
             }
-
 
             if ($UpdateAppProperties -or $UpdateGamingOptions)
             {

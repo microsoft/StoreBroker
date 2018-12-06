@@ -446,6 +446,7 @@ function New-Submission
             [StoreBrokerTelemetryProperty]::FlightId = $FlightId
             [StoreBrokerTelemetryProperty]::SandboxId = $SandboxId
             [StoreBrokerTelemetryProperty]::Scope = $Scope
+            [StoreBrokerTelemetryProperty]::Force = ($Force -eq $true)
             [StoreBrokerTelemetryProperty]::WaitUntilReady = ($WaitUntilReady -eq $true)
             [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
             [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId

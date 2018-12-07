@@ -1407,6 +1407,14 @@ function Start-SubmissionMonitor
                     $shouldMonitor = $false
                 }
 
+                if ($lastSubState -eq [StoreBrokerSubmissionSubState]::Cancelled)
+                {
+                    $body += ""
+                    $body += "*** Your submission has been cancelled.  Monitoring will now end."
+
+                    $shouldMonitor = $false
+                }
+
                 if ($lastSubState -eq [StoreBrokerSubmissionSubState]::Published)
                 {
                     $body += ""

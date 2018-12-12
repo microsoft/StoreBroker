@@ -1879,6 +1879,7 @@ function Read-AppxBundleMetadata
         foreach ($application in $applications)
         {
             $appxFilePath = (Get-ChildItem -Recurse -Path $expandedContainerPath -Include $application).FullName
+            Write-Log -Message "Opening `"$appxFilePath`"." -Indent 2 -Level Verbose
             $appxMetadata = Read-AppxMetadata -AppxPath $appxFilePath -AppxInfo $AppxInfo
 
             # targetPlatform will always be the values of the last .appx processed.

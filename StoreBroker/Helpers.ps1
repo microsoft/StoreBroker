@@ -610,31 +610,31 @@ function Write-Log
             $dateString = $date.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ssZ")
         }
 
-        $consoleMessage = '{0}{1} : {2} : {3}' -f
-            (" " * $Indent),
+        $consoleMessage = '{0} : {1} : {2}{3}' -f
             $dateString,
             $env:username,
+            (" " * $Indent),
             $finalMessage
 
         if ($global:SBShouldLogPid)
         {
             $maxPidDigits = 10 # This is an estimate (see https://stackoverflow.com/questions/17868218/what-is-the-maximum-process-id-on-windows)
             $pidColumnLength = $maxPidDigits + "[]".Length
-            $logFileMessage = "{0}{1} : {2, -$pidColumnLength} : {3} : {4} : {5}" -f
-                (" " * $Indent),
+            $logFileMessage = "{0} : {1, -$pidColumnLength} : {2} : {3} : {4}{5}" -f
                 $dateString,
                 "[$global:PID]",
                 $env:username,
                 $Level.ToUpper(),
+                (" " * $Indent),
                 $finalMessage
         }
         else
         {
-            $logFileMessage = '{0}{1} : {2} : {3} : {4}' -f
-                (" " * $Indent),
+            $logFileMessage = '{0} : {1} : {2} : {3}{4}' -f
                 $dateString,
                 $env:username,
                 $Level.ToUpper(),
+                (" " * $Indent),
                 $finalMessage
         }
 

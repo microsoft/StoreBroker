@@ -285,7 +285,7 @@ function Format-SimpleTableString
     {
         if ($objects.count -gt 0)
         {
-            Write-Output "$(" " * $IndentationLevel)$(($objects | Format-Table | Out-String).TrimStart($([Environment]::NewLine)).TrimEnd([Environment]::NewLine).Replace([Environment]::NewLine, "$([Environment]::NewLine)$(" " * $IndentationLevel)"))"
+            Write-Output "$(" " * $IndentationLevel)$(($objects | Format-Table | Out-String -Width ([int]::MaxValue)).TrimStart($([Environment]::NewLine)).TrimEnd([Environment]::NewLine).Replace([Environment]::NewLine, "$([Environment]::NewLine)$(" " * $IndentationLevel)"))"
         }
     }
 }

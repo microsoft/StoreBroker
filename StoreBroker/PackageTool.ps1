@@ -2030,8 +2030,11 @@ function Read-AppxMetadata
     {
         $expandedAppxPath = Open-AppxContainer -AppxContainerPath $AppxPath
 
-        # Get AppxManifest.xml
-        $appxManifest = (Get-ChildItem -Recurse -Path $expandedAppxPath -Include 'AppxManifest.xml').FullName
+        # Get AppxManifest.xml under the appx root.
+        $appxManifest = Join-Path -Path $expandedAppxPath -ChildPath 'AppxManifest.xml' |
+            Get-Item -ErrorAction Ignore |
+            Select-Object -ExpandProperty FullName
+
         if ($null -eq $appxManifest)
         {
             Report-UnsupportedFile -Path $AppxPath
@@ -2251,8 +2254,11 @@ function Read-AppxBundleMetadata
     {
         $expandedContainerPath = Open-AppxContainer -AppxContainerPath $AppxbundlePath
 
-        # Get AppxBundleManifest.xml
-        $bundleManifestPath = (Get-ChildItem -Recurse -Path $expandedContainerPath -Include 'AppxBundleManifest.xml').FullName
+        # Get AppxBundleManifest.xml under the AppxMetadata folder.
+        $bundleManifestPath = Join-Path -Path $expandedContainerPath -ChildPath 'AppxMetadata\AppxBundleManifest.xml' |
+            Get-Item -ErrorAction Ignore |
+            Select-Object -ExpandProperty FullName
+
         if ($null -eq $bundleManifestPath)
         {
             Report-UnsupportedFile -Path $AppxbundlePath

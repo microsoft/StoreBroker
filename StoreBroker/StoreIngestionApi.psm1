@@ -1347,10 +1347,8 @@ function Start-SubmissionMonitor
         try
         {
             $submission = Get-Submission @commonParams -ProductId $ProductId -SubmissionId $SubmissionId
-            $report = Get-SubmissionReport @commonParams -ProductId $ProductId -SubmissionId $SubmissionId
-            $validation = Get-SubmissionValidation @commonParams -ProductId $ProductId -SubmissionId $SubmissionId
 
-            if (($submission.substate -ne $lastSubState) -or ($validation.Count -gt 0))
+            if ($submission.substate -ne $lastSubState)
             {
                 $lastSubState = $submission.substate
 
@@ -1366,32 +1364,6 @@ function Start-SubmissionMonitor
                 $body += "Friendly Name         : $($submission.friendlyName)"
                 $body += "Submission State      : $($submission.state)"
                 $body += "Submission State      : $lastSubState"
-                $body += ""
-                $body += "Validation Details    : {0}" -f $(if ($validation.count -eq 0) { "<None>" } else { "" })
-                $body += $validation | Format-SimpleTableString -IndentationLevel $indentLength
-                $body += ""
-                $body += "Status Details        : {0}" -f $(if ($report.count -eq 0) { "<None>" } else { "" })
-                $body += $report | Format-SimpleTableString -IndentationLevel $indentLength
-                foreach ($entry in $report)
-                {
-                    $body += $(" " * $indentLength) + $(Get-Date -Date $entry.reportTimeInUtc -Format R) + ": $($entry.status) | $($entry.fileUri)"
-                }
-
-                $body += ""
-                $body += "To view the full submission"
-                $body += "---------------------------"
-                $body += "Dev Portal URL"
-                $body += "    https://dev.windows.com/en-us/dashboard/apps/$appId/submissions/$SubmissionId/"
-                $body += "StoreBroker command"
-                $body += "    Get-Submission -ProductId $productId -SubmissionId $SubmissionId"
-
-                if ($validation.Count -gt 0)
-                {
-                    $body += ""
-                    $body += "*** Your submission has validation errors that must be fixed.  Monitoring will now end."
-
-                    $shouldMonitor = $false
-                }
 
                 $failedStates = @([StoreBrokerSubmissionSubState]::Failed, [StoreBrokerSubmissionSubState]::FailedInCertification)
                 if ($lastSubState -in $failedStates)
@@ -1426,6 +1398,26 @@ function Start-SubmissionMonitor
 
                     $shouldMonitor = $false
                 }
+
+                if (-not $shouldMonitor)
+                {
+                    $report = Get-SubmissionReport @commonParams -ProductId $ProductId -SubmissionId $SubmissionId
+                    $body += ""
+                    $body += "Status Details        : {0}" -f $(if ($report.count -eq 0) { "<None>" } else { "" })
+                    $body += $report | Format-SimpleTableString -IndentationLevel $indentLength
+                    foreach ($entry in $report)
+                    {
+                        $body += $(" " * $indentLength) + $(Get-Date -Date $entry.reportTimeInUtc -Format R) + ": $($entry.status) | $($entry.fileUri)"
+                    }
+                }
+
+                $body += ""
+                $body += "To view the full submission"
+                $body += "---------------------------"
+                $body += "Dev Portal URL"
+                $body += "    https://dev.windows.com/en-us/dashboard/apps/$appId/submissions/$SubmissionId/"
+                $body += "StoreBroker command"
+                $body += "    Get-Submission -ProductId $productId -SubmissionId $SubmissionId"
 
                 Write-Log -Message $body
 

@@ -562,7 +562,11 @@ function Get-AccessToken
         $output += "Be sure to check that your client id/secret are valid."
         $output += "StatusCode: $($_.Exception.Response.StatusCode.value__)"
         $output += "StatusDescription: $($_.Exception.Response.StatusDescription)"
-        $output += "$($_.ErrorDetails | ConvertFrom-JSON | Out-String)"
+        $output += "Message: $($_.Exception.Message)"
+        if (-not [String]::IsNullOrWhiteSpace($_.ErrorDetails))
+        {
+            $output += ($_.ErrorDetails | ConvertFrom-Json | Out-String)
+        }
 
         $newLineOutput = ($output -join [Environment]::NewLine)
         Write-Log -Message $newLineOutput -Level Error
@@ -574,7 +578,7 @@ function Get-AccessToken
         $output = @()
         $output += "Be sure to check that your client id/secret are valid."
         $output += $_.Exception.Message
-        if ($_.ErrorDetails.Message)
+        if (-not [String]::IsNullOrWhiteSpace($_.ErrorDetails.Message))
         {
             $message = ($_.ErrorDetails.Message | ConvertFrom-Json)
             $output += "$($message.code) : $($message.message)"
@@ -936,7 +940,7 @@ function Set-StoreFile
 
         $output = @()
         $output += $_.Exception.Message
-        if ($_.ErrorDetails.Message)
+        if (-not [String]::IsNullOrWhiteSpace($_.ErrorDetails.Message))
         {
             $message = ($_.ErrorDetails.Message | ConvertFrom-Json)
             $output += "$($message.code) : $($message.message)"
@@ -960,7 +964,7 @@ function Set-StoreFile
         $output = @()
         $output += "StatusCode: $($_.Exception.Response.StatusCode.value__)"
         $output += "StatusDescription: $($_.Exception.Response.StatusDescription)"
-        $output += "$($_.ErrorDetails)"
+        $output += $_.ErrorDetails
 
         Set-TelemetryException -Exception $_.Exception -ErrorBucket Set-StoreFile -Properties $telemetryProperties
         $newLineOutput = ($output -join [Environment]::NewLine)
@@ -1141,7 +1145,7 @@ function Get-StoreFile
 
         $output = @()
         $output += $_.Exception.Message
-        if ($_.ErrorDetails.Message)
+        if (-not [String]::IsNullOrWhiteSpace($_.ErrorDetails.Message))
         {
             $message = ($_.ErrorDetails.Message | ConvertFrom-Json)
             $output += "$($message.code) : $($message.message)"
@@ -1165,7 +1169,7 @@ function Get-StoreFile
         $output = @()
         $output += "StatusCode: $($_.Exception.Response.StatusCode.value__)"
         $output += "StatusDescription: $($_.Exception.Response.StatusDescription)"
-        $output += "$($_.ErrorDetails)"
+        $output += $_.ErrorDetails
 
         Set-TelemetryException -Exception $_.Exception -ErrorBucket Get-SubmissionPackage -Properties $telemetryProperties
         $newLineOutput = ($output -join [Environment]::NewLine)

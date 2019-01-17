@@ -2211,7 +2211,6 @@ function Remove-DeprecatedProperties
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification="This is intended to be where all deprecated properties are removed.  It's an accurate name.")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "", Justification="Does not cause any change to system state. No value gained from ShouldProcess in this specific instance.")]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingCmdletAliases", "DeepCopy-Object", Justification="This is a better function name for what we're doing.")]
     param(
         [Parameter(Mandatory)]
         [PSCustomObject] $SubmissionRequestBody
@@ -2219,7 +2218,7 @@ function Remove-DeprecatedProperties
     )
 
     # No side-effects.  We'll work off of a copy of the passed-in object
-    $requestBody = DeepCopy-Object $SubmissionRequestBody
+    $requestBody = DeepCopy-Object -InputObject $SubmissionRequestBody
 
     # hardwareRequirements was deprecated on 5/13/2016
     # Deprecated due to business reasons.  This field is not exposed from the UI.

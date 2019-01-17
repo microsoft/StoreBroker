@@ -310,7 +310,7 @@ function DeepCopy-Object
         The object that is to be copied.  This must be serializable or this will fail.
 
     .EXAMPLE
-        $bar = DeepCopy-Object $foo
+        $bar = DeepCopy-Object -InputObject $foo
         Assuming that $foo is serializable, $bar will now be an exact copy of $foo, but
         any changes that you make to one will not affect the other.
 
@@ -322,17 +322,17 @@ function DeepCopy-Object
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseApprovedVerbs", "", Justification="Intentional.  This isn't exported, and needed to be explicit relative to Copy-Object.")]
     param(
         [Parameter(Mandatory)]
-        [PSCustomObject] $Object
+        [PSCustomObject] $InputObject
     )
 
     $memoryStream = New-Object System.IO.MemoryStream
     $binaryFormatter = New-Object System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
-    $binaryFormatter.Serialize($memoryStream, $Object)
+    $binaryFormatter.Serialize($memoryStream, $InputObject)
     $memoryStream.Position = 0
-    $DeepCopiedObject = $binaryFormatter.Deserialize($memoryStream)
+    $deepCopiedObject = $binaryFormatter.Deserialize($memoryStream)
     $memoryStream.Close()
 
-    return $DeepCopiedObject
+    return $deepCopiedObject
 }
 
 function Get-SHA512Hash

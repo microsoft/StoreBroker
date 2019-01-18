@@ -656,14 +656,19 @@ function Write-Log
             'Informational'    {
                 # We'd prefer to use Write-Information to enable users to redirect that pipe if
                 # they want, unfortunately it's only available on v5 and above.  We'll fallback to
-                # using Write-Host for earlier versions (since we still need to support v4).
+                # using Write-Host for earlier versions (since we still need to support v4) if it's
+                # an interactive host, or Write-Verbose if not.
                 if ($PSVersionTable.PSVersion.Major -ge 5)
                 {
                     Write-Information $consoleMessage -InformationAction Continue
                 }
+                elseif (Test-InteractiveHost)
+                {
+                    Write-Host $consoleMessage
+                }
                 else
                 {
-                    Write-InteractiveHost $consoleMessage
+                    Write-Verbose $consoleMessage
                 }
             }
         }
@@ -938,6 +943,29 @@ function Send-SBMailMessage
     }
 }
 
+function Test-InteractiveHost
+{
+    <#
+    .SYNOPSIS
+        Checks to see if the current host is interactive.
+
+    .DESCRIPTION
+        Checks to see if the current host is interactive.
+
+        The Git repo for this module can be found here: http://aka.ms/StoreBroker
+
+    .EXAMPLE
+        Test-InteractiveHost
+#>
+
+    [CmdletBinding()]
+    param()
+
+    return ([Environment]::UserInteractive -and
+        (-not [Bool]([Environment]::GetCommandLineArgs() -like '-noni*')) -and
+        (Get-Host).Name -ne 'Default Host')
+}
+
 function Write-InteractiveHost
 {
 <#
@@ -981,10 +1009,7 @@ function Write-InteractiveHost
         [System.ConsoleColor] $BackgroundColor
     )
 
-    # Determine if the host is interactive
-    if ([Environment]::UserInteractive -and `
-        ![Bool]([Environment]::GetCommandLineArgs() -like '-noni*') -and `
-        (Get-Host).Name -ne 'Default Host')
+    if (Test-InteractiveHost)
     {
         # Special handling for OutBuffer (generated for the proxy function)
         $outBuffer = $null

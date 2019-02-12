@@ -1403,7 +1403,7 @@ function Start-SubmissionMonitor
                     $shouldMonitor = $false
                 }
 
-                if ($lastSubState -eq [StoreBrokerSubmissionSubState]::Published)
+                if ($lastSubState -in @([StoreBrokerSubmissionSubState]::Published, [StoreBrokerSubmissionSubState]::InStore))
                 {
                     $body += ""
                     $body += "*** Your submission has been published.  Monitoring will now end."

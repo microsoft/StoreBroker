@@ -1975,6 +1975,8 @@ function Invoke-SBRestMethod
                                 $ex.RequestId = $_.Exception.Response.Headers[$script:headerMSRequestId]
                                 $ex.ClientRequestId = $_.Exception.Response.Headers[$script:headerMSClientRequestId]
                                 $ex.CorrelationId = $_.Exception.Response.Headers[$script:headerMSCorrelationId]
+                                $ex.RetryAfter = $_.Exception.Response.Headers[$script:headerRetryAfter]
+                                $ex.Location = $_.Exception.Response.Headers[$script:headerLocation]
                             }
 
                             throw ($ex | ConvertTo-Json -Depth 20)
@@ -2099,6 +2101,8 @@ function Invoke-SBRestMethod
             $returnedClientRequestId = $null
             $returnedCorrelationId = $null
             $innerMessage = $null
+            $retryAfterHeaderValue = $null
+            $locationHeaderValue = $null
             $rawContent = $null
 
             if ($_.Exception -is [System.Net.WebException])
@@ -2122,6 +2126,8 @@ function Invoke-SBRestMethod
                     $requestId = $ex.Response.Headers[$script:headerMSRequestId]
                     $returnedClientRequestId = $ex.Response.Headers[$script:headerMSClientRequestId]
                     $returnedCorrelationId = $ex.Response.Headers[$script:headerMSCorrelationId]
+                    $retryAfterHeaderValue = $ex.Response.Headers[$script:headerRetryAfter]
+                    $locationHeaderValue = $ex.Response.Headers[$script:headerLocation]
                 }
 
             }
@@ -2139,6 +2145,8 @@ function Invoke-SBRestMethod
                     $requestId = $deserialized.RequestId
                     $returnedClientRequestId = $deserialized.ClientRequestId
                     $returnedCorrelationId = $deserialized.CorrelationId
+                    $retryAfterHeaderValue = $deserialized.RetryAfter
+                    $locationHeaderValue = $deserialized.Location
                     $rawContent = $deserialized.RawContent
                 }
                 catch [System.ArgumentException]
@@ -2251,7 +2259,7 @@ function Invoke-SBRestMethod
             }
 
             $newLineOutput = ($output -join [Environment]::NewLine)
-            if ($statusCode -in $global:SBAutoRetryErrorCodes)
+            if (($statusCode -in $global:SBAutoRetryErrorCodes) -or ($null -ne $retryAfterHeaderValue))
             {
                 if ($numRetries -ge $global:SBMaxAutoRetries)
                 {
@@ -2266,9 +2274,22 @@ function Invoke-SBRestMethod
                     $localTelemetryProperties[[StoreBrokerTelemetryProperty]::NumRetries] = $numRetries
                     $localTelemetryProperties[[StoreBrokerTelemetryProperty]::RetryStatusCode] = $statusCode
                     Write-Log -Message $newLineOutput -Level Warning
-                    Write-Log -Message "This status code ($statusCode) is configured to auto-retry (via `$global:SBAutoRetryErrorCodes).  StoreBroker will auto-retry (attempt #$numRetries) in $retryDelayMin minute(s). Sleeping..." -Level Warning
-                    Start-Sleep -Seconds ($retryDelayMin * 60)
-                    $retryDelayMin = $retryDelayMin * 2 # Exponential sleep increase for next retry
+
+                    if ($null -eq $retryAfterHeaderValue)
+                    {
+                        Write-Log -Message "This status code ($statusCode) is configured to auto-retry (via `$global:SBAutoRetryErrorCodes).  StoreBroker will auto-retry (attempt #$numRetries) in $retryDelayMin minute(s). Sleeping..." -Level Warning
+                        Start-Sleep -Seconds ($retryDelayMin * 60)
+                        $retryDelayMin = $retryDelayMin * 2 # Exponential sleep increase for next retry
+                    }
+                    else
+                    {
+                        Write-Log -Message "The server returned ($statusCode).  Will try again in [$retryAfterHeaderValue] seconds per request from the server."
+                        Start-Sleep -Seconds ($retryAfterHeaderValue)
+                        if (-not [String]::IsNullOrWhiteSpace($locationHeaderValue))
+                        {
+                            $UriFragment = $locationHeaderValue
+                        }
+                    }
                     continue # let's get back to the start of the loop again, no need to process anything further in this catch
                 }
             }

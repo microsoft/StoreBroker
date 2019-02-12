@@ -3235,6 +3235,11 @@ function New-SubmissionPackage
             $telemetryProperties = $AppxInfo[$AppxInfo.Count - 1]
         }
 
+        if (-not [String]::IsNullOrWhiteSpace($global:SBStoreBrokerClientName))
+        {
+            $telemetryProperties[[StoreBrokerTelemetryProperty]::ClientName] = $global:SBStoreBrokerClientName
+        }
+
         Set-TelemetryEvent -EventName New-SubmissionPackage -Properties $telemetryProperties -Metrics $telemetryMetrics
     }
     catch
@@ -3247,6 +3252,11 @@ function New-SubmissionPackage
         if ($AppxInfo.Count -gt 0)
         {
             $telemetryProperties = $AppxInfo[$AppxInfo.Count - 1]
+        }
+
+        if (-not [String]::IsNullOrWhiteSpace($global:SBStoreBrokerClientName))
+        {
+            $telemetryProperties[[StoreBrokerTelemetryProperty]::ClientName] = $global:SBStoreBrokerClientName
         }
 
         Set-TelemetryException -Exception $_.Exception -ErrorBucket "New-SubmissionPackage" -Properties $telemetryProperties

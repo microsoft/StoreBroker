@@ -297,6 +297,8 @@ function Update-SubmissionRollout
             [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
         }
 
+        if (-not [String]::IsNullOrWhiteSpace($global:SBStoreBrokerClientName)) { $telemetryProperties[[StoreBrokerTelemetryProperty]::ClientName] = $global:SBStoreBrokerClientName }
+
         Set-TelemetryEvent -EventName Update-SubmissionRollout -Properties $telemetryProperties -Metrics $telemetryMetrics
         return
     }

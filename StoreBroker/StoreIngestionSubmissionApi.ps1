@@ -2048,6 +2048,8 @@ function Update-Submission
             [StoreBrokerTelemetryProperty]::SeekEnabled = $SeekEnabled
         }
 
+        if (-not [String]::IsNullOrWhiteSpace($global:SBStoreBrokerClientName)) { $telemetryProperties[[StoreBrokerTelemetryProperty]::ClientName] = $global:SBStoreBrokerClientName }
+
         Set-TelemetryEvent -EventName Update-Submission -Properties $telemetryProperties -Metrics $telemetryMetrics
 
         return $SubmissionId

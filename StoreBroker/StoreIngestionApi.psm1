@@ -140,6 +140,11 @@ function Initialize-StoreIngestionApiGlobalVariables
     {
         $global:SBMaxAutoRetries = 5
     }
+
+    if (!(Get-Variable -Name SBStoreBrokerClientName -Scope Global -ValueOnly -ErrorAction Ignore))
+    {
+        $global:SBStoreBrokerClientName = $null
+    }
 }
 
 # We need to be sure to call this explicitly so that the global variables get initialized.
@@ -1843,6 +1848,7 @@ function Invoke-SBRestMethod
 
         $headers = @{"Authorization" = "Bearer $AccessToken"}
         $headers.Add($script:headerClientName, "StoreBroker v$($MyInvocation.MyCommand.Module.Version)")
+
         if ($Method -in ('post', 'put'))
         {
             $headers.Add("Content-Type", "application/json; charset=UTF-8")

@@ -14,6 +14,7 @@ Add-Type -TypeDefinition @"
       AppxVersion,
       Auto,
       AutoSubmit,
+      ClientName,
       ClientRequestId,
       CorrelationId,
       DayOfWeek,

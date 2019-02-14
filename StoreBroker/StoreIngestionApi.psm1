@@ -136,6 +136,11 @@ function Initialize-StoreIngestionApiGlobalVariables
         $global:SBAutoRetryErrorCodes = @(429, 503)
     }
 
+    if (!(Get-Variable -Name SBGetRequestAutoRetryErrorCodes -Scope Global -ValueOnly -ErrorAction Ignore))
+    {
+        $global:SBGetRequestAutoRetryErrorCodes = @(500)
+    }
+
     if (!(Get-Variable -Name SBMaxAutoRetries -Scope Global -ValueOnly -ErrorAction Ignore))
     {
         $global:SBMaxAutoRetries = 5
@@ -2265,7 +2270,9 @@ function Invoke-SBRestMethod
             }
 
             $newLineOutput = ($output -join [Environment]::NewLine)
-            if (($statusCode -in $global:SBAutoRetryErrorCodes) -or ($null -ne $retryAfterHeaderValue))
+            if (($statusCode -in $global:SBAutoRetryErrorCodes) -or
+                (($statusCode -in $global:SBGetRequestAutoRetryErrorCodes) -and ($Method -eq 'Get')) -or
+                ($null -ne $retryAfterHeaderValue))
             {
                 if ($numRetries -ge $global:SBMaxAutoRetries)
                 {
@@ -2283,7 +2290,14 @@ function Invoke-SBRestMethod
 
                     if ($null -eq $retryAfterHeaderValue)
                     {
-                        Write-Log -Message "This status code ($statusCode) is configured to auto-retry (via `$global:SBAutoRetryErrorCodes).  StoreBroker will auto-retry (attempt #$numRetries) in $retryDelayMin minute(s). Sleeping..." -Level Warning
+                        $reason = "This status code ($statusCode) is configured to auto-retry (via `$global:SBAutoRetryErrorCodes)."
+                        if (($statusCode -in $global:SBGetRequestAutoRetryErrorCodes) -and ($Method -eq 'Get'))
+                        {
+                            $reason = "This GET request's status code ($statusCode) is configured to auto-retry (via `$global:SBGetRequestAutoRetryErrorCodes)."
+                        }
+
+                        Write-Log -Message ($reason + "  StoreBroker will auto-retry (attempt #$numRetries) in $retryDelayMin minute(s). Sleeping...") -Level Warning
+
                         Start-Sleep -Seconds ($retryDelayMin * 60)
                         $retryDelayMin = $retryDelayMin * 2 # Exponential sleep increase for next retry
                     }

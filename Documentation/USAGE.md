@@ -112,6 +112,14 @@ values of these variables will be honored if they already exist, otherwise they 
   * `503` - An underlying service component was unavailable, and the Submission API suggests that
        you try again.
 
+ **`$global:SBGetRequestAutoRetryErrorCodes`** - [int[]] Some error status codes indicate that a
+   retry is likely to be met with success.  StoreBroker will use an exponential back-off strategy for
+   the status codes contained within this list of values.  This is a similar concept to
+   `$global:SBAutoRetryErrorCodes`, but these only go into effect if the request was a r/o (GET)
+   request.  Defaults to `@(500)`.
+
+  * `500` - A server error that often turns out will succeed if we simply try again.
+
  **`$global:SBMaxAutoRetries`** - [int] The maximum number of times a request will be retried if
    previous attempts result in an error code within the list of values in `$global:SBAutoRetryErrorCodes`.
    Defaults to `5`
@@ -158,7 +166,7 @@ following the instructions in [SETUP.md](SETUP.md):
 
 Generating the submission request JSON/zip package is done with
 
-    New-SubmissionPackage -ConfigPath <config-path> -PDPRootPath <path> [[-Release] <string>] -PDPInclude <filename> [-PDPExclude <filename>] -ImagesRootPath <path> -AppxPath <full-path>[, <additional-path>]+ -OutPath <output-dir> -OutName <output-name>
+    New-SubmissionPackage -ConfigPath <config-path> -PDPRootPath <path> [[-Release] <string>] -PDPInclude <filename> [-PDPExclude <filename>] -MediaRootPath <path> -PackagePath <full-path>[, <additional-path>]+ -OutPath <output-dir> -OutName <output-name>
 
 > Items in brackets ('[]') are optional.
 
@@ -742,7 +750,7 @@ following the instructions in [SETUP.md](SETUP.md):
 
 Generating the submission request JSON/zip package is done with
 
-    New-InAppProductSubmissionPackage -ConfigPath <config-path> -PDPRootPath <path> [[-Release] <string>] -PDPInclude <filename> [-PDPExclude <filename>] -ImagesRootPath <path> -OutPath <output-dir> -OutName <output-name>
+    New-InAppProductSubmissionPackage -ConfigPath <config-path> -PDPRootPath <path> [[-Release] <string>] -PDPInclude <filename> [-PDPExclude <filename>] -MediaRootPath <path> -OutPath <output-dir> -OutName <output-name>
 
 > Items in brackets ('[]') are optional.
 

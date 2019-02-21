@@ -1,4 +1,5 @@
-﻿# Copyright (C) Microsoft Corporation.  All rights reserved.
+﻿# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
 
 # Singleton telemetry client. Don't directly access this though....always get it
 # by calling Get-TelemetryClient to ensure that the singleton is properly initialized.
@@ -11,39 +12,99 @@ Add-Type -TypeDefinition @"
       AppId,
       AppName,
       AppxVersion,
-      AutoCommit,
+      Auto,
+      AutoSubmit,
+      ClientName,
+      ClientRequestId,
+      CorrelationId,
       DayOfWeek,
+      EndingConfigVersion,
       ErrorBucket,
       ExistingPackageRolloutAction,
+      FeatureAvailabilityId,
+      FeatureGroupId,
+      FilePath,
       FlightId,
       Force,
+      GetDetail,
+      GetReport,
+      GetValidation,
+      HasAudience,
       HResult,
       IapId,
+      ImageId,
+      IncludeMarketStates,
+      IncludePricing,
+      IncludeTrial,
+      IsAutoPromote,
+      IsEnabled,
       IsMandatoryUpdate,
+      IsManualPublish,
+      IsMinimalObject,
+      IsSeekEnabled,
+      JsonPath,
+      LanguageCode,
+      MediaRootPath,
       Message,
+      MigrationType,
+      Name,
       NumRetries,
+      PackageId,
+      PackageConfigurationId,
       PackagePath,
       PackageRolloutPercentage,
+      PackageRootPath,
+      Percentage,
+      ProductAvailabilityId,
       ProductId,
       ProductType,
+      PropertyId,
+      ProvidedCertificationNotes,
+      ProvidedSubmissionData,
+      RedundantPackagesToKeep,
+      RelativeRank,
+      RemoveOnly,
       ReplacePackages,
+      RequestId,
+      ResourceType,
       RetryStatusCode,
+      RevisionToken,
+      SandboxId,
+      Scope,
+      SeekEnabled,
+      ShouldOverridePackageLogos,
       ShowFlight,
       ShowSubmission,
+      SingleQuery,
       SourceFilePath,
+      SpecifiedType,
+      StartingConfigVersion,
+      State,
       SubmissionId,
+      TargetPublishMode,
+      Type,
+      Orientation,
       UpdateAppProperties,
+      UpdateCertificationNotes,
       UpdateGamingOptions,
-      UpdateListings,
-      UpdateNotesForCertification,
+      UpdateImagesAndCaptions,
+      UpdateListingText,
+      UpdatePackages,
       UpdatePricingAndAvailability,
       UpdateProperties,
       UpdatePublishMode,
       UpdatePublishModeAndVisibility,
-      UpdateTrailers,
+      UpdateVideos,
+      UsingObject,
       UriFragment,
       UserName,
+      Version,
+      VideoId,
+      Visibility,
+      WaitForCompletion,
+      WaitUntilReady,
       Web,
+      ZipPath
    }
 "@
 
@@ -496,11 +557,11 @@ function Set-TelemetryEvent
 
     if ($global:SBDisableTelemetry)
     {
-        Write-Log -Message "Telemetry has been disabled via `$global:SBDisableTelemetry. Skipping reporting event." -Level Verbose
+        Write-Log -Message "Telemetry has been disabled via `$global:SBDisableTelemetry. Skipping reporting event [$EventName]." -Level Verbose
         return
     }
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog -ExcludeParameter @('Properties', 'Metrics')
 
     try
     {
@@ -599,11 +660,11 @@ function Set-TelemetryException
 
     if ($global:SBDisableTelemetry)
     {
-        Write-Log -Message "Telemetry has been disabled via `$global:SBDisableTelemetry. Skipping reporting event." -Level Verbose
+        Write-Log -Message "Telemetry has been disabled via `$global:SBDisableTelemetry. Skipping reporting exception." -Level Verbose
         return
     }
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog -ExcludeParameter @('Exception', 'Properties', 'NoFlush')
 
     try
     {
@@ -677,11 +738,11 @@ function Flush-TelemetryClient
 
     if ($global:SBDisableTelemetry)
     {
-        Write-Log -Message "Telemetry has been disabled via `$global:SBDisableTelemetry. Skipping reporting event." -Level Verbose
+        Write-Log -Message "Telemetry has been disabled via `$global:SBDisableTelemetry. Skipping flushing of the telemetry client." -Level Verbose
         return
     }
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     $telemetryClient = Get-TelemetryClient -NoStatus:$NoStatus
 

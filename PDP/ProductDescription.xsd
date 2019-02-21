@@ -223,6 +223,48 @@
     <xs:restriction base="xs:string"/>
   </xs:simpleType>
 
+  <!-- We can't put an xs:choice inside of xs:all, but we want to be able to support both the    -->
+  <!-- v1 and v2 names of these image types.  So, this is an interesting way to accomplish that. -->
+  <xs:element name="StoreLogo9x16_or_PosterArt" abstract="true"/>
+  <xs:element name="StoreLogo9x16" type="tns:AdditionalAssetType" substitutionGroup="tns:StoreLogo9x16_or_PosterArt"/>
+  <xs:element name="PosterArt" type="tns:AdditionalAssetType" substitutionGroup="tns:StoreLogo9x16_or_PosterArt"/>
+
+  <xs:element name="StoreLogoSquare_or_BoxArt" abstract="true"/>
+  <xs:element name="StoreLogoSquare" type="tns:AdditionalAssetType" substitutionGroup="tns:StoreLogoSquare_or_BoxArt"/>
+  <xs:element name="BoxArt" type="tns:AdditionalAssetType" substitutionGroup="tns:StoreLogoSquare_or_BoxArt"/>
+
+  <xs:element name="PromotionalArt16x9_or_SquareHeroArt" abstract="true"/>
+  <xs:element name="PromotionalArt16x9" type="tns:AdditionalAssetType" substitutionGroup="tns:PromotionalArt16x9_or_SquareHeroArt"/>
+  <xs:element name="SquareHeroArt" type="tns:AdditionalAssetType" substitutionGroup="tns:PromotionalArt16x9_or_SquareHeroArt"/>
+
+  <xs:element name="PromotionalArtwork2400X1200_or_HeroImage2400x1200" abstract="true"/>
+  <xs:element name="PromotionalArtwork2400X1200" type="tns:AdditionalAssetType" substitutionGroup="tns:PromotionalArtwork2400X1200_or_HeroImage2400x1200"/>
+  <xs:element name="HeroImage2400x1200" type="tns:AdditionalAssetType" substitutionGroup="tns:PromotionalArtwork2400X1200_or_HeroImage2400x1200"/>
+
+  <xs:element name="XboxBrandedKeyArt_or_BrandedKeyArt" abstract="true"/>
+  <xs:element name="XboxBrandedKeyArt" type="tns:AdditionalAssetType" substitutionGroup="tns:XboxBrandedKeyArt_or_BrandedKeyArt"/>
+  <xs:element name="BrandedKeyArt" type="tns:AdditionalAssetType" substitutionGroup="tns:XboxBrandedKeyArt_or_BrandedKeyArt"/>
+
+  <xs:element name="XboxTitledHeroArt_or_TitledHeroArt" abstract="true"/>
+  <xs:element name="XboxTitledHeroArt" type="tns:AdditionalAssetType" substitutionGroup="tns:XboxTitledHeroArt_or_TitledHeroArt"/>
+  <xs:element name="TitledHeroArt" type="tns:AdditionalAssetType" substitutionGroup="tns:XboxTitledHeroArt_or_TitledHeroArt"/>
+
+  <xs:element name="XboxFeaturedPromotionalArt_or_FeaturedPromotionalArt" abstract="true"/>
+  <xs:element name="XboxFeaturedPromotionalArt" type="tns:AdditionalAssetType" substitutionGroup="tns:XboxFeaturedPromotionalArt_or_FeaturedPromotionalArt"/>
+  <xs:element name="FeaturedPromotionalArt" type="tns:AdditionalAssetType" substitutionGroup="tns:XboxFeaturedPromotionalArt_or_FeaturedPromotionalArt"/>
+
+  <xs:element name="SquareIcon358X358_or_Square" abstract="true"/>
+  <xs:element name="SquareIcon358X358" type="tns:AdditionalAssetType" substitutionGroup="tns:SquareIcon358X358_or_Square"/>
+  <xs:element name="Square" type="tns:AdditionalAssetType" substitutionGroup="tns:SquareIcon358X358_or_Square"/>
+
+  <xs:element name="BackgroundImage1000X800_or_Panoramic" abstract="true"/>
+  <xs:element name="BackgroundImage1000X800" type="tns:AdditionalAssetType" substitutionGroup="tns:BackgroundImage1000X800_or_Panoramic"/>
+  <xs:element name="Panoramic" type="tns:AdditionalAssetType" substitutionGroup="tns:BackgroundImage1000X800_or_Panoramic"/>
+
+  <xs:element name="PromotionalArtwork414X180_or_HeroImage414x180" abstract="true"/>
+  <xs:element name="PromotionalArtwork414X180" type="tns:AdditionalAssetType" substitutionGroup="tns:PromotionalArtwork414X180_or_HeroImage414x180"/>
+  <xs:element name="HeroImage414x180" type="tns:AdditionalAssetType" substitutionGroup="tns:PromotionalArtwork414X180_or_HeroImage414x180"/>
+
   <xs:element name="ProductDescription">
     <xs:annotation>
       <xs:documentation>
@@ -342,17 +384,36 @@
           </xs:annotation>
           <xs:complexType>
             <xs:all>
-              <xs:element name="StoreLogo9x16" type="tns:AdditionalAssetType" minOccurs="0" />
-              <xs:element name="StoreLogoSquare" type="tns:AdditionalAssetType" minOccurs="0" />
+              <xs:element ref="tns:StoreLogo9x16_or_PosterArt" minOccurs="0" />
+              <xs:element ref="tns:StoreLogoSquare_or_BoxArt" minOccurs="0" />
               <xs:element name="Icon" type="tns:AdditionalAssetType" minOccurs="0" />
-              <xs:element name="PromotionalArt16x9" type="tns:AdditionalAssetType" minOccurs="0" />
-              <xs:element name="PromotionalArtwork2400X1200" type="tns:AdditionalAssetType" minOccurs="0" />
-              <xs:element name="XboxBrandedKeyArt" type="tns:AdditionalAssetType" minOccurs="0" />
-              <xs:element name="XboxTitledHeroArt" type="tns:AdditionalAssetType" minOccurs="0" />
-              <xs:element name="XboxFeaturedPromotionalArt" type="tns:AdditionalAssetType" minOccurs="0" />
-              <xs:element name="SquareIcon358X358" type="tns:AdditionalAssetType" minOccurs="0" />
-              <xs:element name="BackgroundImage1000X800" type="tns:AdditionalAssetType" minOccurs="0" />
-              <xs:element name="PromotionalArtwork414X180" type="tns:AdditionalAssetType" minOccurs="0" />
+              <xs:element ref="tns:PromotionalArt16x9_or_SquareHeroArt" minOccurs="0" />
+              <xs:element ref="tns:PromotionalArtwork2400X1200_or_HeroImage2400x1200" minOccurs="0" />
+              <xs:element ref="tns:XboxBrandedKeyArt_or_BrandedKeyArt" minOccurs="0" />
+              <xs:element ref="tns:XboxTitledHeroArt_or_TitledHeroArt" minOccurs="0" />
+              <xs:element ref="tns:XboxFeaturedPromotionalArt_or_FeaturedPromotionalArt" minOccurs="0" />
+              <xs:element ref="tns:SquareIcon358X358_or_Square" minOccurs="0" />
+              <xs:element ref="tns:BackgroundImage1000X800_or_Panoramic" minOccurs="0" />
+              <xs:element ref="tns:PromotionalArtwork414X180_or_HeroImage414x180" minOccurs="0" />
+              <xs:element name="HeroImage846x468" type="tns:AdditionalAssetType" minOccurs="0" />
+              <xs:element name="HeroImage558x756" type="tns:AdditionalAssetType" minOccurs="0" />
+              <xs:element name="HeroImage414x468" type="tns:AdditionalAssetType" minOccurs="0" />
+              <xs:element name="HeroImage558x558" type="tns:AdditionalAssetType" minOccurs="0" />
+              <xs:element name="ScreenshotWXGA" type="tns:AdditionalAssetType" minOccurs="0" />
+              <xs:element name="ScreenshotHD720" type="tns:AdditionalAssetType" minOccurs="0" />
+              <xs:element name="ScreenshotWVGA" type="tns:AdditionalAssetType" minOccurs="0" />
+              <xs:element name="SmallMobileTile" type="tns:AdditionalAssetType" minOccurs="0" />
+              <xs:element name="SmallXboxLiveTile" type="tns:AdditionalAssetType" minOccurs="0" />
+              <xs:element name="LargeMobileTile" type="tns:AdditionalAssetType" minOccurs="0" />
+              <xs:element name="LargeXboxLiveTile" type="tns:AdditionalAssetType" minOccurs="0" />
+              <xs:element name="Tile" type="tns:AdditionalAssetType" minOccurs="0" />
+              <xs:element name="DesktopIcon" type="tns:AdditionalAssetType" minOccurs="0" />
+              <xs:element name="AchievementIcon" type="tns:AdditionalAssetType" minOccurs="0" />
+              <xs:element name="ChallengePromoIcon" type="tns:AdditionalAssetType" minOccurs="0" />
+              <xs:element name="RewardDisplayIcon" type="tns:AdditionalAssetType" minOccurs="0" />
+              <xs:element name="Icon150x150" type="tns:AdditionalAssetType" minOccurs="0" />
+              <xs:element name="Icon71x71" type="tns:AdditionalAssetType" minOccurs="0" />
+              <xs:element name="DoubleWide" type="tns:AdditionalAssetType" minOccurs="0" />
             </xs:all>
             <xs:attribute name="FallbackLanguage" type="tns:LangCodeString" />
           </xs:complexType>

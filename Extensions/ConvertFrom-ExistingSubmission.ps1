@@ -1,4 +1,5 @@
-﻿# Copyright (C) Microsoft Corporation.  All rights reserved.
+﻿# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
 
 <#
     .SYNOPSIS
@@ -1523,8 +1524,8 @@ function Show-AssetFileNames
     }
 
     Write-Log -Message @(
-        "You now need to find all of your assets and place them here: <ImagesRootPath>\$Release\<langcode>\...",
-        "  where <ImagesRootPath> is the path defined in your config file,",
+        "You now need to find all of your assets and place them here: <MediaRootPath>\$Release\<langcode>\...",
+        "  where <MediaRootPath> is the path defined in your config file,",
         "  and <langcode> is the same langcode for the directory of the PDP file referencing those assets.")
 
     # Quick analysis to help teams out if they need to do anything special with their PDP's

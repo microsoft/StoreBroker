@@ -1,4 +1,5 @@
-# Copyright (C) Microsoft Corporation.  All rights reserved.
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
 
 function Initialize-HelpersGlobalVariables
 {
@@ -104,8 +105,15 @@ function Wait-JobWithAnimation
 
         The Git repo for this module can be found here: http://aka.ms/StoreBroker
 
-    .PARAMETER jobName
-        The name of the job that we are waiting to complete.
+    .PARAMETER Name
+        The name of the job(s) that we are waiting to complete.
+
+    .PARAMETER Description
+        The text displayed next to the spinning cursor, explaining what the job is doing.
+
+    .PARAMETER StopAllOnAnyFailure
+        Will call Stop-Job on any jobs still Running if any of the specified jobs entered
+        the Failed state.
 
     .EXAMPLE
         Wait-JobWithAnimation Job1
@@ -119,10 +127,16 @@ function Wait-JobWithAnimation
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory)]
-        [string] $JobName,
+        [string[]] $Name,
 
-        [string] $Description = ""
+        [string] $Description = "",
+
+        [switch] $StopAllOnAnyFailure
     )
+
+    [System.Collections.ArrayList]$runningJobs = $Name
+    $allJobsCompleted = $true
+    $hasFailedJob = $false
 
     $animationFrames = '|','/','-','\'
     $framesPerSecond = 9
@@ -134,14 +148,49 @@ function Wait-JobWithAnimation
     }
 
     $iteration = 0
-    while (((Get-Job -Name $JobName).state -eq 'Running'))
+    while ($runningJobs.Count -gt 0)
     {
+        # We'll run into issues if we try to modify the same collection we're iterating over
+        $jobsToCheck = $runningJobs.ToArray()
+        foreach ($jobName in $jobsToCheck)
+        {
+            $state = (Get-Job -Name $jobName).state
+            if ($state -ne 'Running')
+            {
+                $runningJobs.Remove($jobName)
+
+                if ($state -ne 'Completed')
+                {
+                    $allJobsCompleted = $false
+                }
+
+                if ($state -eq 'Failed')
+                {
+                    $hasFailedJob = $true
+                    if ($StopAllOnAnyFailure)
+                    {
+                        break
+                    }
+                }
+            }
+        }
+
+        if ($hasFailedJob -and $StopAllOnAnyFailure)
+        {
+            foreach ($jobName in $runningJobs)
+            {
+                Stop-Job -Name $jobName
+            }
+
+            $runingJobs.Clear()
+        }
+
         Write-InteractiveHost "`r$($animationFrames[$($iteration % $($animationFrames.Length))])  Elapsed: $([int]($iteration / $framesPerSecond)) second(s) $Description" -NoNewline -f Yellow
         Start-Sleep -Milliseconds ([int](1000/$framesPerSecond))
         $iteration++
     }
 
-    if ((Get-Job -Name $JobName).state -eq 'Completed')
+    if ($allJobsCompleted)
     {
         Write-InteractiveHost "`rDONE - Operation took $([int]($iteration / $framesPerSecond)) second(s) $Description" -NoNewline -f Green
 
@@ -222,21 +271,22 @@ function Format-SimpleTableString
         [Int16] $IndentationLevel = 0
     )
 
-    Begin
+    begin
     {
         $objects = @()
     }
 
-    Process
+    process
     {
         $objects += $Object
     }
 
-    End
+    end
     {
         if ($objects.count -gt 0)
         {
-            Write-Output "$(" " * $IndentationLevel)$(($objects | Format-Table | Out-String).TrimStart($([Environment]::NewLine)).TrimEnd([Environment]::NewLine).Replace([Environment]::NewLine, "$([Environment]::NewLine)$(" " * $IndentationLevel)"))"
+            $width = 400
+            Write-Output "$(" " * $IndentationLevel)$(($objects | Format-Table | Out-String -Width $width).TrimStart($([Environment]::NewLine)).TrimEnd([Environment]::NewLine).Replace([Environment]::NewLine, "$([Environment]::NewLine)$(" " * $IndentationLevel)"))"
         }
     }
 }
@@ -260,7 +310,7 @@ function DeepCopy-Object
         The object that is to be copied.  This must be serializable or this will fail.
 
     .EXAMPLE
-        $bar = DeepCopy-Object $foo
+        $bar = DeepCopy-Object -InputObject $foo
         Assuming that $foo is serializable, $bar will now be an exact copy of $foo, but
         any changes that you make to one will not affect the other.
 
@@ -272,17 +322,17 @@ function DeepCopy-Object
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseApprovedVerbs", "", Justification="Intentional.  This isn't exported, and needed to be explicit relative to Copy-Object.")]
     param(
         [Parameter(Mandatory)]
-        [PSCustomObject] $Object
+        [PSCustomObject] $InputObject
     )
 
     $memoryStream = New-Object System.IO.MemoryStream
     $binaryFormatter = New-Object System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
-    $binaryFormatter.Serialize($memoryStream, $Object)
+    $binaryFormatter.Serialize($memoryStream, $InputObject)
     $memoryStream.Position = 0
-    $DeepCopiedObject = $binaryFormatter.Deserialize($memoryStream)
+    $deepCopiedObject = $binaryFormatter.Deserialize($memoryStream)
     $memoryStream.Close()
 
-    return $DeepCopiedObject
+    return $deepCopiedObject
 }
 
 function Get-SHA512Hash
@@ -401,17 +451,17 @@ function ConvertTo-Array
         [Object] $Value
     )
 
-    Begin
+    begin
     {
         $output = @();
     }
 
-    Process
+    process
     {
         $output += $_;
     }
 
-    End
+    end
     {
         return ,$output;
     }
@@ -512,8 +562,8 @@ function Write-Log
         [AllowNull()]
         [string[]] $Message = @(),
 
-        [ValidateSet('Error', 'Warning', 'Info', 'Verbose', 'Debug')]
-        [string] $Level = 'Info',
+        [ValidateSet('Error', 'Warning', 'Informational', 'Verbose', 'Debug')]
+        [string] $Level = 'Informational',
 
         [ValidateRange(1, 30)]
         [Int16] $Indent = 0,
@@ -523,13 +573,13 @@ function Write-Log
         [System.Management.Automation.ErrorRecord] $Exception
     )
 
-    Begin
+    begin
     {
         # Accumulate the list of Messages, whether by pipeline or parameter.
         $messages = @()
     }
 
-    Process
+    process
     {
         foreach ($m in $Message)
         {
@@ -537,7 +587,7 @@ function Write-Log
         }
     }
 
-    End
+    end
     {
         if ($null -ne $Exception)
         {
@@ -561,31 +611,31 @@ function Write-Log
             $dateString = $date.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ssZ")
         }
 
-        $consoleMessage = '{0}{1} : {2} : {3}' -f
-            (" " * $Indent),
+        $consoleMessage = '{0} : {1} : {2}{3}' -f
             $dateString,
             $env:username,
+            (" " * $Indent),
             $finalMessage
 
         if ($global:SBShouldLogPid)
         {
             $maxPidDigits = 10 # This is an estimate (see https://stackoverflow.com/questions/17868218/what-is-the-maximum-process-id-on-windows)
             $pidColumnLength = $maxPidDigits + "[]".Length
-            $logFileMessage = "{0}{1} : {2, -$pidColumnLength} : {3} : {4} : {5}" -f
-                (" " * $Indent),
+            $logFileMessage = "{0} : {1, -$pidColumnLength} : {2} : {3} : {4}{5}" -f
                 $dateString,
                 "[$global:PID]",
                 $env:username,
                 $Level.ToUpper(),
+                (" " * $Indent),
                 $finalMessage
         }
         else
         {
-            $logFileMessage = '{0}{1} : {2} : {3} : {4}' -f
-                (" " * $Indent),
+            $logFileMessage = '{0} : {1} : {2} : {3}{4}' -f
                 $dateString,
                 $env:username,
                 $Level.ToUpper(),
+                (" " * $Indent),
                 $finalMessage
         }
 
@@ -597,21 +647,28 @@ function Write-Log
         # could confuse an end user.
         switch ($Level)
         {
-            'Error'   { Write-Error $consoleMessage }
+            # Need to explicitly say SilentlyContinue here so that we continue on, given that
+            # we've assigned a script-level ErrorActionPreference of "Stop" for the module.
+            'Error'   { Write-Error $consoleMessage -ErrorAction SilentlyContinue }
             'Warning' { Write-Warning $consoleMessage }
             'Verbose' { Write-Verbose $consoleMessage }
             'Debug'   { Write-Debug $consoleMessage }
-            'Info'    {
+            'Informational'    {
                 # We'd prefer to use Write-Information to enable users to redirect that pipe if
                 # they want, unfortunately it's only available on v5 and above.  We'll fallback to
-                # using Write-Host for earlier versions (since we still need to support v4).
+                # using Write-Host for earlier versions (since we still need to support v4) if it's
+                # an interactive host, or Write-Verbose if not.
                 if ($PSVersionTable.PSVersion.Major -ge 5)
                 {
                     Write-Information $consoleMessage -InformationAction Continue
                 }
+                elseif (Test-InteractiveHost)
+                {
+                    Write-Host $consoleMessage
+                }
                 else
                 {
-                    Write-InteractiveHost $consoleMessage
+                    Write-Verbose $consoleMessage
                 }
             }
         }
@@ -650,6 +707,89 @@ function Write-Log
     }
 }
 
+$script:alwaysRedactParametersForLogging = @(
+    'AccessToken' # Would be a security issue
+)
+
+$script:alwaysExcludeParametersForLogging = @(
+    'NoStatus'
+)
+
+function Write-InvocationLog
+{
+    <#
+    .SYNOPSIS
+        Writes a log entry for the invoke command.
+
+    .DESCRIPTION
+        Writes a log entry for the invoke command.
+
+        The Git repo for this module can be found here: http://aka.ms/PowerShellForGitHub
+
+    .PARAMETER InvocationInfo
+        The '$MyInvocation' object from the calling function.
+        No need to explicitly provide this if you're trying to log the immediate function this is
+        being called from.
+
+    .PARAMETER RedactParameter
+        An optional array of parameter names that should be logged, but their values redacted.
+
+    .PARAMETER ExcludeParameter
+        An optional array of parameter names that should simply not be logged.
+
+    .EXAMPLE
+        Write-InvocationLog -Invocation $MyInvocation
+
+    .EXAMPLE
+        Write-InvocationLog -Invocation $MyInvocation -ExcludeParameter @('Properties', 'Metrics')
+
+    .NOTES
+        The actual invocation line will not be _completely_ accurate as converted parameters will
+        be in JSON format as opposed to PowerShell format.  However, it should be sufficient enough
+        for debugging purposes.
+
+        ExcludeParamater will always take precedence over RedactParameter.
+#>
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Management.Automation.InvocationInfo] $Invocation = (Get-Variable -Name MyInvocation -Scope 1 -ValueOnly),
+
+        [string[]] $RedactParameter,
+
+        [string[]] $ExcludeParameter
+    )
+
+    $jsonConversionDepth = 20 # Seems like it should be more than sufficient
+
+    # Build up the invoked line, being sure to exclude and/or redact any values necessary
+    $params = @()
+    foreach ($param in $Invocation.BoundParameters.GetEnumerator())
+    {
+        if ($param.Key -in ($script:alwaysExcludeParametersForLogging + $ExcludeParameter))
+        {
+            continue
+        }
+
+        if ($param.Key -in ($script:alwaysRedactParametersForLogging + $RedactParameter))
+        {
+            $params += "-$($param.Key) <redacted>"
+        }
+        else
+        {
+            if ($param.Value -is [switch])
+            {
+                $params += "-$($param.Key):`$$($param.Value.ToBool().ToString().ToLower())"
+            }
+            else
+            {
+                $params += "-$($param.Key) $($param.Value | ConvertTo-Json -Depth $jsonConversionDepth -Compress)"
+            }
+        }
+    }
+
+    Write-Log -Message "[$($Invocation.MyCommand.Module.Version)] Executing: $($Invocation.MyCommand) $($params -join ' ')" -Level Verbose
+}
+
 function New-TemporaryDirectory
 {
 <#
@@ -681,7 +821,7 @@ function New-TemporaryDirectory
     $tempFolderPath = Join-Path -Path $env:TEMP -ChildPath $guid
 
     Write-Log -Message "Creating temporary directory: $tempFolderPath" -Level Verbose
-    New-Item -ItemType directory -Path $tempFolderPath
+    New-Item -ItemType Directory -Path $tempFolderPath
 }
 
 function Send-SBMailMessage
@@ -803,6 +943,29 @@ function Send-SBMailMessage
     }
 }
 
+function Test-InteractiveHost
+{
+    <#
+    .SYNOPSIS
+        Checks to see if the current host is interactive.
+
+    .DESCRIPTION
+        Checks to see if the current host is interactive.
+
+        The Git repo for this module can be found here: http://aka.ms/StoreBroker
+
+    .EXAMPLE
+        Test-InteractiveHost
+#>
+
+    [CmdletBinding()]
+    param()
+
+    return ([Environment]::UserInteractive -and
+        (-not [Bool]([Environment]::GetCommandLineArgs() -like '-noni*')) -and
+        (Get-Host).Name -ne 'Default Host')
+}
+
 function Write-InteractiveHost
 {
 <#
@@ -846,10 +1009,7 @@ function Write-InteractiveHost
         [System.ConsoleColor] $BackgroundColor
     )
 
-    # Determine if the host is interactive
-    if ([Environment]::UserInteractive -and `
-        ![Bool]([Environment]::GetCommandLineArgs() -like '-noni*') -and `
-        (Get-Host).Name -ne 'Default Host')
+    if (Test-InteractiveHost)
     {
         # Special handling for OutBuffer (generated for the proxy function)
         $outBuffer = $null
@@ -986,7 +1146,6 @@ function Get-HttpWebResponseContent
     [CmdletBinding()]
     [OutputType([String])]
     param(
-        [Parameter(Mandatory)]
         [System.Net.HttpWebResponse] $WebResponse
     )
 
@@ -996,7 +1155,7 @@ function Get-HttpWebResponseContent
     {
         $content = $null
 
-        if ($WebResponse.ContentLength -gt 0)
+        if (($null -ne $WebResponse) -and ($WebResponse.ContentLength -gt 0))
         {
             $stream = $WebResponse.GetResponseStream()
             $encoding = [System.Text.Encoding]::UTF8
@@ -1018,4 +1177,262 @@ function Get-HttpWebResponseContent
             $streamReader.Close()
         }
     }
+}
+
+function Convert-EnumToString
+{
+<#
+    .SYNOPSIS
+        Converts all keys and values in arrays and hashtables that are enum values
+        within InputObject into strings.
+
+    .DESCRIPTION
+        Converts all keys and values in arrays and hashtables that are enum values
+        within InputObject into strings.
+
+        The Git repo for this module can be found here: http://aka.ms/StoreBroker
+
+    .PARAMETER InputObject
+        The object that potentially has enum values to convert to string.
+
+    .EXAMPLE
+        @{[StoreBrokerSubmissionProperty]::isManualPublish = $true; 'array' = @(1, 2, 3, [StoreBrokerSubmissionState]::Published)} | Convert-EnumToString
+
+        Returns @{ "isManualPublish":  true; 'array': @(1, 2, 3, 'Published') }
+
+    .NOTES
+        While new arrays and hashtables are created to hold the converted values, the original
+        object(s) will be used within the returned object if they are neither arrays,
+        hashtables or enum values.
+#>
+    [CmdletBinding()]
+    [OutputType([Object[]])]
+    param(
+        [Parameter(
+            ValueFromPipeline,
+            Mandatory)]
+        $InputObject
+    )
+
+    # ConvertTo-Json only works if the keys are strings.
+    # We need to string-ify all keys
+    if ($InputObject -is [array])
+    {
+        $modified = @()
+        foreach ($item in $InputObject)
+        {
+            $modified += (Convert-EnumToString -InputObject $item)
+        }
+
+        return @($modified)
+    }
+    elseif ($InputObject -is [hashtable])
+    {
+        $modified = @{}
+        foreach ($key in $InputObject.Keys.GetEnumerator())
+        {
+            $converted = (Convert-EnumToString -InputObject $InputObject[$key])
+            if ($InputObject[$key] -is [array])
+            {
+                $converted = @($converted)
+            }
+
+            $modified[$key.ToString()] = $converted
+        }
+
+        return $modified
+    }
+    elseif ($InputObject -is [System.Enum])
+    {
+        return $InputObject.ToString()
+    }
+    else
+    {
+        return $InputObject
+    }
+}
+
+function Get-JsonBody
+{
+<#
+    .SYNOPSIS
+        A wrapper around ConvertTo-Json that ensures any Enum value is converted to
+        a string before the JSON conversion occurs.
+
+    .DESCRIPTION
+        A wrapper around ConvertTo-Json that ensures any Enum value is converted to
+        a string before the JSON conversion occurs.
+
+        This exists primarily because hashtable keys must be strings for serialization purposes.
+
+        The Git repo for this module can be found here: http://aka.ms/StoreBroker
+
+    .PARAMETER InputObject
+        The object that is to be converted into JSON.
+
+    .EXAMPLE
+        @{[StoreBrokerSubmissionProperty]::isManualPublish = $true} | Get-JsonBody
+
+        Returns { "isManualPublish":  true }
+#>
+    [CmdletBinding()]
+    [OutputType([String])]
+    param(
+        [Parameter(
+            ValueFromPipeline,
+            Mandatory)]
+        $InputObject
+    )
+
+    return ConvertTo-Json -InputObject (Convert-EnumToString -InputObject $InputObject) -Depth $script:jsonConversionDepth
+}
+
+function Test-PropertyExists
+{
+<#
+    .SYNOPSIS
+        Determines if an object contains a property with a specified name.
+
+    .DESCRIPTION
+        Determines if an object contains a property with a specified name.
+
+        This is essentially using Get-Member to verify that a property exists,
+        but additionally adds a check to ensure that InputObject isn't null.
+
+        The Git repo for this module can be found here: http://aka.ms/StoreBroker
+
+    .PARAMETER InputObject
+        The object to check to see if it has a property named Name.
+
+    .PARAMETER Name
+        The name of the property on InputObject that is being tested for.
+
+    .EXAMPLE
+        Test-PropertyExists -InputObject $listing -Name 'title'
+
+        Returns $true if $listing is non-null and has a property named 'title'.
+        Returns $false otherwise.
+
+    .NOTES
+        Internal-only helper method.
+#>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification="This is gramatically correct.")]
+    param(
+        [Parameter(Mandatory)]
+        [AllowNull()]
+        $InputObject,
+
+        [Parameter(Mandatory)]
+        [String] $Name
+    )
+
+    return (($null -ne $InputObject) -and
+            ($null -ne (Get-Member -InputObject $InputObject -Name $Name -MemberType Properties)))
+}
+
+function Set-ObjectProperty
+{
+<#
+    .SYNOPSIS
+        Reliably sets a property on a PSCustomObject, whether or not the property already exists.
+
+    .DESCRIPTION
+        Reliably sets a property on a PSCustomObject, whether or not the property already exists.
+
+        This is, by and large, a wrapper on top of Add-Member.  It's main benefit is to also
+        wrap the logic to support only setting the value if the source property exists (a requirement
+        if a user is providing a minimal object).
+
+        The Git repo for this module can be found here: http://aka.ms/StoreBroker
+
+    .PARAMETER InputObject
+        The object that has a property named Name that should be getting assigned a new value.
+
+    .PARAMETER Name
+        The name of the property on InputObject whose value should get assigned.
+
+    .PARAMETER Value
+        The value that should be assgined to the Name property on InputObject.
+
+    .PARAMETER SourceObject
+        An object with a property called SourceName that contains the value that is desired
+        to be assigned to the Name property on InputObject.
+
+    .PARAMETER SourceName
+        The property on SourceObject that contains the value that is desired to be assigned
+        to the Name property on InputObject.
+
+    .PARAMETER SkipIfNotDefined
+        Only set the value on InputObject if SourceObject exists and has a property on in
+        called SourceName.  This would commonly be set if being used with a minimal object,
+        and thus only want to update an object if the minimal (source) object contains the
+        property being updated.
+
+    .EXAMPLE
+        Set-ObjectProperty -InputObject $listing -Name 'title' -Value 'Photos'
+
+        Sets the title of $listing.title = 'Photos', adding the 'title' property to $listing
+        if it didn't already exist.
+
+    .EXAMPLE
+        Set-ObjectProperty -InputObject $listing -Name 'title' -SourceObject $suppliedListing -SourceName 'title'
+
+        Sets the title of $listing.title = $suppliedListing.title, adding the 'title' property to
+        $listing if it didn't already exist.
+
+    .EXAMPLE
+        Set-ObjectProperty -InputObject $listing -Name 'title' -SourceObject $suppliedListing -SourceName 'title' -SkipIfNotDefined
+
+        If $suppliedListing is not null, and it has a property called 'title', then it will
+        set the title of $listing.title = $suppliedListing.title, adding the 'title' property to
+        $listing if it didn't already exist.  Otherwise, it will do nothing.
+
+    .NOTES
+        Internal-only helper method.
+#>
+    [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "", Justification="This module's use case precludes the need to support ShouldProcess on this function.")]
+    param(
+        [Parameter(Mandatory)]
+        [PSCustomObject] $InputObject,
+
+        [Parameter(Mandatory)]
+        [String] $Name,
+
+        [Parameter(
+            Mandatory,
+            ParameterSetName="DirectValue")]
+        [AllowNull()]
+        [AllowEmptyString()]
+        $Value,
+
+        [Parameter(
+            Mandatory,
+            ParameterSetName="SourceObject")]
+        [AllowNull()]
+        $SourceObject,
+
+        [Parameter(
+            Mandatory,
+            ParameterSetName="SourceObject")]
+        $SourceName,
+
+        [Parameter(ParameterSetName="SourceObject")]
+        [switch] $SkipIfNotDefined
+    )
+
+    if ($PSCmdlet.ParameterSetName -eq 'SourceObject')
+    {
+        if ($SkipIfNotDefined -and
+            (-not (Test-PropertyExists -InputObject $SourceObject -Name $SourceName)))
+        {
+            return
+        }
+
+        $Value = $SourceObject.$SourceName
+    }
+
+    Add-Member -InputObject $InputObject -Name $Name -Value $Value -MemberType NoteProperty -Force
 }

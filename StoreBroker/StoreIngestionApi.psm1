@@ -1,4 +1,8 @@
-# Copyright (C) Microsoft Corporation.  All rights reserved.
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
+# This will ensure that if an internal command throws an exception, we don't continue execution
+$script:ErrorActionPreference = 'Stop'
 
 # Configured via Set-StoreBrokerAuthentication / Clear-StoreBrokerAuthentication
 $script:proxyEndpoint = $null
@@ -33,6 +37,7 @@ $script:lastAccessTokenExpirationDate = Get-Date
 # Common keywords in the API Model used by StoreBroker
 $script:keywordSpecificDate = 'SpecificDate'
 $script:keywordManual = 'Manual'
+$script:keywordImmediate = 'Immediate'
 $script:keywordDefault = 'Default'
 $script:keywordNoAction = 'NoAction'
 $script:keywordPendingDelete = 'PendingDelete'
@@ -40,23 +45,51 @@ $script:keywordPendingCommit = 'PendingCommit'
 $script:keywordRelease = 'Release'
 $script:keywordPublished = 'Published'
 
+# Special header that is used with the Submission API to track the type of client
+# that is using the API
+$script:headerClientName = 'X-ClientName'
+
 # Special header added to Submission API responses that provides a unique ID
 # that the Submission API team can use to trace back problems with a specific request.
+$script:headerMSRequestId = 'MS-RequestId'
+
+# Special headers that clients can add to their requests to make it easier to track the
+# responses
+$script:headerMSClientRequestId = 'MS-Client-RequestId'
 $script:headerMSCorrelationId = 'MS-CorrelationId'
 
-# Warning that is referenced in multiple places throughout the module.
-# {0} will be replaced in context with the relevant command.
-$script:manualPublishWarning = @"
-PLEASE NOTE: Due to the nature of how the Store API works, you won't see any of your changes in the
-Dev Portal until your submission has entered into certification.  It doesn't have to *complete*
-certification for you to see your changes, but it does have to enter certification first.
-If it's important for you to verify your changes in the Dev Portal prior to publishing,
-consider publishing with the `"$script:keywordManual`" targetPublishMode by setting that value in your
-config file and then additionally specifying the -UpdatePublishModeAndVisibility switch
-when calling {0}, or by specifying the
--TargetPublishMode $script:keywordManual parameter when calling {0}.
+# Other headers that we may need for processing a response
+$script:headerRetryAfter = 'Retry-After'
+$script:headerLocation = 'Location'
+
+Add-Type -TypeDefinition @"
+   public enum StoreBrokerResourceType
+   {
+       FeatureAvailability,
+       FeatureGroup,
+       Flight,
+       Group,
+       Listing,
+       ListingImage,
+       ListingVideo,
+       Package,
+       PackageConfiguration,
+       Rollout,
+       Submission,
+       SubmissionDetail
+   }
 "@
 
+Add-Type -TypeDefinition @"
+   public enum StoreBrokerFileState
+   {
+       PendingUpload,
+       Uploaded,
+       InProcessing,
+       Processed,
+       ProcessFailed
+   }
+"@
 function Initialize-StoreIngestionApiGlobalVariables
 {
 <#
@@ -103,9 +136,19 @@ function Initialize-StoreIngestionApiGlobalVariables
         $global:SBAutoRetryErrorCodes = @(429, 503)
     }
 
+    if (!(Get-Variable -Name SBGetRequestAutoRetryErrorCodes -Scope Global -ValueOnly -ErrorAction Ignore))
+    {
+        $global:SBGetRequestAutoRetryErrorCodes = @(500)
+    }
+
     if (!(Get-Variable -Name SBMaxAutoRetries -Scope Global -ValueOnly -ErrorAction Ignore))
     {
         $global:SBMaxAutoRetries = 5
+    }
+
+    if (!(Get-Variable -Name SBStoreBrokerClientName -Scope Global -ValueOnly -ErrorAction Ignore))
+    {
+        $global:SBStoreBrokerClientName = $null
     }
 }
 
@@ -230,7 +273,7 @@ function Set-StoreBrokerAuthentication
         [string] $TenantName = $null
     )
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     if ($UseProxy)
     {
@@ -336,7 +379,7 @@ function Clear-StoreBrokerAuthentication
 
     Set-TelemetryEvent -EventName Clear-StoreBrokerAuthentication
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     if ($PSCmdlet.ShouldProcess("", "Clear tenantId"))
     {
@@ -497,7 +540,7 @@ function Get-AccessToken
 
                 if ($PSCmdlet.ShouldProcess($jobName, "Wait-JobWithAnimation"))
                 {
-                    Wait-JobWithAnimation -JobName $jobName -Description "Getting access token"
+                    Wait-JobWithAnimation -Name $jobName -Description "Getting access token"
                 }
 
                 if ($PSCmdlet.ShouldProcess($jobName, "Receive-Job"))
@@ -514,7 +557,6 @@ function Get-AccessToken
             # Keep track of how long this token will be valid for, to enable logic that re-uses
             # the same token across multiple commands to know when a new one is necessary.
             $script:accessTokenTimeoutSeconds = $response.expires_in - $script:accessTokenRefreshBufferSeconds
-
             $script:lastAccessTokenExpirationDate = (Get-Date).AddSeconds($script:accessTokenTimeoutSeconds)
             $script:lastAccessToken = $response.access_token
             return $response.access_token
@@ -530,7 +572,11 @@ function Get-AccessToken
         $output += "Be sure to check that your client id/secret are valid."
         $output += "StatusCode: $($_.Exception.Response.StatusCode.value__)"
         $output += "StatusDescription: $($_.Exception.Response.StatusDescription)"
-        $output += "$($_.ErrorDetails | ConvertFrom-JSON | Out-String)"
+        $output += "Message: $($_.Exception.Message)"
+        if (-not [String]::IsNullOrWhiteSpace($_.ErrorDetails))
+        {
+            $output += ($_.ErrorDetails | ConvertFrom-Json | Out-String)
+        }
 
         $newLineOutput = ($output -join [Environment]::NewLine)
         Write-Log -Message $newLineOutput -Level Error
@@ -542,7 +588,7 @@ function Get-AccessToken
         $output = @()
         $output += "Be sure to check that your client id/secret are valid."
         $output += $_.Exception.Message
-        if ($_.ErrorDetails.Message)
+        if (-not [String]::IsNullOrWhiteSpace($_.ErrorDetails.Message))
         {
             $message = ($_.ErrorDetails.Message | ConvertFrom-Json)
             $output += "$($message.code) : $($message.message)"
@@ -674,8 +720,8 @@ function Get-AzureStorageDllPath
     )
 
     $nugetPackageName = "WindowsAzure.Storage"
-    $nugetPackageVersion = "8.1.1"
-    $assemblyPackageTailDir = "WindowsAzure.Storage.8.1.1\lib\net45\"
+    $nugetPackageVersion = "9.0.0.0"
+    $assemblyPackageTailDir = "WindowsAzure.Storage.9.0.0\lib\net45\"
     $assemblyName = "Microsoft.WindowsAzure.Storage.dll"
 
     return Get-NugetPackageDllPath -NugetPackageName $nugetPackageName -NugetPackageVersion $nugetPackageVersion -AssemblyPackageTailDirectory $assemblyPackageTailDir -AssemblyName $assemblyName -NoStatus:$NoStatus
@@ -734,31 +780,31 @@ function Get-AzureStorageDataMovementDllPath {
     )
 
     $nugetPackageName = "Microsoft.Azure.Storage.DataMovement"
-    $nugetPackageVersion = "0.5.1"
-    $assemblyPackageTailDir = "Microsoft.Azure.Storage.DataMovement.0.5.1\lib\net45\"
+    $nugetPackageVersion = "0.7.1"
+    $assemblyPackageTailDir = "Microsoft.Azure.Storage.DataMovement.0.7.1\lib\net45\"
     $assemblyName = "Microsoft.WindowsAzure.Storage.DataMovement.dll"
 
     return Get-NugetPackageDllPath -NugetPackageName $nugetPackageName -NugetPackageVersion $nugetPackageVersion -AssemblyPackageTailDirectory $assemblyPackageTailDir -AssemblyName $assemblyName -NoStatus:$NoStatus
 }
 
-function Set-SubmissionPackage
+function Set-StoreFile
 {
 <#
     .SYNOPSIS
-        Uploads the package to the URL provided after calling New-ApplicationSubmission.
+        Uploads the package to the URL provided after calling New-ListingImage, New-ListingVideo,
+        or New-ProductPackage.
 
     .DESCRIPTION
-        Uploads the package to the URL provided after calling New-ApplicationSubmission.
+        Uploads the package to the URL provided after calling New-ListingImage, New-ListingVideo,
+        or New-ProductPackage.
 
         The Git repo for this module can be found here: http://aka.ms/StoreBroker
 
-    .PARAMETER PackagePath
-        The package (zip) that contains all of the contents (appxupload/appxbundle/screenshots)
-        referenced by the submission.
+    .PARAMETER FilePath
+        The file that is to be uploaded.
 
     .PARAMETER UploadUrl
-        The unique URL that was provided in response to a successful call to
-        New-ApplicationSubmission.
+        The unique URL that was provided in a resource object that supports binary content.
         Supports Pipeline input.
 
     .PARAMETER NoStatus
@@ -767,12 +813,12 @@ function Set-SubmissionPackage
         the background, enabling the command prompt to provide status information.
 
     .EXAMPLE
-        Upload-SubmissionPackage "c:\foo.zip" "https://prodingestionbinaries1.blob.core.windows.net/ingestion/00000000-abcd-1234-0000-abcdefghijkl?sv=2014-02-14&sr=b&sig=WujGssA00/voXHaDgmaK1mpPn2JUkRPD/123gkAJdnI=&se=2015-12-17T12:58:14Z&sp=rwl"
+        Upload-StoreFile "c:\foo.zip" "https://prodingestionbinaries1.blob.core.windows.net/ingestion/00000000-abcd-1234-0000-abcdefghijkl?sv=2014-02-14&sr=b&sig=WujGssA00/voXHaDgmaK1mpPn2JUkRPD/123gkAJdnI=&se=2015-12-17T12:58:14Z&sp=rwl"
         Uploads the package content for the application submission,
         with the console window showing progress while waiting for the upload to complete.
 
     .EXAMPLE
-        Upload-SubmissionPackage "c:\foo.zip" "https://prodingestionbinaries1.blob.core.windows.net/ingestion/00000000-abcd-1234-0000-abcdefghijkl?sv=2014-02-14&sr=b&sig=WujGssA00/voXHaDgmaK1mpPn2JUkRPD/123gkAJdnI=&se=2015-12-17T12:58:14Z&sp=rwl" -NoStatus
+        Upload-StoreFile "c:\foo.zip" "https://prodingestionbinaries1.blob.core.windows.net/ingestion/00000000-abcd-1234-0000-abcdefghijkl?sv=2014-02-14&sr=b&sig=WujGssA00/voXHaDgmaK1mpPn2JUkRPD/123gkAJdnI=&se=2015-12-17T12:58:14Z&sp=rwl" -NoStatus
         Uploads the package content for the application submission,
         but the request happens in the foreground and there is no additional status
         shown to the user until the upload has completed.
@@ -783,35 +829,37 @@ function Set-SubmissionPackage
         the -NoStatus switch).
 
         This uses the "Set" verb to avoid Powershell import module warnings, but is then
-        aliased to Upload-ApplicationSubmissionPackage to better express what it is actually doing.
+        aliased to Upload-StoreFile to better express what it is actually doing.
 #>
     [CmdletBinding(SupportsShouldProcess)]
     [Alias('Set-ApplicationSubmissionPackage')]
+    [Alias('Set-SubmissionPackage')]
     [Alias('Upload-ApplicationSubmissionPackage')]
+    [Alias('Upload-StoreFile')]
     [Alias('Upload-SubmissionPackage')]
     param(
         [Parameter(Mandatory)]
         [ValidateScript({if (Test-Path -Path $_ -PathType Leaf) { $true } else { throw "$_ cannot be found." }})]
-        [string] $PackagePath,
+        [string] $FilePath,
 
         [Parameter(
             Mandatory,
             ValueFromPipeline=$True)]
-        [string] $UploadUrl,
+        [string] $SasUri,
 
         [switch] $NoStatus
     )
 
     # Let's resolve this path to a full path so that it works with non-PowerShell commands (like the Azure module)
-    $PackagePath = Resolve-UnverifiedPath -Path $PackagePath
+    $FilePath = Resolve-UnverifiedPath -Path $FilePath
 
     # Telemetry-related
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-    $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::PackagePath = (Get-PiiSafeString -PlainText $PackagePath) }
+    $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::FilePath = (Get-PiiSafeString -PlainText $FilePath) }
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
-    Write-Log -Message "Attempting to upload the package ($PackagePath) for the submission to $UploadUrl..." -Level Verbose
+    Write-Log -Message "Attempting to upload the file ($FilePath) to $SasUri..." -Level Verbose
 
     $azureStorageDll = Get-AzureStorageDllPath -NoStatus:$NoStatus
     $azureStorageDataMovementDll = Get-AzureStorageDataMovementDllPath -NoStatus:$NoStatus
@@ -835,24 +883,24 @@ function Set-SubmissionPackage
             $bytes = [System.IO.File]::ReadAllBytes($azureStorageDataMovementDll)
             [System.Reflection.Assembly]::Load($bytes) | Out-Null
 
-            $uri = New-Object -TypeName System.Uri -ArgumentList $UploadUrl
+            $uri = New-Object -TypeName System.Uri -ArgumentList $SasUri
             $cloudBlockBlob = New-Object -TypeName Microsoft.WindowsAzure.Storage.Blob.CloudBlockBlob -ArgumentList $uri
 
-            if ($PSCmdlet.ShouldProcess($PackagePath, "CloudBlockBlob.UploadFromFile"))
+            if ($PSCmdlet.ShouldProcess($FilePath, "CloudBlockBlob.UploadFromFile"))
             {
                 # We will run this async command synchronously within the console.
-                $task = [Microsoft.WindowsAzure.Storage.DataMovement.TransferManager]::UploadAsync($packagePath, $cloudBlockBlob, $null, $null)
+                $task = [Microsoft.WindowsAzure.Storage.DataMovement.TransferManager]::UploadAsync($FilePath, $cloudBlockBlob, $null, $null)
                 $task.GetAwaiter().GetResult() | Out-Null
             }
         }
         else
         {
-            $jobName = "Set-SubmissionPackage-" + (Get-Date).ToFileTime().ToString()
+            $jobName = "Set-StoreFile-" + (Get-Date).ToFileTime().ToString()
 
             if ($PSCmdlet.ShouldProcess($jobName, "Start-Job"))
             {
                 [scriptblock]$scriptBlock = {
-                    param($UploadUrl, $PackagePath, $AzureStorageDll, $AzureStorageDataMovementDll)
+                    param($SasUri, $FilePath, $AzureStorageDll, $AzureStorageDataMovementDll)
 
                     # Recommendations per https://github.com/Azure/azure-storage-net-data-movement#best-practice
                     [System.Net.ServicePointManager]::DefaultConnectionLimit = [Environment]::ProcessorCount * 8
@@ -864,19 +912,19 @@ function Set-SubmissionPackage
                     $bytes = [System.IO.File]::ReadAllBytes($AzureStorageDataMovementDll)
                     [System.Reflection.Assembly]::Load($bytes) | Out-Null
 
-                    $uri = New-Object -TypeName System.Uri -ArgumentList $UploadUrl
+                    $uri = New-Object -TypeName System.Uri -ArgumentList $SasUri
                     $cloudBlockBlob = New-Object -TypeName Microsoft.WindowsAzure.Storage.Blob.CloudBlockBlob -ArgumentList $uri
 
                     # We will run this async command synchronously within the console.
-                    $task = [Microsoft.WindowsAzure.Storage.DataMovement.TransferManager]::UploadAsync($PackagePath, $cloudBlockBlob, $null, $null)
+                    $task = [Microsoft.WindowsAzure.Storage.DataMovement.TransferManager]::UploadAsync($FilePath, $cloudBlockBlob, $null, $null)
                     $task.GetAwaiter().GetResult() | Out-Null
                 }
 
-                $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($UploadUrl, $PackagePath, $azureStorageDll, $azureStorageDataMovementDll)
+                $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($SasUri, $FilePath, $azureStorageDll, $azureStorageDataMovementDll)
 
                 if ($PSCmdlet.ShouldProcess($jobName, "Wait-JobWithAnimation"))
                 {
-                    Wait-JobWithAnimation -JobName $jobName -Description "Uploading $PackagePath"
+                    Wait-JobWithAnimation -Name $jobName -Description "Uploading $FilePath"
                 }
 
                 if ($PSCmdlet.ShouldProcess($jobName, "Receive-Job"))
@@ -894,7 +942,7 @@ function Set-SubmissionPackage
         # Record the telemetry for this event.
         $stopwatch.Stop()
         $telemetryMetrics = @{ [StoreBrokerTelemetryMetric]::Duration = $stopwatch.Elapsed.TotalSeconds }
-        Set-TelemetryEvent -EventName Set-SubmissionPackage -Properties $telemetryProperties -Metrics $telemetryMetrics
+        Set-TelemetryEvent -EventName Set-StoreFile -Properties $telemetryProperties -Metrics $telemetryMetrics
     }
     catch [System.Management.Automation.RuntimeException]
     {
@@ -902,7 +950,7 @@ function Set-SubmissionPackage
 
         $output = @()
         $output += $_.Exception.Message
-        if ($_.ErrorDetails.Message)
+        if (-not [String]::IsNullOrWhiteSpace($_.ErrorDetails.Message))
         {
             $message = ($_.ErrorDetails.Message | ConvertFrom-Json)
             $output += "$($message.code) : $($message.message)"
@@ -912,7 +960,7 @@ function Set-SubmissionPackage
             }
         }
 
-        Set-TelemetryException -Exception $_.Exception -ErrorBucket Set-SubmissionPackage -Properties $telemetryProperties
+        Set-TelemetryException -Exception $_.Exception -ErrorBucket Set-StoreFile -Properties $telemetryProperties
         $newLineOutput = ($output -join [Environment]::NewLine)
         Write-Log -Message $newLineOutput -Level Error
         throw $newLineOutput
@@ -926,9 +974,9 @@ function Set-SubmissionPackage
         $output = @()
         $output += "StatusCode: $($_.Exception.Response.StatusCode.value__)"
         $output += "StatusDescription: $($_.Exception.Response.StatusDescription)"
-        $output += "$($_.ErrorDetails)"
+        $output += $_.ErrorDetails
 
-        Set-TelemetryException -Exception $_.Exception -ErrorBucket Set-SubmissionPackage -Properties $telemetryProperties
+        Set-TelemetryException -Exception $_.Exception -ErrorBucket Set-StoreFile -Properties $telemetryProperties
         $newLineOutput = ($output -join [Environment]::NewLine)
         Write-Log -Message $newLineOutput -Level Error
         throw $newLineOutput
@@ -939,28 +987,26 @@ function Set-SubmissionPackage
         [System.Net.ServicePointManager]::Expect100Continue = $origExpect100Continue
     }
 
-    Write-Log -Message "Successfully uploaded the application package." -Level Verbose
+    Write-Log -Message "Successfully uploaded the file." -Level Verbose
 }
 
-function Get-SubmissionPackage
+function Get-StoreFile
 {
 <#
     .SYNOPSIS
-        Downloads the existing package from the URL provided after calling New-ApplicationSubmission.
+        Downloads the file from the Azure SAS Uri provided.
 
     .DESCRIPTION
-        Downloads the existing package from the URL provided after calling New-ApplicationSubmission.
+        Downloads the file from the Azure SAS Uri provided.
 
         The Git repo for this module can be found here: http://aka.ms/StoreBroker
 
-    .PARAMETER UploadUrl
-        The unique URL that was provided in response to a successful call to
-        New-ApplicationSubmission.
+    .PARAMETER SasUri
+        The unique URL that was provided in a resource object that supports binary content.
         Supports Pipeline input.
 
-    .PARAMETER PackagePath
-        The local path that you want to store the package (zip) that contains all of the contents
-        (appxupload/appxbundle/screenshots) referenced by the submission.
+    .PARAMETER FilePath
+        The local path that you want to store the downloaded file.
 
     .PARAMETER NoStatus
         If this switch is specified, long-running commands will run on the main thread
@@ -968,13 +1014,13 @@ function Get-SubmissionPackage
         the background, enabling the command prompt to provide status information.
 
     .EXAMPLE
-        Get-SubmissionPackage "https://prodingestionbinaries1.blob.core.windows.net/ingestion/00000000-abcd-1234-0000-abcdefghijkl?sv=2014-02-14&sr=b&sig=WujGssA00/voXHaDgmaK1mpPn2JUkRPD/123gkAJdnI=&se=2015-12-17T12:58:14Z&sp=rwl" "c:\foo.zip"
-        Downloads the package content for the application submission to c:\foo.zip,
+        Get-StoreFile "https://prodingestionbinaries1.blob.core.windows.net/ingestion/00000000-abcd-1234-0000-abcdefghijkl?sv=2014-02-14&sr=b&sig=WujGssA00/voXHaDgmaK1mpPn2JUkRPD/123gkAJdnI=&se=2015-12-17T12:58:14Z&sp=rwl" "c:\foo.appx"
+        Downloads the package to c:\foo.appx,
         with the console window showing progress while awaiting for the download to complete.
 
     .EXAMPLE
-        Get-SubmissionPackage "https://prodingestionbinaries1.blob.core.windows.net/ingestion/00000000-abcd-1234-0000-abcdefghijkl?sv=2014-02-14&sr=b&sig=WujGssA00/voXHaDgmaK1mpPn2JUkRPD/123gkAJdnI=&se=2015-12-17T12:58:14Z&sp=rwl" "c:\foo.zip" -NoStatus
-        Downloads the package content for the application submission to c:\foo.zip,
+        Get-StoreFile "https://prodingestionbinaries1.blob.core.windows.net/ingestion/00000000-abcd-1234-0000-abcdefghijkl?sv=2014-02-14&sr=b&sig=WujGssA00/voXHaDgmaK1mpPn2JUkRPD/123gkAJdnI=&se=2015-12-17T12:58:14Z&sp=rwl" "c:\foo.appx" -NoStatus
+        Downloads the package to c:\foo.appx,
         but the download happens in the foreground and there is no additional status
         shown to the user until the download completes.
 
@@ -985,29 +1031,30 @@ function Get-SubmissionPackage
 #>
     [CmdletBinding(SupportsShouldProcess)]
     [Alias('Get-ApplicationSubmissionPackage')]
+    [Alias('Get-SubmissionPackage')]
     param(
         [Parameter(
             Mandatory,
             ValueFromPipeline=$True)]
-        [string] $UploadUrl,
+        [string] $SasUri,
 
         [Parameter(Mandatory)]
         [ValidateScript({if (Test-Path -Path $_ -PathType Leaf) { throw "$_ already exists. Choose a different destination name." } else { $true }})]
-        [string] $PackagePath,
+        [string] $FilePath,
 
         [switch] $NoStatus
     )
 
     # Let's resolve this path to a full path so that it works with non-PowerShell commands (like the Azure module)
-    $PackagePath = Resolve-UnverifiedPath -Path $PackagePath
+    $FilePath = Resolve-UnverifiedPath -Path $FilePath
 
     # Telemetry-related
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-    $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::PackagePath = (Get-PiiSafeString -PlainText $PackagePath) }
+    $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::FilePath = (Get-PiiSafeString -PlainText $FilePath) }
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
-    Write-Log -Message "Attempting to download the contents of $UploadUrl to $PackagePath..." -Level Verbose
+    Write-Log -Message "Attempting to download the contents of $SasUri to $FilePath..." -Level Verbose
 
     $azureStorageDll = Get-AzureStorageDllPath -NoStatus:$NoStatus
     $azureStorageDataMovementDll = Get-AzureStorageDataMovementDllPath -NoStatus:$NoStatus
@@ -1031,13 +1078,18 @@ function Get-SubmissionPackage
             $bytes = [System.IO.File]::ReadAllBytes($azureStorageDataMovementDll)
             [System.Reflection.Assembly]::Load($bytes) | Out-Null
 
-            $uri = New-Object -TypeName System.Uri -ArgumentList $UploadUrl
+            $uri = New-Object -TypeName System.Uri -ArgumentList $SasUri
             $cloudBlockBlob = New-Object -TypeName Microsoft.WindowsAzure.Storage.Blob.CloudBlockBlob -ArgumentList $uri
 
-            if ($PSCmdlet.ShouldProcess($PackagePath, "CloudBlockBlob.DownloadToFile"))
+            # Unfortunately, due to the fact that the files are processed/modified by the API after Azure
+            # has stored the MD5 hash, when we later download them, the files simply won't match the MD5 that was stored.
+            $downloadOptions = New-Object -TypeName Microsoft.WindowsAzure.Storage.DataMovement.DownloadOptions
+            $downloadOptions.DisableContentMD5Validation = $true
+
+            if ($PSCmdlet.ShouldProcess($FilePath, "CloudBlockBlob.DownloadToFile"))
             {
                 # We will run this async command synchronously within the console.
-                $task = [Microsoft.WindowsAzure.Storage.DataMovement.TransferManager]::DownloadAsync($cloudBlockBlob, $PackagePath)
+                $task = [Microsoft.WindowsAzure.Storage.DataMovement.TransferManager]::DownloadAsync($cloudBlockBlob, $FilePath, $downloadOptions, $null)
                 $task.GetAwaiter().GetResult() | Out-Null
             }
         }
@@ -1048,7 +1100,7 @@ function Get-SubmissionPackage
             if ($PSCmdlet.ShouldProcess($jobName, "Start-Job"))
             {
                 [scriptblock]$scriptBlock = {
-                    param($UploadUrl, $PackagePath, $AzureStorageDll, $AzureStorageDataMovementDll)
+                    param($SasUri, $FilePath, $AzureStorageDll, $AzureStorageDataMovementDll)
 
                     # Recommendations per https://github.com/Azure/azure-storage-net-data-movement#best-practice
                     [System.Net.ServicePointManager]::DefaultConnectionLimit = [Environment]::ProcessorCount * 8
@@ -1060,19 +1112,24 @@ function Get-SubmissionPackage
                     $bytes = [System.IO.File]::ReadAllBytes($AzureStorageDataMovementDll)
                     [System.Reflection.Assembly]::Load($bytes) | Out-Null
 
-                    $uri = New-Object -TypeName System.Uri -ArgumentList $UploadUrl
+                    $uri = New-Object -TypeName System.Uri -ArgumentList $SasUri
                     $cloudBlockBlob = New-Object -TypeName Microsoft.WindowsAzure.Storage.Blob.CloudBlockBlob -ArgumentList $uri
 
+                    # Unfortunately, due to the fact that the files are processed/modified by the API after Azure
+                    # has stored the MD5 hash, when we later download them, the files simply won't match the MD5 that was stored.
+                    $downloadOptions = New-Object -TypeName Microsoft.WindowsAzure.Storage.DataMovement.DownloadOptions
+                    $downloadOptions.DisableContentMD5Validation = $true
+
                     # We will run this async command synchronously within the console.
-                    $task = [Microsoft.WindowsAzure.Storage.DataMovement.TransferManager]::DownloadAsync($cloudBlockBlob, $PackagePath)
+                    $task = [Microsoft.WindowsAzure.Storage.DataMovement.TransferManager]::DownloadAsync($cloudBlockBlob, $FilePath, $downloadOptions, $null)
                     $task.GetAwaiter().GetResult() | Out-Null
                 }
 
-                $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($UploadUrl, $PackagePath, $azureStorageDll, $azureStorageDataMovementDll)
+                $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($SasUri, $FilePath, $azureStorageDll, $azureStorageDataMovementDll)
 
                 if ($PSCmdlet.ShouldProcess($jobName, "Wait-JobWithAnimation"))
                 {
-                    Wait-JobWithAnimation -JobName $jobName -Description "Downloading contents to $PackagePath"
+                    Wait-JobWithAnimation -Name $jobName -Description "Downloading content to $FilePath"
                 }
 
                 if ($PSCmdlet.ShouldProcess($jobName, "Receive-Job"))
@@ -1090,7 +1147,7 @@ function Get-SubmissionPackage
         # Record the telemetry for this event.
         $stopwatch.Stop()
         $telemetryMetrics = @{ [StoreBrokerTelemetryMetric]::Duration = $stopwatch.Elapsed.TotalSeconds }
-        Set-TelemetryEvent -EventName Get-SubmissionPackage -Properties $telemetryProperties -Metrics $telemetryMetrics
+        Set-TelemetryEvent -EventName Get-StoreFile -Properties $telemetryProperties -Metrics $telemetryMetrics
     }
     catch [System.Management.Automation.RuntimeException]
     {
@@ -1098,7 +1155,7 @@ function Get-SubmissionPackage
 
         $output = @()
         $output += $_.Exception.Message
-        if ($_.ErrorDetails.Message)
+        if (-not [String]::IsNullOrWhiteSpace($_.ErrorDetails.Message))
         {
             $message = ($_.ErrorDetails.Message | ConvertFrom-Json)
             $output += "$($message.code) : $($message.message)"
@@ -1108,7 +1165,7 @@ function Get-SubmissionPackage
             }
         }
 
-        Set-TelemetryException -Exception $_.Exception -ErrorBucket Get-SubmissionPackage -Properties $telemetryProperties
+        Set-TelemetryException -Exception $_.Exception -ErrorBucket Get-StoreFile -Properties $telemetryProperties
         $newLineOutput = ($output -join [Environment]::NewLine)
         Write-Log -Message $newLineOutput -Level Error
         throw $newLineOutput
@@ -1122,7 +1179,7 @@ function Get-SubmissionPackage
         $output = @()
         $output += "StatusCode: $($_.Exception.Response.StatusCode.value__)"
         $output += "StatusDescription: $($_.Exception.Response.StatusDescription)"
-        $output += "$($_.ErrorDetails)"
+        $output += $_.ErrorDetails
 
         Set-TelemetryException -Exception $_.Exception -ErrorBucket Get-SubmissionPackage -Properties $telemetryProperties
         $newLineOutput = ($output -join [Environment]::NewLine)
@@ -1135,7 +1192,7 @@ function Get-SubmissionPackage
         [System.Net.ServicePointManager]::Expect100Continue = $origExpect100Continue
     }
 
-    Write-Log -Message "Successfully downloaded the blob contents." -Level Verbose
+    Write-Log -Message "Successfully downloaded the file." -Level Verbose
 }
 
 function Start-SubmissionMonitor
@@ -1204,178 +1261,129 @@ function Start-SubmissionMonitor
 #>
     [CmdletBinding(
         SupportsShouldProcess,
-        DefaultParametersetName="AppOrFlight")]
+        DefaultParametersetName="Flight")]
     [Alias('Start-ApplicationSubmissionMonitor')]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
     param(
-        [Parameter(
-            Mandatory,
-            ParameterSetName="AppOrFlight",
-            Position=0)]
-        [string] $AppId,
+        [Parameter(Mandatory)]
+        [ValidateScript({if ($_.Length -le 12) { throw "It looks like you supplied an AppId instead of a ProductId.  Use Get-Product with -AppId to find the ProductId for this AppId." } else { $true }})]
+        [string] $ProductId,
 
-        [Parameter(
-            Mandatory,
-            ParameterSetName="AppOrFlight",
-            Position=1)]
-        [Parameter(
-            Mandatory,
-            ParameterSetName="Iap",
-            Position=1)]
+        [Parameter(Mandatory)]
         [string] $SubmissionId,
 
-        [Parameter(
-            ParameterSetName="AppOrFlight",
-            Position=2)]
-        [Parameter(
-            ParameterSetName="Iap",
-            Position=2)]
+        [Parameter(ParameterSetName='Flight')]
+        [string] $FlightId,
+
+        [Parameter(ParameterSetName='Sandbox')]
+        [string] $SandboxId,
+
         [string[]] $EmailNotifyTo = @(),
 
-        [Parameter(ParameterSetName="AppOrFlight")]
-        [string] $FlightId = $null,
-
-        [Parameter(
-            Mandatory,
-            ParameterSetName="Iap",
-            Position=0)]
-        [string] $IapId,
-
         [int] $PollingInterval = 5,
+
+        [string] $ClientRequestId,
+
+        [string] $CorrelationId,
+
+        [string] $AccessToken,
 
         [switch] $NoStatus,
 
         [switch] $PassThru
     )
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     # Telemetry-related
     $telemetryProperties = @{
-        [StoreBrokerTelemetryProperty]::AppId = $AppId
+        [StoreBrokerTelemetryProperty]::ProductId = $ProductId
         [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
     }
 
     if (-not [String]::IsNullOrEmpty($FlightId)) { $telemetryProperties[[StoreBrokerTelemetryProperty]::FlightId] = $FlightId }
-    if (-not [String]::IsNullOrEmpty($IapId)) { $telemetryProperties[[StoreBrokerTelemetryProperty]::IapId] = $IapId }
+    if (-not [String]::IsNullOrEmpty($SandboxId)) { $telemetryProperties[[StoreBrokerTelemetryProperty]::SandboxId] = $SandboxId }
     $telemetryMetrics = @{ [StoreBrokerTelemetryMetric]::NumEmailAddresses = $EmailNotifyTo.Count }
     Set-TelemetryEvent -EventName Start-ApplicationSubmissionMonitor -Properties $telemetryProperties -Metrics $telemetryMetrics
 
     $shouldMonitor = $true
     $indentLength = 5
 
-    # Get the info so we have it's name when we give the user updates.
-    $isIapSubmission = -not [String]::IsNullOrEmpty($IapId)
-    if ($isIapSubmission)
-    {
-        $iap = Get-InAppProduct -IapId $IapId -NoStatus:$NoStatus
-        $appName = $iap.productId
-        $fullName = $appName
-    }
-    else
-    {
-        $app = Get-Application -AppId $AppId -NoStatus:$NoStatus
-        $appName = $app.primaryName
-        $fullName = $appName
+    $CorrelationId = Get-CorrelationId -CorrelationId $CorrelationId -Identifier $ProductId
 
-        # If this is monitoring a flight submission, let's also get the flight's friendly name for
-        # those updates as well.
-        $isFlightingSubmission = (-not [String]::IsNullOrEmpty($FlightId))
-        if ($isFlightingSubmission)
-        {
-            $flight = Get-ApplicationFlight -AppId $AppId -FlightId $FlightId -NoStatus:$NoStatus
-            $flightName = $flight.friendlyName
-            $fullName = "$appName | $flightName"
-        }
+    $commonParams = @{
+        'ClientRequestId' = $ClientRequestId
+        'CorrelationId' = $CorrelationId
+        'NoStatus' = $NoStatus
     }
+
+    if ($PSBoundParameters.ContainsKey('AccessToken'))
+    {
+        $commonParams.Add('AccessToken', $AccessToken)
+    }
+
+    # Get the info so we have it's name when we give the user updates.
+    $product = Get-Product @commonParams -ProductId $ProductId
+    $appId = ($product.externalIds | Where-Object { $_.type -eq 'StoreId' }).value
+    $productName = $product.name
+    $fullName = $productName
+
+    $isSandboxSubmission = (-not [String]::IsNullOrEmpty($SandboxId))
+    if ($isSandboxSubmission)
+    {
+        $fullName = "$productName | Sandbox $SandboxId"
+    }
+
+    # If this is monitoring a flight submission, let's also get the flight's friendly name for
+    # those updates as well.
+    $isFlightingSubmission = (-not [String]::IsNullOrEmpty($FlightId))
+    if ($isFlightingSubmission)
+    {
+        $flight = Get-Flight @commonParams -ProductId $ProductId -FlightId $FlightId
+        $flightName = $flight.name
+        $fullName = "$productName | $flightName"
+    }
+
+    # Get the submission details so that we know how/when this submission will get published
+    # once it has passed certification.
+    $detail = Get-SubmissionDetail @commonParams -ProductId $ProductId -SubmissionId $SubmissionId
 
     $submission = $null
 
-    # We can safely assume this is being used on a recently committed submission.
-    # If it isn't we'll report that to the user and update this value during the first
-    # run through our loop.
-    $lastStatus = "CommitStarted"
+    $lastSubState = [StoreBrokerSubmissionSubState]::InDraft.ToString()
 
     while ($shouldMonitor)
     {
         try
         {
-            if ($isIapSubmission)
-            {
-                $submission = Get-InAppProductSubmission -IapId $IapId -SubmissionId $SubmissionId -NoStatus:$NoStatus
-            }
-            elseif ($isFlightingSubmission)
-            {
-                $submission = Get-ApplicationFlightSubmission -AppId $AppId -FlightId $FlightId -SubmissionId $SubmissionId -NoStatus:$NoStatus
-            }
-            else
-            {
-                $submission = Get-ApplicationSubmission -AppId $AppId -SubmissionId $SubmissionId -NoStatus:$NoStatus
-            }
+            $submission = Get-Submission @commonParams -ProductId $ProductId -SubmissionId $SubmissionId
 
-            if ($submission.status -ne $lastStatus)
+            if ($submission.substate -ne $lastSubState)
             {
-                $lastStatus = $submission.status
+                $lastSubState = $submission.substate
 
                 $body = @()
                 $body += ""
-                if ($isIapSubmission)
+                $body += "ProductId             : $ProductId ($productName)"
+                if ($isFlightingSubmission)
                 {
-                    $body += "IapId             : $IapId ($appName)"
-                }
-                else
-                {
-                    $body += "AppId             : $AppId ($appName)"
-                    if ($isFlightingSubmission)
-                    {
-                        $body += "FlightId          : $FlightId ($flightName)"
-                    }
+                    $body += "FlightId              : $FlightId ($flightName)"
                 }
 
-                $body += "SubmissionId      : $SubmissionId"
-                $body += "Submission Status : $lastStatus"
-                $body += ""
-                $body += "Status Details [Errors]                : {0}" -f $(if ($submission.statusDetails.errors.count -eq 0) { "<None>" } else { "" })
-                $body += $submission.statusDetails.errors | Format-SimpleTableString -IndentationLevel $indentLength
-                $body += ""
-                $body += "Status Details [Warnings]              : {0}" -f $(if ($submission.statusDetails.warnings.count -eq 0) { "<None>" } else { "" })
-                $body += $submission.statusDetails.warnings | Format-SimpleTableString -IndentationLevel $indentLength
-                $body += ""
-                $body += "Status Details [Certification Reports] : {0}" -f $(if ($submission.statusDetails.certificationReports.count -eq 0) { "<None>" } else { "" })
-                foreach ($report in $submission.statusDetails.certificationReports)
-                {
-                    $body += $(" " * $indentLength) + $(Get-Date -Date $report.date -Format R) + ": $($report.reportUrl)"
-                }
-
+                $body += "SubmissionId          : $SubmissionId"
+                $body += "Friendly Name         : $($submission.friendlyName)"
+                $body += "Submission State      : $($submission.state)"
+                $body += "Submission Substate   : $lastSubState"
                 $body += ""
                 $body += "To view the full submission"
                 $body += "---------------------------"
-                if ($isIapSubmission)
-                {
-                    $body += "Dev Portal URL"
-                    $body += "    https://dev.windows.com/en-us/dashboard/iaps/$IapId/submissions/$SubmissionId/"
-                    $body += "StoreBroker command"
-                    $body += "    Get-InAppProductSubmission -IapId $IapId -SubmissionId $SubmissionId"
-                }
-                else
-                {
-                    $body += "Dev Portal URL"
-                    $body += "    https://dev.windows.com/en-us/dashboard/apps/$AppId/submissions/$SubmissionId/"
-                    $body += "StoreBroker command"
-                    if ($isFlightingSubmission)
-                    {
-                        $body += "    Get-ApplicationFlightSubmission -AppId $AppId -FlightId $FlightId -SubmissionId $SubmissionId"
-                    }
-                    else
-                    {
-                        $body += "    Get-ApplicationSubmission -AppId $AppId -SubmissionId $SubmissionId"
-                    }
-                }
+                $body += "Dev Portal URL"
+                $body += "    https://dev.windows.com/en-us/dashboard/apps/$appId/submissions/$SubmissionId/"
+                $body += "StoreBroker command"
+                $body += "    Get-Submission -ProductId $productId -SubmissionId $SubmissionId"
 
-                # Any status that ends in Failed is absolutely a failed state that the user won't leave.
-                # If it changes from CommitStarted -> PendingCommit, that's indicative of a server-side
-                # failure that we also can't recover from.
-                if (($lastStatus -like "*Failed") -or ($lastStatus -eq $script:keywordPendingCommit))
+                $failedStates = @([StoreBrokerSubmissionSubState]::Failed, [StoreBrokerSubmissionSubState]::FailedInCertification)
+                if ($lastSubState -in $failedStates)
                 {
                     $body += ""
                     $body += "*** Your submission has entered a Failed state.  Monitoring will now end."
@@ -1383,7 +1391,8 @@ function Start-SubmissionMonitor
                     $shouldMonitor = $false
                 }
 
-                if (($lastStatus -eq $script:keywordRelease) -and ($submission.targetPublishMode -in ($script:keywordManual, $script:keywordSpecificDate)))
+                if (($lastSubState -eq [StoreBrokerSubmissionSubState]::ReadyToPublish) -and
+                    ($detail.isManualPublish -or ((Get-Date) -lt (Get-Date -Date $detail.releaseTimeInUtc))))
                 {
                     $body += ""
                     $body += "*** Your submission is ready for publishing.  Monitoring will now end."
@@ -1391,7 +1400,15 @@ function Start-SubmissionMonitor
                     $shouldMonitor = $false
                 }
 
-                if ($lastStatus -eq $script:keywordPublished)
+                if ($lastSubState -eq [StoreBrokerSubmissionSubState]::Cancelled)
+                {
+                    $body += ""
+                    $body += "*** Your submission has been cancelled.  Monitoring will now end."
+
+                    $shouldMonitor = $false
+                }
+
+                if ($lastSubState -in @([StoreBrokerSubmissionSubState]::Published, [StoreBrokerSubmissionSubState]::InStore))
                 {
                     $body += ""
                     $body += "*** Your submission has been published.  Monitoring will now end."
@@ -1399,11 +1416,23 @@ function Start-SubmissionMonitor
                     $shouldMonitor = $false
                 }
 
+                if (-not $shouldMonitor)
+                {
+                    $report = Get-SubmissionReport @commonParams -ProductId $ProductId -SubmissionId $SubmissionId
+                    $body += ""
+                    $body += "Status Details        : {0}" -f $(if ($report.count -eq 0) { "<None>" } else { "" })
+                    $body += $report | Format-SimpleTableString -IndentationLevel $indentLength
+                    foreach ($entry in $report)
+                    {
+                        $body += $(" " * $indentLength) + $(Get-Date -Date $entry.reportTimeInUtc -Format R) + ": $($entry.status) | $($entry.fileUri)"
+                    }
+                }
+
                 Write-Log -Message $body
 
                 if ($EmailNotifyTo.Count -gt 0)
                 {
-                    $subject = "Status change for [$fullName] submission [$SubmissionId] : $lastStatus"
+                    $subject = "Status change for [$fullName] submission [$SubmissionId] : $lastSubState"
                     Send-SBMailMessage -Subject $subject -Body $($body -join [Environment]::NewLine) -To $EmailNotifyTo
                 }
             }
@@ -1425,7 +1454,7 @@ function Start-SubmissionMonitor
         if ($shouldMonitor)
         {
             $secondsBetweenChecks = $PollingInterval * 60
-            Write-Log -Message "Status is [$lastStatus]. Waiting $secondsBetweenChecks seconds before checking again..."
+            Write-Log -Message "SubState is [$lastSubState]. Waiting $secondsBetweenChecks seconds before checking again..."
             Start-Sleep -Seconds $secondsBetweenChecks
         }
     }
@@ -1451,7 +1480,10 @@ function Open-DevPortal
         The Git repo for this module can be found here: http://aka.ms/StoreBroker
 
     .PARAMETER AppId
-        The ID of the application to be viewed.
+        The ID of the app that should be opened in the Store (in the "BigId" format).
+
+    .PARAMETER ProductId
+        The ID of the app that should be opened in the Store (in the ProductId format).
 
     .PARAMETER SubmissionId
         The ID of the submission to be viewed.
@@ -1460,24 +1492,42 @@ function Open-DevPortal
         If provided, will show the flight UI as opposed to the flight submission UI.
 
     .EXAMPLE
-        Open-DevPortal 0ABCDEF12345
+        Open-DevPortal -AppId 0ABCDEF12345
 
         Opens a new tab in the default web browser to the page in the Dev Portal that displays
         the general status of the application.
 
     .EXAMPLE
-        Open-DevPortal 0ABCDEF12345 1234567890123456789
+        Open-DevPortal -AppId 0ABCDEF12345 -SubmissionId 1234567890123456789
 
         Opens a new tab in the default web browser to the page in the Dev Portal that displays
         the indicated submission.  Will work for both app and flight submissions.
 
     .EXAMPLE
-        Open-DevPortal 0ABCDEF12345 1234567890123456789 -ShowFlight
+        Open-DevPortal -AppId 0ABCDEF12345 -SubmissionId 1234567890123456789 -ShowFlight
+
+        Opens a new tab in the default web browser to the page in the Dev Portal that displays
+        the flight edit page (enabling you to change the name, flight groups and ranking).
+
+    .EXAMPLE
+        Open-DevPortal -ProductId 00012345678901234567
+
+        Opens a new tab in the default web browser to the page in the Dev Portal that displays
+        the general status of the application.
+
+    .EXAMPLE
+        Open-DevPortal -ProductId 00012345678901234567 -SubmissionId 1234567890123456789
+
+        Opens a new tab in the default web browser to the page in the Dev Portal that displays
+        the indicated submission.  Will work for both app and flight submissions.
+
+    .EXAMPLE
+        Open-DevPortal -ProductId 00012345678901234567 -SubmissionId 1234567890123456789 -ShowFlight
 
         Opens a new tab in the default web browser to the page in the Dev Portal that displays
         the flight edit page (enabling you to change the name, flight groups and ranking).
 #>
-    [CmdletBinding(DefaultParametersetName="App")]
+    [CmdletBinding(DefaultParametersetName="Product")]
     param(
         [Parameter(
             Mandatory,
@@ -1485,28 +1535,52 @@ function Open-DevPortal
             Position=0)]
         [Parameter(
             Mandatory,
-            ParameterSetName="Submission",
+            ParameterSetName="AppSubmission",
             Position=0)]
+        [ValidateScript({if ($_.Length -eq 12) { $true } else { throw "It looks like you supplied a ProductId instead of an AppId.  Use the -ProductId parameter with this value instead." }})]
         [string] $AppId,
 
         [Parameter(
             Mandatory,
-            ParameterSetName="Submission",
+            ParameterSetName="Product",
+            Position=0)]
+        [Parameter(
+            Mandatory,
+            ParameterSetName="ProductSubmission",
+            Position=0)]
+        [ValidateScript({if ($_.Length -le 12) { throw "It looks like you supplied an AppId instead of a ProductId.  Use the -AppId parameter with this value instead." } else { $true }})]
+        [string] $ProductId,
+
+        [Parameter(
+            Mandatory,
+            ParameterSetName="AppSubmission",
+            Position=1)]
+        [Parameter(
+            Mandatory,
+            ParameterSetName="ProductSubmission",
             Position=1)]
         [string] $SubmissionId,
 
-        [Parameter(ParameterSetName="Submission")]
+        [Parameter(ParameterSetName="AppSubmission")]
+        [Parameter(ParameterSetName="ProductSubmission")]
         [switch] $ShowFlight
     )
 
     # Telemetry-related
     $telemetryProperties = @{
         [StoreBrokerTelemetryProperty]::AppId = $AppId
+        [StoreBrokerTelemetryProperty]::ProductId = $ProductId
         [StoreBrokerTelemetryProperty]::ShowSubmission = (-not [String]::IsNullOrEmpty($SubmissionId))
         [StoreBrokerTelemetryProperty]::ShowFlight = $ShowFlight
     }
 
     Set-TelemetryEvent -EventName Open-DevPortal -Properties $telemetryProperties
+
+    if ([String]::IsNullOrEmpty($AppId))
+    {
+        $product = Get-Product -ProductId $ProductId
+        $AppId = ($product.externalIds | Where-Object { $_.type -eq 'StoreId' }).value
+    }
 
     Write-Log -Message "Opening Dev Portal in default web browser."
 
@@ -1528,7 +1602,7 @@ function Open-DevPortal
     }
 }
 
-function Open-Store()
+function Open-Store
 {
 <#
 .SYNOPSIS
@@ -1540,7 +1614,10 @@ function Open-Store()
     The Git repo for this module can be found here: https://aka.ms/StoreBroker
 
 .PARAMETER AppId
-    The ID of the app that should be opened in the Store.
+    The ID of the app that should be opened in the Store (in the "BigId" format).
+
+.PARAMETER ProductId
+    The ID of the app that should be opened in the Store (in the ProductId format).
 
 .PARAMETER Web
     If specified, opens the Web Store instead of the native Windows Store App.
@@ -1551,14 +1628,28 @@ function Open-Store()
     Opens the Windows Store app and navigates to the specified application.
 
 .EXAMPLE
+    Open-Store -ProductId 00012345678901234567
+
+    Opens the Windows Store app and navigates to the specified application.
+
+.EXAMPLE
     Open-Store -AppId 0ABCDEF12345 -Web
 
     Opens the user's browser to the specified app's Windows Store page.
 #>
-    [cmdletbinding()]
-    param(
-        [Parameter(Mandatory)]
+[CmdletBinding(DefaultParametersetName="ProductId")]
+param(
+        [Parameter(
+            Mandatory,
+            ParameterSetName="AppId")]
+        [ValidateScript({if ($_.Length -eq 12) { $true } else { throw "It looks like you supplied a ProductId instead of an AppId.  Use the -ProductId parameter with this value instead." }})]
         [string] $AppId,
+
+        [Parameter(
+            Mandatory,
+            ParameterSetName="ProductId")]
+        [ValidateScript({if ($_.Length -le 12) { throw "It looks like you supplied an AppId instead of a ProductId.  Use the -AppId parameter with this value instead." } else { $true }})]
+        [string] $ProductId,
 
         [switch] $Web
     )
@@ -1566,83 +1657,28 @@ function Open-Store()
     # Telemetry-related
     $telemetryProperties = @{
         [StoreBrokerTelemetryProperty]::AppId = $AppId
+        [StoreBrokerTelemetryProperty]::ProductId = $ProductId
         [StoreBrokerTelemetryProperty]::Web = $Web
     }
 
     Set-TelemetryEvent -EventName Open-Store -Properties $telemetryProperties
 
-    $webUri = "https://www.microsoft.com/store/apps/$AppId"
-    $storeAppUri = "ms-windows-store://pdp/?productid=$AppId"
+    if ($null -eq $ProductId)
+    {
+        $product = Get-Product -AppId $AppId
+        $ProductId = $product.id
+    }
 
-    $uri = $storeAppUri
+    $storeLinks = Get-ProductStoreLink -ProductId $ProductId
+
+    $uri = $storeLinks.storeProtocolLink
     if ($Web)
     {
-        $uri = $webUri
+        $uri = $storeLinks.storeUri
     }
 
     Write-Log -Message "Launching $uri" -Level Verbose
     Start-Process -FilePath $uri
-}
-
-function Get-ProperEnumCasing
-{
-<#
-    .SYNOPSIS
-        Gets the proper casing for the provided enum value per the requirements of the
-        Windows Store Submission API.
-
-    .DESCRIPTION
-        Gets the proper casing for the provided enum value per the requirements of the
-        Windows Store Submission API.
-
-        The API is case-sensitive on these enum values, but PowerShell isn't, so we need to do
-        a little extra work to ensure proper casing is used when modifying the JSON.  We won't
-        be trying to ensure every possible enum value is the right casing -- just the ones that
-        users are most likely to alter during submissions.  More can be added as needed over time.
-
-        The Git repo for this module can be found here: http://aka.ms/StoreBroker
-
-    .PARAMETER EnumValue
-        The enum value the user needs the proper casing for.
-
-    .EXAMPLE
-        Get-ProperEnumCasing -EnumValue immediate
-
-        Returns "Immediate"
-
-    .EXAMPLE
-        Get-ProperEnumCasing -EnumValue 'Un1kn0wn'
-
-        Returns the provided value "Un1kn0wn" since it's not a known Enum value.
-
-    .OUTPUTS
-        System.String
-
-    .NOTES
-        Internal-only helper method.
-
-        For now, we assume that if the same value is used in multiple enums within the API,
-        the casing will be identical in all scenarios.  If that proves to not be the case in the
-        future, then this function (and its callers) will need to be updated to provide context
-        for where the enum value is being used.
-#>
-    param(
-        [Parameter(Mandatory)]
-        [string] $EnumValue
-    )
-
-    switch ($EnumValue)
-    {
-        'Hidden'                    { return 'Hidden' }
-        'Immediate'                 { return 'Immediate' }
-        $script:keywordManual       { return $script:keywordManual }
-        'Public'                    { return 'Public' }
-        'Private'                   { return 'Private' }
-        $script:keywordSpecificDate { return $script:keywordSpecificDate }
-    }
-
-    # If we don't know the Enum value, we'll simply return the intiial value sent in.
-    return $EnumValue
 }
 
 function Invoke-SBRestMethod
@@ -1673,6 +1709,10 @@ function Invoke-SBRestMethod
     .PARAMETER Body
         This optional parameter forms the body of a PUT or POST request. It will be automatically
         encoded to UTF8 and sent as Content Type: "application/json; charset=UTF-8"
+
+    .PARAMETER ExtendedResult
+        If specified, the result will be a PSObject that contains the normal result, along with
+        the response code and other relevant header detail content.
 
     .PARAMETER AccessToken
         If provided, this will be used as the AccessToken for authentication with the
@@ -1716,14 +1756,13 @@ function Invoke-SBRestMethod
 
     .NOTES
         This wraps Invoke-WebRequest as opposed to Invoke-RestMethod because we want access to the headers
-        that are returned in the response (specifically 'MS-CorrelationId') for logging purposes, and
+        that are returned in the response (specifically 'MS-ClientRequestId') for logging purposes, and
         Invoke-RestMethod drops those headers.
 #>
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars", "", Justification="We use global variables sparingly and intentionally for module configuration, and employ a consistent naming convention.")]
     param(
         [Parameter(Mandatory)]
-        [ValidateScript({if ($_.StartsWith("/")) { throw "Fragments should not start with a leading `"/`"" } else { return $true }})]
         [string] $UriFragment,
 
         [Parameter(Mandatory)]
@@ -1734,6 +1773,14 @@ function Invoke-SBRestMethod
         [string] $Description,
 
         [string] $Body = $null,
+
+        [switch] $ExtendedResult,
+
+        [switch] $WaitForCompletion,
+
+        [string] $ClientRequestId,
+
+        [string] $CorrelationId,
 
         [string] $AccessToken = "",
 
@@ -1746,17 +1793,28 @@ function Invoke-SBRestMethod
         [switch] $NoStatus
     )
 
-    $serviceEndpointVersion = "1.0"
+    $serviceEndpointVersion = "2.0"
+
+    # Normalize our Uri fragment.  It might be coming from a method implemented here, or it might
+    # be coming from the Location header in a previous response.  Either way, we don't want there
+    # to be a leading "/"
+    if ($UriFragment.StartsWith("/"))
+    {
+        $UriFragment = $UriFragment.Substring(1)
+    }
 
     # The initial number of minutes we'll wait before retrying this command when we've hit an
     # error with a status code that is configured to auto-retry.  To reduce repeated contention, we
     # stagger the initial wait time (and thus, the resulting spread when it exponentially backs off).
-    $retryDelayMin = [Math]::Round((Get-Random -Minimum 0.4 -Maximum 2.0), 2)
+    $retryDelayMin = [Math]::Round((Get-Random -Minimum 0.25 -Maximum 2.0), 2)
     $numRetries = 0
 
     # Telemetry-related
     $stopwatch = New-Object -TypeName System.Diagnostics.Stopwatch
-    $localTelemetryProperties = @{ [StoreBrokerTelemetryProperty]::UriFragment = $UriFragment }
+    $localTelemetryProperties = @{
+        [StoreBrokerTelemetryProperty]::UriFragment = $UriFragment
+        [StoreBrokerTelemetryProperty]::WaitForCompletion = ($WaitForCompletion -eq $true)
+    }
     $TelemetryProperties.Keys | ForEach-Object { $localTelemetryProperties[$_] = $TelemetryProperties[$_] }
     $errorBucket = $TelemetryExceptionBucket
     if ([String]::IsNullOrEmpty($errorBucket))
@@ -1783,9 +1841,19 @@ function Invoke-SBRestMethod
         $stopwatch.Start()
 
         $serviceEndpoint = Get-ServiceEndpoint
-        $url = "$serviceEndpoint/v$serviceEndpointVersion/my/$UriFragment"
+        $uriPreface = "v$serviceEndpointVersion/my"
+        $url = "$serviceEndpoint/$uriPreface/$UriFragment"
+
+        # This scenario might happen if a client calls into here setting the UriFragment
+        # to the value returned in the Location header from a previous request.
+        if ($UriFragment.StartsWith($uriPreface))
+        {
+            $url = "$serviceEndpoint/$UriFragment"
+        }
 
         $headers = @{"Authorization" = "Bearer $AccessToken"}
+        $headers.Add($script:headerClientName, "StoreBroker v$($MyInvocation.MyCommand.Module.Version)")
+
         if ($Method -in ('post', 'put'))
         {
             $headers.Add("Content-Type", "application/json; charset=UTF-8")
@@ -1810,6 +1878,17 @@ function Invoke-SBRestMethod
             }
         }
 
+        # Add any headers that clients can add to track specific requests
+        if (-not [String]::IsNullOrWhiteSpace($ClientRequestId))
+        {
+            $headers.Add($script:headerMSClientRequestId, $ClientRequestId)
+        }
+
+        if (-not [String]::IsNullOrWhiteSpace($correlationId))
+        {
+            $headers.Add($script:headerMSCorrelationId, $CorrelationId)
+        }
+
         try
         {
             Write-Log -Message $Description -Level Verbose
@@ -1831,6 +1910,7 @@ function Invoke-SBRestMethod
                     {
                         $bodyAsBytes = [System.Text.Encoding]::UTF8.GetBytes($Body)
                         $params.Add("Body", $bodyAsBytes)
+                        Write-Log -Message "Request includes a body." -Level Verbose
                     }
 
                     $result = Invoke-WebRequest @params
@@ -1847,7 +1927,7 @@ function Invoke-SBRestMethod
                 if ($PSCmdlet.ShouldProcess($jobName, "Start-Job"))
                 {
                     [scriptblock]$scriptBlock = {
-                        param($Url, $method, $Headers, $Body, $HeaderName, $TimeoutSec, $ScriptRootPath)
+                        param($Url, $method, $Headers, $Body, $RequestIdHeaderName, $ClientRequestIdHeaderName, $CorrelationIdHeaderName, $TimeoutSec, $ScriptRootPath)
 
                         # We need to "dot invoke" Helpers.ps1 within the context of this script block since
                         # we're running in a different PowerShell process and need access to
@@ -1856,7 +1936,9 @@ function Invoke-SBRestMethod
 
                         # Because this is running in a different PowerShell process, we need to
                         # redefine this script variable (for use within the exception)
-                        $script:headerMSCorrelationId = $HeaderName
+                        $script:headerMSRequestId = $RequestIdHeaderName
+                        $script:headerMSClientRequestId = $ClientRequestIdHeaderName
+                        $script:headerMSCorrelationId = $CorrelationIdHeaderName
 
                         $params = @{}
                         $params.Add("Uri", $Url)
@@ -1870,6 +1952,7 @@ function Invoke-SBRestMethod
                         {
                             $bodyAsBytes = [System.Text.Encoding]::UTF8.GetBytes($Body)
                             $params.Add("Body", $bodyAsBytes)
+                            Write-Log -Message "Request includes a body." -Level Verbose
                         }
 
                         try
@@ -1878,7 +1961,7 @@ function Invoke-SBRestMethod
                         }
                         catch [System.Net.WebException]
                         {
-                            # We need to access the CorrelationId header in the exception handling,
+                            # We need to access the RequestId header in the exception handling,
                             # but the actual *values* of the headers of a WebException don't get serialized
                             # when the RemoteException wraps it.  To work around that, we'll extract the
                             # information that we actually care about *now*, and then we'll throw our own exception
@@ -1900,18 +1983,22 @@ function Invoke-SBRestMethod
 
                             if ($_.Exception.Response.Headers.Count -gt 0)
                             {
+                                $ex.RequestId = $_.Exception.Response.Headers[$script:headerMSRequestId]
+                                $ex.ClientRequestId = $_.Exception.Response.Headers[$script:headerMSClientRequestId]
                                 $ex.CorrelationId = $_.Exception.Response.Headers[$script:headerMSCorrelationId]
+                                $ex.RetryAfter = $_.Exception.Response.Headers[$script:headerRetryAfter]
+                                $ex.Location = $_.Exception.Response.Headers[$script:headerLocation]
                             }
 
                             throw ($ex | ConvertTo-Json -Depth 20)
                         }
                     }
 
-                    $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($url, $Method, $headers, $Body, $script:headerMSCorrelationId, $global:SBWebRequestTimeoutSec, $PSScriptRoot)
+                    $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($url, $Method, $headers, $Body, $script:headerMSRequestId, $script:headerMSClientRequestId, $script:headerMSCorrelationId, $global:SBWebRequestTimeoutSec, $PSScriptRoot)
 
                     if ($PSCmdlet.ShouldProcess($jobName, "Wait-JobWithAnimation"))
                     {
-                        Wait-JobWithAnimation -JobName $jobName -Description $Description
+                        Wait-JobWithAnimation -Name $jobName -Description $Description
                     }
 
                     if ($PSCmdlet.ShouldProcess($jobName, "Receive-Job"))
@@ -1931,10 +2018,39 @@ function Invoke-SBRestMethod
                 }
             }
 
-            $correlationId = $result.Headers[$script:headerMSCorrelationId]
-            if (-not [String]::IsNullOrEmpty($correlationId))
+            $requestId = $result.Headers[$script:headerMSRequestId]
+            if (-not [String]::IsNullOrEmpty($requestId))
             {
-                Write-Log -Message "$($script:headerMSCorrelationId) : $correlationId" -Level Verbose
+                $localTelemetryProperties[$script:headerMSRequestId] = $requestId
+                Write-Log -Message "$($script:headerMSRequestId) : $requestId" -Level Verbose
+            }
+
+            $returnedClientRequestId = $result.Headers[$script:headerMSClientRequestId]
+            if (-not [String]::IsNullOrEmpty($returnedClientRequestId))
+            {
+                $localTelemetryProperties[$script:headerMSClientRequestId] = $returnedClientRequestId
+                Write-Log -Message "$($script:headerMSClientRequestId) : $returnedClientRequestId" -Level Verbose
+            }
+
+            $returnedCorrelationId = $result.Headers[$script:headerMSCorrelationId]
+            if (-not [String]::IsNullOrEmpty($returnedCorrelationId))
+            {
+                $localTelemetryProperties[$script:headerMSCorrelationId] = $returnedCorrelationId
+                Write-Log -Message "$($script:headerMSCorrelationId) : $returnedCorrelationId" -Level Verbose
+            }
+
+            $statusCode = $result.StatusCode
+
+            $retryAfterHeaderValue = 0
+            if ($result.Headers.ContainsKey($script:headerRetryAfter))
+            {
+                $retryAfterHeaderValue = $result.Headers[$script:headerRetryAfter]
+            }
+
+            $locationHeaderValue = $null
+            if ($result.Headers.ContainsKey($script:headerLocation))
+            {
+                $locationHeaderValue = $result.Headers[$script:headerLocation]
             }
 
             # Record the telemetry for this event.
@@ -1957,7 +2073,32 @@ function Invoke-SBRestMethod
                 $finalResult = $finalResult
             }
 
-            return $finalResult
+            $resultNotReadyStatusCode = 202
+            if ($WaitForCompletion -and ($statusCode -eq $resultNotReadyStatusCode))
+            {
+                Write-Log -Message "The server has indicated that the result is not yet ready (received status code of [$statusCode]).  Will retry in [$retryAfterHeaderValue] seconds."
+                Start-Sleep -Seconds ($retryAfterHeaderValue)
+                $PSBoundParameters['UriFragment'] = $locationHeaderValue
+                return (Invoke-SBRestMethod @PSBoundParameters)
+            }
+            else
+            {
+                if ($ExtendedResult)
+                {
+                    $finalResultEx = @{
+                        'Result' = $finalResult
+                        'StatusCode' = $statusCode
+                        'RetryAfter' = $retryAfterHeaderValue
+                        'Location' = $locationHeaderValue
+                    }
+
+                    return ([PSCustomObject] $finalResultEx)
+                }
+                else
+                {
+                    return $finalResult
+                }
+            }
         }
         catch
         {
@@ -1967,8 +2108,12 @@ function Invoke-SBRestMethod
             $message = $null
             $statusCode = $null
             $statusDescription = $null
-            $correlationId = $null
+            $requestId = $null
+            $returnedClientRequestId = $null
+            $returnedCorrelationId = $null
             $innerMessage = $null
+            $retryAfterHeaderValue = $null
+            $locationHeaderValue = $null
             $rawContent = $null
 
             if ($_.Exception -is [System.Net.WebException])
@@ -1989,7 +2134,11 @@ function Invoke-SBRestMethod
 
                 if ($ex.Response.Headers.Count -gt 0)
                 {
-                    $correlationId = $ex.Response.Headers[$script:headerMSCorrelationId]
+                    $requestId = $ex.Response.Headers[$script:headerMSRequestId]
+                    $returnedClientRequestId = $ex.Response.Headers[$script:headerMSClientRequestId]
+                    $returnedCorrelationId = $ex.Response.Headers[$script:headerMSCorrelationId]
+                    $retryAfterHeaderValue = $ex.Response.Headers[$script:headerRetryAfter]
+                    $locationHeaderValue = $ex.Response.Headers[$script:headerLocation]
                 }
 
             }
@@ -2004,7 +2153,11 @@ function Invoke-SBRestMethod
                     $statusCode = $deserialized.StatusCode
                     $statusDescription = $deserialized.StatusDescription
                     $innerMessage = $deserialized.InnerMessage
-                    $correlationId = $deserialized.CorrelationId
+                    $requestId = $deserialized.RequestId
+                    $returnedClientRequestId = $deserialized.ClientRequestId
+                    $returnedCorrelationId = $deserialized.CorrelationId
+                    $retryAfterHeaderValue = $deserialized.RetryAfter
+                    $locationHeaderValue = $deserialized.Location
                     $rawContent = $deserialized.RawContent
                 }
                 catch [System.ArgumentException]
@@ -2092,14 +2245,34 @@ function Invoke-SBRestMethod
                 }
             }
 
-            if (-not [String]::IsNullOrEmpty($correlationId))
+            if (-not [String]::IsNullOrEmpty($requestId))
             {
-                $output += $script:headerMSCorrelationId + ': ' + $correlationId
-                Write-Log -Message "$($script:headerMSCorrelationId): $correlationId" -Level Verbose
+                $localTelemetryProperties[$script:headerMSRequestId] = $requestId
+                $message = $script:headerMSRequestId + ': ' + $requestId
+                $output += $message
+                Write-Log -Message $message -Level Verbose
+            }
+
+            if (-not [String]::IsNullOrEmpty($returnedClientRequestId))
+            {
+                $localTelemetryProperties[$script:headerMSClientRequestId] = $returnedClientRequestId
+                $message = $script:headerMSClientRequestId + ': ' + $returnedClientRequestId
+                $output += $message
+                Write-Log -Message $message -Level Verbose
+            }
+
+            if (-not [String]::IsNullOrEmpty($returnedCorrelationId))
+            {
+                $localTelemetryProperties[$script:headerMSCorrelationId] = $returnedCorrelationId
+                $message = $script:headerMSCorrelationId + ': ' + $returnedCorrelationId
+                $output += $message
+                Write-Log -Message $message -Level Verbose
             }
 
             $newLineOutput = ($output -join [Environment]::NewLine)
-            if ($statusCode -in $global:SBAutoRetryErrorCodes)
+            if (($statusCode -in $global:SBAutoRetryErrorCodes) -or
+                (($statusCode -in $global:SBGetRequestAutoRetryErrorCodes) -and ($Method -eq 'Get')) -or
+                ($null -ne $retryAfterHeaderValue))
             {
                 if ($numRetries -ge $global:SBMaxAutoRetries)
                 {
@@ -2114,9 +2287,29 @@ function Invoke-SBRestMethod
                     $localTelemetryProperties[[StoreBrokerTelemetryProperty]::NumRetries] = $numRetries
                     $localTelemetryProperties[[StoreBrokerTelemetryProperty]::RetryStatusCode] = $statusCode
                     Write-Log -Message $newLineOutput -Level Warning
-                    Write-Log -Message "This status code ($statusCode) is configured to auto-retry (via `$global:SBAutoRetryErrorCodes).  StoreBroker will auto-retry (attempt #$numRetries) in $retryDelayMin minute(s). Sleeping..." -Level Warning
-                    Start-Sleep -Seconds ($retryDelayMin * 60)
-                    $retryDelayMin = $retryDelayMin * 2 # Exponential sleep increase for next retry
+
+                    if ($null -eq $retryAfterHeaderValue)
+                    {
+                        $reason = "This status code ($statusCode) is configured to auto-retry (via `$global:SBAutoRetryErrorCodes)."
+                        if (($statusCode -in $global:SBGetRequestAutoRetryErrorCodes) -and ($Method -eq 'Get'))
+                        {
+                            $reason = "This GET request's status code ($statusCode) is configured to auto-retry (via `$global:SBGetRequestAutoRetryErrorCodes)."
+                        }
+
+                        Write-Log -Message ($reason + "  StoreBroker will auto-retry (attempt #$numRetries) in $retryDelayMin minute(s). Sleeping...") -Level Warning
+
+                        Start-Sleep -Seconds ($retryDelayMin * 60)
+                        $retryDelayMin = $retryDelayMin * 2 # Exponential sleep increase for next retry
+                    }
+                    else
+                    {
+                        Write-Log -Message "The server returned ($statusCode).  Will try again in [$retryAfterHeaderValue] seconds per request from the server."
+                        Start-Sleep -Seconds ($retryAfterHeaderValue)
+                        if (-not [String]::IsNullOrWhiteSpace($locationHeaderValue))
+                        {
+                            $UriFragment = $locationHeaderValue
+                        }
+                    }
                     continue # let's get back to the start of the loop again, no need to process anything further in this catch
                 }
             }
@@ -2133,7 +2326,7 @@ function Invoke-SBRestMethod
     while ($true) # infinite loop for retrying is ok, since we early return in the postive case, and throw an exception in the failure case.
 }
 
-function Invoke-SBRestMethodMultipleResult
+function Invoke-SBRestMethodMultipleResultOld
 {
 <#
     .SYNOPSIS
@@ -2290,53 +2483,124 @@ function Invoke-SBRestMethodMultipleResult
     }
 }
 
-function Remove-UnofficialSubmissionProperties
+function Invoke-SBRestMethodMultipleResult
 {
-<#
-    .SYNOPSIS
-        Removes additional properties from the submission object that aren't part of the submission API.
-
-    .DESCRIPTION
-        Removes additional properties from the submission object that aren't part of the submission API.
-
-        The properties don't actually need to exist on the submission object before calling this function.
-
-    .PARAMETER Submission
-        A PSCustomObject representing the submission.
-
-    .EXAMPLE
-        Remove-UnofficialSubmissionProperties -Submission (Get-ApplicationSubmission -AppId $appId -SubmissionId $submissionId)
-
-    .NOTES
-        Valid properties for applicationPackages are taken from https://docs.microsoft.com/en-us/windows/uwp/monetize/manage-app-submissions#application-package-object
-#>
-    [CmdletBinding()]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification="This really does remove multiple properties.")]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "", Justification="This has no impact to system state.")]
+    [CmdletBinding(SupportsShouldProcess)]
+    [OutputType([Object[]])]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
     param(
         [Parameter(Mandatory)]
-        [PSCustomObject] $Submission
+        [string] $UriFragment,
+
+        [Parameter(Mandatory)]
+        [string] $Description,
+
+        [string] $ClientRequestId,
+
+        [string] $CorrelationId,
+
+        [string] $AccessToken = "",
+
+        [string] $TelemetryEventName = $null,
+
+        [hashtable] $TelemetryProperties = @{},
+
+        [string] $TelemetryExceptionBucket = $null,
+
+        [switch] $SinglePage,
+
+        [switch] $NoStatus
     )
 
-    # These properties aren't really valid in submission content.
-    # We can safely call this method without validating that the property actually exists.
-    $Submission.PSObject.Properties.Remove("appId")
-    $Submission.PSObject.Properties.Remove("iapId")
-
-    foreach ($package in $Submission.applicationPackages)
+    if ([System.String]::IsNullOrEmpty($AccessToken))
     {
-        @(
-            "version",
-            "architecture",
-            "targetPlatform",
-            "languages",
-            "capabilities",
-            "targetDeviceFamilies",
-            "targetDeviceFamiliesEx",
-            "minOSVersion",
-            "innerPackages"
-        ) | ForEach-Object {
-            $package.PSObject.Properties.Remove($_)
-        }
+        $AccessToken = Get-AccessToken -NoStatus:$NoStatus
     }
+
+    $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    $errorBucket = $TelemetryExceptionBucket
+    if ([String]::IsNullOrEmpty($errorBucket))
+    {
+        $errorBucket = $TelemetryEventName
+    }
+
+    $finalResult = @()
+
+    $currentDescription = $Description
+    $nextLink = $UriFragment
+
+    try
+    {
+        do {
+            $params = @{
+                "UriFragment" = $nextLink
+                "Method" = 'Get'
+                "Description" = $currentDescription
+                "ClientRequestId" = $ClientRequestId
+                "CorrelationId" = $CorrelationId
+                "AccessToken" = $AccessToken
+                "TelemetryProperties" = $telemetryProperties
+                "TelemetryExceptionBucket" = $errorBucket
+                "NoStatus" = $NoStatus
+            }
+
+            $result = Invoke-SBRestMethod @params
+            $finalResult += $result.value
+            $nextLink = $result.nextLink
+            $currentDescription = "$Description (getting additional results)"
+        }
+        until ($SinglePage -or ([String]::IsNullOrWhiteSpace($nextLink)))
+
+        # Record the telemetry for this event.
+        $stopwatch.Stop()
+        if (-not [String]::IsNullOrEmpty($TelemetryEventName))
+        {
+            $telemetryMetrics = @{ [StoreBrokerTelemetryMetric]::Duration = $stopwatch.Elapsed.TotalSeconds }
+            Set-TelemetryEvent -EventName $TelemetryEventName -Properties $TelemetryProperties -Metrics $telemetryMetrics
+        }
+
+        # Ensure we're always returning our results as an array, even if there is a single result.
+        return @($finalResult)
+    }
+    catch
+    {
+        throw
+    }
+}
+
+function Test-ResourceType
+{
+    [CmdletBinding()]
+    param(
+        [PSCustomObject] $Object,
+
+        [StoreBrokerResourceType] $ResourceType
+    )
+
+    $resourceTypeString = $ResourceType.ToString()
+    if (($null -ne $Object) -and ($Object.resourceType -ne $resourceTypeString))
+    {
+        $message = "Expected an object with a resourceType of [$resourceTypeString], got [$($Object.resourceType)]."
+        Write-Log -Message $message -Level Error
+        throw $message
+    }
+}
+
+function Get-CorrelationId
+{
+    [CmdletBinding()]
+    [OutputType([String])]
+    param(
+        [string] $CorrelationId,
+
+        [string] $Identifier
+    )
+
+    # We'll provide a unique value if one wasn't provided to us already.
+    if ([String]::IsNullOrWhiteSpace($CorrelationId))
+    {
+        return "$((Get-Date).ToString("yyyyMMddssmm.ffff"))-$Identifier"
+    }
+
+    return $CorrelationId
 }

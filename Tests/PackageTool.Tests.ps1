@@ -1,4 +1,7 @@
-﻿# Need to split-path $MyInvocation.MyCommand.Path twice and then add StoreBroker folder
+﻿# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
+# Need to split-path $MyInvocation.MyCommand.Path twice and then add StoreBroker folder
 $sbModulePath = Join-Path ($MyInvocation.MyCommand.Path | Split-Path -Parent | Split-Path -Parent) "StoreBroker"
 
 Import-Module $sbModulePath
@@ -7,12 +10,12 @@ InModuleScope StoreBroker {
 
     Describe "PackageTool" {
 
-        Context "Remove-Comment" {
+        Context "Remove-Comments" {
 
             It "does not change text with no comments" {
                 $in = "This is a test string with no comments."
 
-                $in | Remove-Comment | Should BeExactly $in
+                $in | Remove-Comments | Should BeExactly $in
             }
 
             It "does not change multiple lines of text with no comments" {
@@ -23,7 +26,7 @@ InModuleScope StoreBroker {
                     "and with no comments"
                 )
 
-                $out = $in | Remove-Comment
+                $out = $in | Remove-Comments
                 
                 # Assert the collection size is the same
                 $out.Count | Should Be $in.Count
@@ -40,7 +43,7 @@ InModuleScope StoreBroker {
                 $comment = "// this is comment content // and so is this"
                 $in = $content + $comment
 
-                $in | Remove-Comment | Should BeExactly $content
+                $in | Remove-Comments | Should BeExactly $content
             }
 
             It "removes comments from multiple lines of text" {
@@ -64,7 +67,7 @@ InModuleScope StoreBroker {
                     $in += ($content[$i] + $comments[$i])
                 }
 
-                $out = $in | Remove-Comment
+                $out = $in | Remove-Comments
 
                 # Assert the collection size is the same
                 $out.Count | Should Be $content.Count
@@ -83,7 +86,7 @@ InModuleScope StoreBroker {
                     "    "
                 )
 
-                $in | Remove-Comment | Should Be $null
+                $in | Remove-Comments | Should Be $null
             }
 
             It "returns nothing when all lines are comments" {
@@ -94,7 +97,7 @@ InModuleScope StoreBroker {
                     "//   valid."
                 )
 
-                $in | Remove-Comment | Should Be $null
+                $in | Remove-Comments | Should Be $null
             }
         }
     }

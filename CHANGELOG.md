@@ -1,6 +1,24 @@
 # StoreBroker PowerShell Module
 ## Changelog
 
+## [2.0.1](https://github.com/Microsoft/StoreBroker/tree/2.0.1) - (2019/03/15)
+### Fixes:
+
++ Fix occasional error "ConvertFrom-Json : Invalid JSON primitive: Index"
+
+More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/https://github.com/Microsoft/StoreBroker/pull/149) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/TODO)
+
+Author: [**@HowardWolosky**](https://github.com/HowardWolosky)
+
+## [2.0.0](https://github.com/Microsoft/StoreBroker/tree/2.0.0) - (2019/02/21)
+### Fixes:
+
++ Introducing StoreBroker v2.0.0
+
+More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/https://github.com/Microsoft/StoreBroker/pull/148) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/c3b54c54d93d7208859a4e87dd11074237c39273)
+
+Author: [**@HowardWolosky**](https://github.com/HowardWolosky)
+
 ## [1.19.1](https://github.com/Microsoft/StoreBroker/tree/1.19.1) - (2018/11/14)
 ### Fixes:
 

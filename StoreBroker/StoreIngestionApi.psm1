@@ -1981,13 +1981,33 @@ function Invoke-SBRestMethod
                                 Write-Log -Message "Unable to retrieve the raw HTTP Web Response:" -Exception $_ -Level Warning
                             }
 
-                            if ($_.Exception.Response.Headers.Count -gt 0)
+                            $responseHeaders = $_.Exception.Response.Headers
+                            if ($responseHeaders.Count -gt 0)
                             {
-                                $ex.RequestId = $_.Exception.Response.Headers[$script:headerMSRequestId]
-                                $ex.ClientRequestId = $_.Exception.Response.Headers[$script:headerMSClientRequestId]
-                                $ex.CorrelationId = $_.Exception.Response.Headers[$script:headerMSCorrelationId]
-                                $ex.RetryAfter = $_.Exception.Response.Headers[$script:headerRetryAfter]
-                                $ex.Location = $_.Exception.Response.Headers[$script:headerLocation]
+                                if ($responseHeaders.AllKeys.Contains($script:headerMSRequestId))
+                                {
+                                    $ex.RequestId = $responseHeaders[$script:headerMSRequestId]
+                                }
+
+                                if ($responseHeaders.AllKeys.Contains($script:headerMSClientRequestId))
+                                {
+                                    $ex.ClientRequestId = $responseHeaders[$script:headerMSClientRequestId]
+                                }
+
+                                if ($responseHeaders.AllKeys.Contains($script:headerMSCorrelationId))
+                                {
+                                    $ex.CorrelationId = $responseHeaders[$script:headerMSCorrelationId]
+                                }
+
+                                if ($responseHeaders.AllKeys.Contains($script:headerRetryAfter))
+                                {
+                                    $ex.RetryAfter = $responseHeaders[$script:headerRetryAfter]
+                                }
+
+                                if ($responseHeaders.AllKeys.Contains($script:headerLocation))
+                                {
+                                    $ex.Location = $responseHeaders[$script:headerLocation]
+                                }
                             }
 
                             throw ($ex | ConvertTo-Json -Depth 20)
@@ -2132,15 +2152,34 @@ function Invoke-SBRestMethod
                     Write-Log -Message "Unable to retrieve the raw HTTP Web Response:" -Exception $_ -Level Warning
                 }
 
-                if ($ex.Response.Headers.Count -gt 0)
+                $responseHeaders = $ex.Response.Headers
+                if ($responseHeaders.Count -gt 0)
                 {
-                    $requestId = $ex.Response.Headers[$script:headerMSRequestId]
-                    $returnedClientRequestId = $ex.Response.Headers[$script:headerMSClientRequestId]
-                    $returnedCorrelationId = $ex.Response.Headers[$script:headerMSCorrelationId]
-                    $retryAfterHeaderValue = $ex.Response.Headers[$script:headerRetryAfter]
-                    $locationHeaderValue = $ex.Response.Headers[$script:headerLocation]
-                }
+                    if ($responseHeaders.AllKeys.Contains($script:headerMSRequestId))
+                    {
+                        $requestId = $responseHeaders[$script:headerMSRequestId]
+                    }
 
+                    if ($responseHeaders.AllKeys.Contains($script:headerMSClientRequestId))
+                    {
+                        $returnedClientRequestId = $responseHeaders[$script:headerMSClientRequestId]
+                    }
+
+                    if ($responseHeaders.AllKeys.Contains($script:headerMSCorrelationId))
+                    {
+                        $returnedCorrelationId = $responseHeaders[$script:headerMSCorrelationId]
+                    }
+
+                    if ($responseHeaders.AllKeys.Contains($script:headerRetryAfter))
+                    {
+                        $retryAfterHeaderValue = $responseHeaders[$script:headerRetryAfter]
+                    }
+
+                    if ($responseHeaders.AllKeys.Contains($script:headerLocation))
+                    {
+                        $locationHeaderValue = $responseHeaders[$script:headerLocation]
+                    }
+                }
             }
             elseif (($_.Exception -is [System.Management.Automation.RemoteException]) -and
                 ($_.Exception.SerializedRemoteException.PSObject.TypeNames[0] -eq 'Deserialized.System.Management.Automation.RuntimeException'))

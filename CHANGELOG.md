@@ -1,12 +1,21 @@
 # StoreBroker PowerShell Module
 ## Changelog
 
+## [2.0.2](https://github.com/Microsoft/StoreBroker/tree/2.0.2) - (2019/03/18)
+### Fixes:
+
+- Ensure AccessToken is still cached, even when using the `-NoStatus` switch
+
+More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/https://github.com/Microsoft/StoreBroker/pull/150) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/8c4c40e3481221c894e3998e1a2b48deef8babdf)
+
+Author: [**@elendil326**](https://github.com/elendil326)
+
 ## [2.0.1](https://github.com/Microsoft/StoreBroker/tree/2.0.1) - (2019/03/15)
 ### Fixes:
 
-+ Fix occasional error "ConvertFrom-Json : Invalid JSON primitive: Index"
+- Fix occasional error "ConvertFrom-Json : Invalid JSON primitive: Index"
 
-More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/https://github.com/Microsoft/StoreBroker/pull/149) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/TODO)
+More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/https://github.com/Microsoft/StoreBroker/pull/149) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/124087ad58a886b4c5b8a4d8317ef8b29c555830)
 
 Author: [**@HowardWolosky**](https://github.com/HowardWolosky)
 

@@ -515,6 +515,7 @@ function Get-AccessToken
     {
         Write-Log -Message "Getting access token..." -Level Verbose
         Write-Log -Message "Accessing [POST] $url" -Level Verbose
+        $response = $null
 
         if ($NoStatus)
         {
@@ -522,8 +523,6 @@ function Get-AccessToken
             {
                 $response = Invoke-RestMethod $url -Method Post -Body $body
             }
-
-            return $response.access_token
         }
         else
         {
@@ -553,14 +552,19 @@ function Get-AccessToken
             {
                throw $remoteErrors[0].Exception
             }
+        }
 
+        if ($null -ne $response)
+        {
             # Keep track of how long this token will be valid for, to enable logic that re-uses
             # the same token across multiple commands to know when a new one is necessary.
             $script:accessTokenTimeoutSeconds = $response.expires_in - $script:accessTokenRefreshBufferSeconds
             $script:lastAccessTokenExpirationDate = (Get-Date).AddSeconds($script:accessTokenTimeoutSeconds)
             $script:lastAccessToken = $response.access_token
-            return $response.access_token
+            Write-Log -Message "Access Token has been cached for future use. Will expire in $($script:accessTokenTimeoutSeconds) seconds." -Level Verbose
         }
+
+        return $response.access_token
     }
     catch [System.InvalidOperationException]
     {

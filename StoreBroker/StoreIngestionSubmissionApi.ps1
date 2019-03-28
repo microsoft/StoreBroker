@@ -1993,7 +1993,7 @@ function Update-Submission
                     (Format-SimpleTableString -Object $validation))
             }
 
-            $hasValidationErrors = ($validation | Where-Object { $_.severity -eq 'Error' }).Length -gt 0
+            $hasValidationErrors = @($validation | Where-Object { $_.severity -eq 'Error' }).Length -gt 0
             if ($hasValidationErrors)
             {
                 $message = 'Unable to continue with submission because of validation errors.'

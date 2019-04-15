@@ -138,7 +138,7 @@ function Initialize-StoreIngestionApiGlobalVariables
 
     if (!(Get-Variable -Name SBGetRequestAutoRetryErrorCodes -Scope Global -ValueOnly -ErrorAction Ignore))
     {
-        $global:SBGetRequestAutoRetryErrorCodes = @(429, 500, 503)
+        $global:SBGetRequestAutoRetryErrorCodes = @(429, 500, 502, 503)
     }
 
     if (!(Get-Variable -Name SBMaxAutoRetries -Scope Global -ValueOnly -ErrorAction Ignore))

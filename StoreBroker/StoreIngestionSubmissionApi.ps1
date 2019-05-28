@@ -1442,9 +1442,9 @@ function Submit-Submission
             "You can view the progress of the submission validation on the Dev Portal here:",
             "    https://dev.windows.com/en-us/dashboard/apps/$appId/submissions/$submissionId/",
             "or by running this command:",
-            "    Get-Submission -ProductId $AppId -SubmissionId $submissionId",
+            "    Get-Submission -ProductId $ProductId -SubmissionId $submissionId",
             "You can automatically monitor this submission with this command:",
-            "    Start-SubmissionMonitor -Product $ProductId -SubmissionId $SubmissionId -EmailNotifyTo $env:username")
+            "    Start-SubmissionMonitor -ProductId $ProductId -SubmissionId $SubmissionId -EmailNotifyTo $env:username")
 
         return $result
     }

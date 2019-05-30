@@ -104,6 +104,7 @@ Add-Type -TypeDefinition @"
       WaitForCompletion,
       WaitUntilReady,
       Web,
+      WithSasUri,
       ZipPath
    }
 "@

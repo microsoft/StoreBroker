@@ -33,6 +33,8 @@ function Get-ListingImage
 
         [string] $ImageId,
 
+        [switch] $WithSasUri,
+
         [switch] $SinglePage,
 
         [string] $ClientRequestId,
@@ -55,6 +57,7 @@ function Get-ListingImage
             [StoreBrokerTelemetryProperty]::LanguageCode = $LanguageCode
             [StoreBrokerTelemetryProperty]::ImageId = $ImageId
             [StoreBrokerTelemetryProperty]::SingleQuery = $singleQuery
+            [StoreBrokerTelemetryProperty]::WithSasUri = $WithSasUri.ToBool()
             [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
             [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
         }
@@ -63,6 +66,11 @@ function Get-ListingImage
         if (-not [String]::IsNullOrWhiteSpace($SubmissionId))
         {
             $getParams += "submissionId=$SubmissionId"
+        }
+
+        if ($WithSasUri)
+        {
+            $getParams += "withSasUri=true"
         }
 
         $params = @{

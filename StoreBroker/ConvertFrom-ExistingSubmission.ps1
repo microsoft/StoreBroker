@@ -856,7 +856,12 @@ function Add-ScreenshotCaptions
 
         if ([String]::IsNullOrEmpty($description))
         {
-            $noCaptionImages += @{ $imageType = $fileName }
+            $noCaptionImages += [PSCustomObject]@{
+                'imageType' = $imageType
+                'fileName' = $fileName
+                'fileSasUri' = $image.fileSasUri
+            }
+
             continue
         }
 
@@ -867,7 +872,10 @@ function Add-ScreenshotCaptions
             $captionImageMap[$description] = @{}
         }
 
-        ($captionImageMap[$description])[$imageType] = $fileName
+        ($captionImageMap[$description])[$imageType] = [PSCustomObject]@{
+            'fileName' = $fileName
+            'fileSasUri' = $image.fileSasUri
+        }
     }
 
     # Create ScreenshotCaptions node if it does not exist
@@ -883,7 +891,8 @@ function Add-ScreenshotCaptions
 
         foreach ($screenshotType in $captionImageMap.$caption.Keys)
         {
-            $imageName = $captionImageMap.$caption[$screenshotType]
+            $image = $captionImageMap.$caption[$screenshotType]
+            $imageName = $image.fileName
             $child.SetAttribute($script:ScreenshotAttributeMap[$screenshotType], $imageName)
 
             $properties = @{
@@ -903,8 +912,8 @@ function Add-ScreenshotCaptions
     foreach ($image in $noCaptionImages)
     {
         $child = $Xml.CreateElement("Caption", $xml.productDescription.NamespaceURI)
-        $imageName = $image.Values[0]
-        $child.SetAttribute($script:ScreenshotAttributeMap[$image.Keys[0]], $imageName)
+        $imageName = $image.fileName
+        $child.SetAttribute($script:ScreenshotAttributeMap[$image.imageType], $imageName)
         $elementNode.AppendChild($child) | Out-Null
 
         $properties = @{
@@ -1570,7 +1579,7 @@ function ConvertFrom-Listing
 
         $languageCode = $Listing.languageCode
 
-        $images = Get-ListingImage @commonParams
+        $images = Get-ListingImage @commonParams -WithSasUri
         $videos = Get-ListingVideo @commonParams
 
         $xml = [xml]([String]::Format('<?xml version="1.0" encoding="utf-8"?>

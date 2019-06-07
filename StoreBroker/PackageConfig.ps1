@@ -47,10 +47,14 @@ function New-StoreBrokerConfigFile
         A full path specifying where the new config file will go and what it will be
         named.  It is recommended to use the .json file extension.
 
-    .PARAMETER AppId
+    .PARAMETER ProductId
         If specified, this will pre-populate the app config portion of the
         configuration file with the values from the most recent submission for this
-        AppId.
+        ProductId.
+
+    .PARAMETER Force
+        By default, if a file already exists at the specified Path, this function will fail.
+        Specify this switch to overwrite any existing file at the specified path.
 
     .EXAMPLE
         New-StoreBrokerConfigFile -Path "C:\users\alias\NewAppConfig.json"
@@ -64,11 +68,11 @@ function New-StoreBrokerConfigFile
         function will report on the actions it would have taken, instead.
 
     .EXAMPLE
-        New-StoreBrokerConfigFile -Path "C:\users\alias\NewAppConfig.json" -AppId 0ABCDEF12345
+        New-StoreBrokerConfigFile -Path "C:\users\alias\NewAppConfig.json" -ProductId 00009001234567898765
 
         Creates the config file template "NewAppConfig.json" under "C:\users\alias", but sets
         the values for the app config portion to be those from the most recent submission for
-        AppId 0ABCDEF12345.
+        ProductId 00009001234567898765.
 #>
     [CmdletBinding(SupportsShouldProcess)]
     [Alias('New-PackageToolConfigFile')]
@@ -78,8 +82,20 @@ function New-StoreBrokerConfigFile
         [ValidateScript({ if ((Split-Path -Leaf $_) -like "*.*") { $true } else { throw "Path must include filename." } })]
         [string] $Path,
 
-        [string] $AppId = ""
+        [ValidateScript({
+            if ($_.Length -gt 12) { return $true }
+            else { throw "A ProductId is greater than 12 characters. The provided ProductId is invalid: [$_]." } })]
+        [string] $ProductId,
+
+        [switch] $Force
     )
+
+    if ((Test-Path -Path $Path -PathType Leaf) -and (-not $Force))
+    {
+        $message = "A file already exists at the specified path [$Path].  Provide a different path or use -Force to overwrite it."
+        Write-Log -Message $message -Level Error
+        throw $message
+    }
 
     $dir = Split-Path -Parent -Path $Path
     if (-not (Test-Path -PathType Container -Path $dir -ErrorAction Ignore))
@@ -89,174 +105,64 @@ function New-StoreBrokerConfigFile
         Write-Log -Message "Created directory." -Level Verbose
     }
 
-    $sourcePath = Join-Path -Path $PSScriptRoot -ChildPath $script:defaultConfigFileName
-
-    # Get-Content returns an array of lines.... using Out-String gives us back the linefeeds.
-    $template = (Get-Content -Path $sourcePath -Encoding UTF8) | Out-String
-
-    if (-not ([String]::IsNullOrEmpty($AppId)))
+    $template = Get-OrderedConfigTemplate -Type App
+    $appSubmission = Get-ConfigFromLatestSubmission -ProductId $ProductId
+    foreach ($kvp in $appSubmission.GetEnumerator())
     {
-        $template = Get-StoreBrokerConfigFileContentForAppId -ConfigContent $template -AppId $AppId
+        $template.appSubmission[$kvp.Key] = $kvp.Value
     }
 
-    Write-Log -Message "Copying (Item: $sourcePath) to (Target: $Path)." -Level Verbose
-    Set-Content -Path $Path -Value $template -Encoding UTF8 -Force
-    Write-Log -Message "Copy complete." -Level Verbose
+    ConvertTo-Json -InputObject $template -Depth $script:jsonConversionDepth |
+        Out-File -FilePath $Path -Encoding utf8
 
-    $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::AppId = $AppId }
+    $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::ProductId = $ProductId }
     Set-TelemetryEvent -EventName New-StoreBrokerConfigFile -Properties $telemetryProperties
 }
 
-function Get-StoreBrokerConfigFileContentForAppId
+function Get-ConfigFromLatestSubmission
 {
 <#
     .SYNOPSIS
-        Updates the default configuration file template with the values from the
+        Gets the configuration object with the values from the
         indicated App's most recent published submission.
 
     .DESCRIPTION
-        Updates the default configuration file template with the values from the
+        Gets the configuration object with the values from the
         indicated App's most recent published submission.
 
         The Git repo for this module can be found here: https://aka.ms/StoreBroker
 
-    .PARAMETER ConfigContent
-        The content of the config file template as a simple string.
-
-    .PARAMETER AppId
-        The AppId whose most recent submission should be retrieved and used to fill
+    .PARAMETER ProductId
+        The ProductId whose most recent submission should be retrieved and used to fill
         in the default values of the template content.
 
     .EXAMPLE
-        Get-StoreBrokerConfigFileContentForAppId -ConfigContent $template -AppId 0ABCDEF12345
+        Get-StoreBrokerConfigFileContentForProductId
 
-        Assuming that $template has the content of the template file read in from disk and
-        merged into a single string, this then gets the most recent app submission for
-        AppId 0ABCDEF12345 and replaces the default values in the template with those from
-        that submission.
+        This returns back an empty appSubmission object.
+
+    .EXAMPLE
+        Get-StoreBrokerConfigFileContentForProductId -ProductId 00009001234567898765
+
+        This gets the most recent app submission for ProductId 00009001234567898765 and returns
+        an "appSubmission" config object
 
     .OUTPUTS
-        System.String - The template content modified with the values from the
-                        most recent app submission.
-
-    .NOTES
-        We use regular expression matching within the implementation rather than operating
-        on the content as a JSON object, because we want to retain all of the comments that
-        are part of the template content.
+        HashTagble - The "appSubmission" part of the Config object with the contents from the
+                     most recent submission of the specified app.
 #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)]
-        [string] $ConfigContent,
-
-        [Parameter(Mandatory)]
-        [string] $AppId
+        [AllowNull()]
+        [AllowEmptyString()]
+        [string] $ProductId
     )
 
-    $updated = $ConfigContent
-
-    try
-    {
-        $app = Get-Application -AppId $AppId
-
-        if ([String]::IsNullOrEmpty($app.lastPublishedApplicationSubmission.id))
-        {
-            throw "Specified AppId has no published submission to copy settings from."
-        }
-
-        $sub = Get-ApplicationSubmission -AppId $AppId -SubmissionId $($app.lastPublishedApplicationSubmission.id)
-
-        $updated = $updated -replace '"appId": ".*",', "`"appId`": $($AppId | ConvertTo-Json),"
-
-        # PUBLISH MODE AND VISIBILITY
-        $updated = $updated -replace '"targetPublishMode": ".*",', "`"targetPublishMode`": $($sub.targetPublishMode | ConvertTo-Json),"
-        $updated = $updated -replace '"targetPublishDate": .*,', "`"targetPublishDate`": $($sub.targetPublishDate | ConvertTo-Json),"
-        $updated = $updated -replace '"visibility": ".*",', "`"visibility`": $($sub.visibility | ConvertTo-Json),"
-
-        # PRICING AND AVAILABILITY
-        $updated = $updated -replace '"priceId": ".*",', "`"priceId`": $($sub.pricing.priceId | ConvertTo-Json),"
-        $updated = $updated -replace '"trialPeriod": ".*",', "`"trialPeriod`": $($sub.pricing.trialPeriod | ConvertTo-Json),"
-
-        $marketSpecificPricings = $sub.pricing.marketSpecificPricings | ConvertTo-Json -Depth $script:jsonConversionDepth
-        $updated = $updated -replace '(\s+)"marketSpecificPricings": {.*(\r|\n)+\s*}', "`$1`"marketSpecificPricings`": $marketSpecificPricings"
-
-        $sales = $sub.pricing.sales | ConvertTo-Json -Depth $script:jsonConversionDepth
-        if ($null -eq $sales) { $sales = "[ ]" }
-        $updated = $updated -replace '(\s+)"sales": \[.*(\r|\n)+\s*\]', "`$1`"sales`": $sales"
-
-        $families = $sub.allowTargetFutureDeviceFamilies
-        foreach ($family in ("Xbox", "Team", "Holographic", "Desktop", "Mobile"))
-        {
-            if ($families -match $family)
-            {
-                $updated = $updated -replace "`"$family`": [^,\r\n]*(,)?", "`"$family`": $($families.$family | ConvertTo-Json)`$1"
-            }
-            else
-            {
-                $updated = $updated -replace "`"$family`": [^,\r\n]*(,)?", "// `"$family`": false`$1"
-            }
-        }
-
-        $updated = $updated -replace '"allowMicrosoftDecideAppAvailabilityToFutureDeviceFamilies": .*,', "`"allowMicrosoftDecideAppAvailabilityToFutureDeviceFamilies`": $($sub.allowMicrosoftDecideAppAvailabilityToFutureDeviceFamilies | ConvertTo-Json),"
-        $updated = $updated -replace '"enterpriseLicensing": ".*",', "`"enterpriseLicensing`": $($sub.enterpriseLicensing | ConvertTo-Json),"
-
-        # APP PROPERTIES
-        $updated = $updated -replace '"applicationCategory": ".*",', "`"applicationCategory`": $($sub.applicationCategory | ConvertTo-Json),"
-
-        $hardwarePreferences = $sub.hardwarePreferences | ConvertTo-Json -Depth $script:jsonConversionDepth
-        if ($null -eq $hardwarePreferences) { $hardwarePreferences = "[ ]" }
-        $updated = $updated -replace '(\s+)"hardwarePreferences": \[.*(\r|\n)+\s*\]', "`$1`"hardwarePreferences`": $hardwarePreferences"
-
-        $updated = $updated -replace '"hasExternalInAppProducts": .*,', "`"hasExternalInAppProducts`": $($sub.hasExternalInAppProducts | ConvertTo-Json),"
-        $updated = $updated -replace '"meetAccessibilityGuidelines": .*,', "`"meetAccessibilityGuidelines`": $($sub.meetAccessibilityGuidelines | ConvertTo-Json),"
-        $updated = $updated -replace '"canInstallOnRemovableMedia": .*,', "`"canInstallOnRemovableMedia`": $($sub.canInstallOnRemovableMedia | ConvertTo-Json),"
-        $updated = $updated -replace '"automaticBackupEnabled": .*,', "`"automaticBackupEnabled`": $($sub.automaticBackupEnabled | ConvertTo-Json),"
-        $updated = $updated -replace '"isGameDvrEnabled": .*,', "`"isGameDvrEnabled`": $($sub.isGameDvrEnabled | ConvertTo-Json),"
-
-        # GAMING OPTIONS
-        if ($null -ne $sub.gamingOptions)
-        {
-            $gamingOptionsGenres = $sub.gamingOptions.genres | ConvertTo-Json -Depth $script:jsonConversionDepth
-            if ($null -eq $gamingOptionsGenres) { $gamingOptionsGenres = "[ ]" }
-            $updated = $updated -replace '(\s+)"genres": \[.*(\r|\n)+\s*\]', "`$1`"genres`": $gamingOptionsGenres"
-
-            $updated = $updated -replace '"isLocalMultiplayer": .*,', "`"isLocalMultiplayer`": $($sub.gamingOptions.isLocalMultiplayer | ConvertTo-Json),"
-            $updated = $updated -replace '"isLocalCooperative": .*,', "`"isLocalCooperative`": $($sub.gamingOptions.isLocalCooperative | ConvertTo-Json),"
-            $updated = $updated -replace '"isOnlineMultiplayer": .*,', "`"isOnlineMultiplayer`": $($sub.gamingOptions.isOnlineMultiplayer | ConvertTo-Json),"
-            $updated = $updated -replace '"isOnlineCooperative": .*,', "`"isOnlineCooperative`": $($sub.gamingOptions.isOnlineCooperative | ConvertTo-Json),"
-
-            $localMultiplayerMinPlayers = $sub.gamingOptions.localMultiplayerMinPlayers
-            if ($null -eq $localMultiplayerMinPlayers) { $localMultiplayerMinPlayers = 0 }
-            $updated = $updated -replace '"localMultiplayerMinPlayers": .*,', "`"localMultiplayerMinPlayers`": $localMultiplayerMinPlayers,"
-
-            $localMultiplayerMaxPlayers = $sub.gamingOptions.localMultiplayerMaxPlayers
-            if ($null -eq $localMultiplayerMaxPlayers) { $localMultiplayerMaxPlayers = 0 }
-            $updated = $updated -replace '"localMultiplayerMaxPlayers": .*,', "`"localMultiplayerMaxPlayers`": $localMultiplayerMaxPlayers,"
-
-            $localCooperativeMinPlayers = $sub.gamingOptions.localCooperativeMinPlayers
-            if ($null -eq $localCooperativeMinPlayers) { $localCooperativeMinPlayers = 0 }
-            $updated = $updated -replace '"localCooperativeMinPlayers": .*,', "`"localCooperativeMinPlayers`": $localCooperativeMinPlayers,"
-
-            $localCooperativeMaxPlayers = $sub.gamingOptions.localCooperativeMaxPlayers
-            if ($null -eq $localCooperativeMaxPlayers) { $localCooperativeMaxPlayers = 0 }
-            $updated = $updated -replace '"localCooperativeMaxPlayers": .*,', "`"localCooperativeMaxPlayers`": $localCooperativeMaxPlayers,"
-
-            $updated = $updated -replace '"isBroadcastingPrivilegeGranted": .*,', "`"isBroadcastingPrivilegeGranted`": $($sub.gamingOptions.isBroadcastingPrivilegeGranted | ConvertTo-Json),"
-            $updated = $updated -replace '"isCrossPlayEnabled": .*,', "`"isCrossPlayEnabled`": $($sub.gamingOptions.isCrossPlayEnabled | ConvertTo-Json),"
-            $updated = $updated -replace '"kinectDataForExternal": .*', "`"kinectDataForExternal`": $($sub.gamingOptions.kinectDataForExternal | ConvertTo-Json)"
-        }
-
-        # NOTES FOR CERTIFICATION
-        $notesForCertification = Get-EscapedJsonValue -Value $sub.notesForCertification
-        $updated = $updated -replace '"notesForCertification": ""', "`"notesForCertification`": `"$notesForCertification`""
-
-        return $updated
+    $appSubmission = @{
+        'productId' = $ProductId
     }
-    catch
-    {
-        Write-Log -Message "Encountered problems getting current application submission values:" -Exception $_ -Level Error
-        throw
-    }
+
+    return $appSubmission
 }
 
 function New-StoreBrokerInAppProductConfigFile

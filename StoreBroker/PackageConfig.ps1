@@ -774,7 +774,8 @@ function Resolve-ProductId
         "values for AppId/IapId."
         ) | Out-String
 
-    if ([String]::IsNullOrWhiteSpace($ProductId))
+    if ([String]::IsNullOrWhiteSpace($ProductId) -and
+        [String]::IsNullOrWhiteSpace($Config.appSubmission.productId))
     {
         # Use AppId or IapId and do a reverse lookup of ProductId.
         # If we don't have either, check the config for the value.
@@ -829,6 +830,12 @@ function Resolve-ProductId
     }
     else
     {
+        if ([String]::IsNullOrWhiteSpace($ProductId))
+        {
+            $ProductId = $Config.appSubmission.productId
+            Write-Log -Message "Using ProductId from config: [$ProductId]." -Level Verbose
+        }
+
         Write-Log -Message "Validating ProductId: [$ProductId]" -Level Verbose
         $product = Get-Product -ProductId $ProductId
         if ($null -eq $product)

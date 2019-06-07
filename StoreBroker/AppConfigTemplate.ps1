@@ -1,5 +1,5 @@
 ﻿[ordered]@{
-    "helpUri" = "https:\\\\aka.ms\\StoreBroker_Config";
+    "helpUri" = "https:\\aka.ms\StoreBroker_Config";
     "schemaVersion" = 2;
     "packageParameters" = [ordered]@{
                               "PDPRootPath" = "";

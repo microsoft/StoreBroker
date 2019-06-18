@@ -803,8 +803,8 @@ function Update-Listing
                 $listingParams['Trademark'] = $suppliedListing.trademark
                 $listingParams['LicenseTerm'] = $suppliedListing.licenseTerm
                 $listingParams['Features'] = $suppliedListing.features
-                $listingParams['additionalMinimumHardware'] = $suppliedListing.minimumHardware
-                $listingParams['AdditionalRecommendedHardware'] = $suppliedListing.recommendedHardware
+                $listingParams['MinimumHardware'] = $suppliedListing.minimumHardware
+                $listingParams['RecommendedHardware'] = $suppliedListing.recommendedHardware
                 $listingParams['DevStudio'] = $suppliedListing.devStudio
                 $listingParams['Description'] = $suppliedListing.description
                 $listingParams['ShortDescription'] = $suppliedListing.shortDescription

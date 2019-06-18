@@ -651,7 +651,8 @@ function Update-Listing
 
     Write-InvocationLog
 
-    if ($SubmissionData.listings.Count -eq 0)
+    $submissionDataLangCodes = ($SubmissionData.listings |Get-Member -Type NoteProperty | Select-Object -ExpandProperty Name)
+    if ($submissionDataLangCodes.Count -eq 0)
     {
         if ((-not $UpdateVideos) -or ($SubmissionData.trailers.Count -eq 0))
         {
@@ -769,17 +770,12 @@ function Update-Listing
 
         # Now we have to see what languages exist in the user's supplied content that we didn't already
         # have cloned submissions for
-        if ($SubmissionData.listings.Count -gt 0)
+        foreach ($langCode in $submissionDataLangCodes)
         {
-            $SubmissionData.listings |
-                Get-Member -Type NoteProperty |
-                    ForEach-Object {
-                        $langCode = $_.Name
-                        if (-not $existingLangCodes.Contains($langCode))
-                        {
-                            $null = $missingLangCodes.Add($langCode)
-                        }
-                    }
+            if (-not $existingLangCodes.Contains($langCode))
+            {
+                $null = $missingLangCodes.Add($langCode)
+            }
         }
 
         Write-Log -Message 'Now adding listings for languages that don''t already exist.' -Level Verbose

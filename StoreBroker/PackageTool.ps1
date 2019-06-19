@@ -6,7 +6,7 @@ $script:packageImageFolderName = "Assets"
 
 # New-SubmissionPackage supports these extensions, but won't inspect their content due to encryption
 $script:extensionsSupportingInspection = @(".appx", ".appxbundle", ".appxupload")
-$script:extensionsNotSupportingInspection = @('.xvc', '.msix', '.msixbundle')
+$script:extensionsNotSupportingInspection = @('.xvc', '.msix', '.msixbundle', '.msixupload')
 $script:supportedExtensions =  $script:extensionsSupportingInspection + $script:extensionsNotSupportingInspection
 
 # String constants for New-SubmissionPackage parameters

@@ -1522,14 +1522,14 @@ function Get-TargetPlatform
 
         Returns one of "Windows10", "Windows81", "Windows80", "WindowsPhone81", or $null
 
-    .PARAMETER AppxManifestPath
+    .PARAMETER AppPackageManifestPath
         A path to the AppxManifest.xml file to be processed.
 
     .OUTPUTS
         String    A string identifying the target platform, or $null if it could not be identified.
 
     .EXAMPLE
-        Get-TargetPlatform -AppxManifestPath "C:\package\AppxManifest.xml"
+        Get-TargetPlatform -AppPackageManifestPath "C:\package\AppxManifest.xml"
 
         Indentifies the target platform for the given AppxManifest.xml
 #>
@@ -1538,10 +1538,10 @@ function Get-TargetPlatform
         [ValidateScript({
             if (Test-Path -PathType Leaf -Include "AppxManifest.xml" -Path $_ -ErrorAction Ignore) { $true }
             else { throw "$_ cannot be found or is not an AppxManifest.xml." } })]
-        [string] $AppxManifestPath
+        [string] $AppPackageManifestPath
     )
 
-    $manifest = [xml] (Get-Content -Path $AppxManifestPath -Encoding UTF8)
+    $manifest = [xml] (Get-Content -Path $AppPackageManifestPath -Encoding UTF8)
     $root = $manifest.DocumentElement
     if ($root.xmlns -match "^http://schemas.microsoft.com/appx/manifest/(.*/)?windows10(/.*)?$")
     {
@@ -1551,7 +1551,7 @@ function Get-TargetPlatform
     $minOSVersion = $root.Prerequisites.OSMinVersion
     if ([String]::IsNullOrEmpty($minOSVersion))
     {
-        Write-Log -Message "Could not find OSMinVersion in [$AppxManifestPath]" -Level Warning
+        Write-Log -Message "Could not find OSMinVersion in [$AppPackageManifestPath]" -Level Warning
         return $null
     }
 
@@ -2285,7 +2285,7 @@ function Get-SubmissionRequestBody
     .PARAMETER PackagePath
         A list of file paths to be included in the package.
 
-    .PARAMETER AppxInfo
+    .PARAMETER AppPackageInfo
         If provided, will be updated to maintain information about the app being packaged
         (like AppName and Version) if the information can be determined.
 
@@ -2343,7 +2343,7 @@ function Get-SubmissionRequestBody
 
         [string[]] $PackagePath,
 
-        [ref] $AppxInfo,
+        [ref] $AppPackageInfo,
 
         [switch] $DisableAutoPackageNameFormatting,
 
@@ -2355,7 +2355,7 @@ function Get-SubmissionRequestBody
 
     if ($PackagePath.Count -gt 0)
     {
-        $submissionRequestBody | Add-AppPackagesMetadata -PackagePath $PackagePath -AppxInfo $AppxInfo -EnableAutoPackageNameFormatting:(-not $DisableAutoPackageNameFormatting)
+        $submissionRequestBody | Add-AppPackagesMetadata -PackagePath $PackagePath -AppPackageInfo $AppPackageInfo -EnableAutoPackageNameFormatting:(-not $DisableAutoPackageNameFormatting)
     }
 
     if (-not [String]::IsNullOrWhiteSpace($PDPRootPath))
@@ -3227,8 +3227,8 @@ function New-SubmissionPackage
         $params = Get-Variable -Name $resourceParams -ErrorAction SilentlyContinue |
                   ForEach-Object { $m = @{} } { $m[$_.Name] = $_.Value } { $m } # foreach begin{} process{} end{}
 
-        $AppxInfo = @()
-        $submissionBody = Get-SubmissionRequestBody -ConfigObject $config -AppxInfo ([ref]$AppxInfo) @params
+        $AppPackageInfo = @()
+        $submissionBody = Get-SubmissionRequestBody -ConfigObject $config -AppPackageInfo ([ref]$AppPackageInfo) @params
 
         Write-SubmissionRequestBody -JsonObject $submissionBody -OutFilePath (Join-Path $OutPath ($OutName + '.json'))
 

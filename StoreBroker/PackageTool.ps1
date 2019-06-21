@@ -5,8 +5,8 @@
 $script:packageImageFolderName = "Assets"
 
 # New-SubmissionPackage supports these extensions, but won't inspect their content due to encryption
-$script:extensionsSupportingInspection = @(".appx", ".appxbundle", ".appxupload")
-$script:extensionsNotSupportingInspection = @('.xvc', '.msix', '.msixbundle', '.msixupload')
+$script:extensionsSupportingInspection = @(".appx", ".appxbundle", ".appxupload", ".msix", ".msixbundle", ".msixupload")
+$script:extensionsNotSupportingInspection = @('.xvc')
 $script:supportedExtensions =  $script:extensionsSupportingInspection + $script:extensionsNotSupportingInspection
 
 # String constants for New-SubmissionPackage parameters
@@ -1377,26 +1377,26 @@ function Convert-InAppProductListingsMetadata
     return $listings
 }
 
-function Open-AppxContainer
+function Open-AppPackageContainer
 {
 <#
     .SYNOPSIS
-        Given a path to a .appxbundle, .appxupload, or .appx file, unzips that file to a directory
+        Given a path to a .appxbundle, .appxupload, .appx, .msixbundle, .msixupload, or .msix file, unzips that file to a directory
         and returns that directory path.
 
-    .PARAMETER AppxContainerPath
-        Full path to the .appxbundle, .appxupload, or .appx file.
+    .PARAMETER AppPackageContainerPath
+        Full path to the .appxbundle, .appxupload, .appx, .msixbundle, .msixupload, or .msix file.
 
     .OUTPUTS
         System.String.  Full path to the unzipped directory.
 
     .EXAMPLE
-        Open-AppxContainer "C:\path\App.appxbundle"
+        Open-AppPackageContainer "C:\path\App.appxbundle"
 
         Unzips contents of App.appxbundle to <env:Temp>\<guid>\App\ and returns that path.
 
     .EXAMPLE
-        Open-AppxContainer "C:\path\App.appxupload"
+        Open-AppPackageContainer "C:\path\App.appxupload"
 
         Same as Example 1 only with a .appxupload file.
 
@@ -1406,15 +1406,15 @@ function Open-AppxContainer
 #>
     param(
         [Parameter(Mandatory)]
-        [string] $AppxContainerPath
+        [string] $AppPackageContainerPath
     )
 
     try
     {
         Add-Type -AssemblyName System.IO.Compression.FileSystem
 
-        # .appxcontainer can be either .appxbundle, .appxupload, or .appx
-        # Copy CONTAINER.appxcontainer to tempFolderPath\GUID.zip
+        # .apppackagecontainer can be either .appxbundle, .appxupload, .appx, .msixbundle, .msixupload, or .msix
+        # Copy CONTAINER.apppackagecontainer to tempFolderPath\GUID.zip
         $containerZipPathFormat = Join-Path $env:TEMP '{0}.zip'
 
         do
@@ -1423,11 +1423,11 @@ function Open-AppxContainer
         }
         while (Test-Path -PathType Leaf -Path $containerZipPath -ErrorAction Ignore)
 
-        Write-Log -Message "Copying (Item: $AppxContainerPath) to (Target: $containerZipPath)." -Level Verbose
-        Copy-Item -Force -Path $AppxContainerPath -Destination $containerZipPath
+        Write-Log -Message "Copying (Item: $AppPackageContainerPath) to (Target: $containerZipPath)." -Level Verbose
+        Copy-Item -Force -Path $AppPackageContainerPath -Destination $containerZipPath
         Write-Log -Message "Copy complete." -Level Verbose
 
-        # Expand CONTAINER.appxcontainer.zip to CONTAINER folder
+        # Expand CONTAINER.apppackagecontainer.zip to CONTAINER folder
         $expandedContainerPath = New-TemporaryDirectory
 
         Write-Log -Message "Unzipping archive (Item: $containerZipPath) to (Target: $expandedContainerPath)." -Level Verbose
@@ -1573,14 +1573,14 @@ function Get-TargetPlatform
     return $targetPlatform
 }
 
-function Read-AppxMetadata
+function Read-AppPackageMetadata
 {
 <#
     .SYNOPSIS
-        Reads various metadata properties about the input .appx file.
+        Reads various metadata properties about the input .appx or .msix file.
 
     .DESCRIPTION
-        Reads various metadata properties about the input .appx file.
+        Reads various metadata properties about the input .appx or .msix file.
 
         The metadata read is "version", "architecture", "targetPlatform", "languages",
         "capabilities", "targetDeviceFamilies", "targetDeviceFamiliesEx"
@@ -1588,10 +1588,10 @@ function Read-AppxMetadata
         part of the Store submission; some metadata is used as part of an app flighting
         workflow.
 
-    .PARAMETER AppxPath
-        A path to the .appx file to be processed.
+    .PARAMETER AppPackagePath
+        A path to the .appx or .msix file to be processed.
 
-    .PARAMETER AppxInfo
+    .PARAMETER AppPackageInfo
         If provided, will be updated to maintain information about the app being packaged
         (like AppName and Version) if the information can be determined.
 
@@ -1599,40 +1599,46 @@ function Read-AppxMetadata
         Hasthable    A hashtable containing the various metadata values.
 
     .EXAMPLE
-        Read-AppxMetadata -AppxPath ".\my.appx" -AppxInfo ([ref] @())
+        Read-AppPackageMetadata -AppPackagePath ".\my.appx" -AppPackageInfo ([ref] @())
 
         Returns a hashtable containing metadata about the .appx file.
+
+    .EXAMPLE
+        Read-AppPackageMetadata -AppPackagePath ".\my.msix" -AppPackageInfo ([ref] @())
+
+        Returns a hashtable containing metadata about the .msix file.
 #>
     [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter(Mandatory)]
         [ValidateScript({
             if (Test-Path -PathType Leaf -Include "*.appx" -Path $_ -ErrorAction Ignore) { $true }
-            else { throw "$_ cannot be found or is not an .appx." } })]
-        [string] $AppxPath,
+            else if (Test-Path -PathType Leaf -Include "*.msix" -Path $_ -ErrorAction Ignore) { $true }
+            else { throw "$_ cannot be found or is not an .appx or .msix." } })]
+        [string] $AppPackagePath,
 
-        [ref] $AppxInfo
+        [ref] $AppPackageInfo
     )
 
     $metadata = New-ApplicationMetadataTable
 
     try
     {
-        $expandedAppxPath = Open-AppxContainer -AppxContainerPath $AppxPath
+        $expandedAppPackagePath = Open-AppPackageContainer -AppPackageContainerPath $AppPackagePath
 
-        # Get AppxManifest.xml under the appx root.
-        $appxManifest = Join-Path -Path $expandedAppxPath -ChildPath 'AppxManifest.xml' |
+        # Get AppxManifest.xml under the appx or msix root.
+        $appPackageManifest = Join-Path -Path $expandedAppPackagePath -ChildPath 'AppxManifest.xml' |
             Get-Item -ErrorAction Ignore |
             Select-Object -ExpandProperty FullName
 
-        if ($null -eq $appxManifest)
+        if ($null -eq $appPackageManifest)
         {
-            Report-UnsupportedFile -Path $AppxPath
-            throw "`"$AppxPath`" is not a proper .appx. Could not find an AppxManifest.xml."
+            Report-UnsupportedFile -Path $AppPackagePath
+            throw "`"$AppPackagePath`" is not a proper .appx or .msix. Could not find an AppxManifest.xml."
         }
 
-        Write-Log -Message "Opening `"$appxManifest`"." -Level Verbose
-        $manifest = [xml] (Get-Content -Path $appxManifest -Encoding UTF8)
+        Write-Log -Message "Opening `"$appPackageManifest`"." -Level Verbose
+        $manifest = [xml] (Get-Content -Path $appPackageManifest -Encoding UTF8)
 
 
         # Processing
@@ -1644,7 +1650,7 @@ function Read-AppxMetadata
             $metadata.architecture = "neutral"
         }
 
-        $metadata.targetPlatform = Get-TargetPlatform -AppxManifestPath $appxManifest
+        $metadata.targetPlatform = Get-TargetPlatform -AppPackageManifestPath $appPackageManifest
         $metadata.name           = $manifest.Package.Identity.Name -creplace '^Microsoft\.', ''
 
         $metadata.languages = @()
@@ -1670,23 +1676,23 @@ function Read-AppxMetadata
             $metadata.targetDeviceFamilies += ($script:minVersionFormatString -f $family.Name, $family.minOSVersion)
         }
 
-        # A single .appx will never have an inner package, but we will still set this property to
+        # A single .appx or .msix will never have an inner package, but we will still set this property to
         # an empty hashtable so that the value is never $null when translated to JSON
         $metadata.innerPackages = @{}
 
         # Track the info about this package for later processing.
-        $singleAppxInfo = @{}
-        $singleAppxInfo[[StoreBrokerTelemetryProperty]::AppxVersion] = $metadata.version
-        $singleAppxInfo[[StoreBrokerTelemetryProperty]::AppName] = $metadata.name
+        $singleAppPackageInfo = @{}
+        $singleAppPackageInfo[[StoreBrokerTelemetryProperty]::AppxVersion] = $metadata.version
+        $singleAppPackageInfo[[StoreBrokerTelemetryProperty]::AppName] = $metadata.name
 
-        $AppxInfo.Value += $singleAppxInfo
+        $AppPackageInfo.Value += $singleAppPackageInfo
     }
     finally
     {
-        if (-not [String]::IsNullOrWhiteSpace($expandedAppxPath))
+        if (-not [String]::IsNullOrWhiteSpace($expandedAppPackagePath))
         {
-            Write-Log -Message "Deleting item: $expandedAppxPath" -Level Verbose
-            Remove-Item -Force -Recurse -Path $expandedAppxPath -ErrorAction SilentlyContinue | Out-Null
+            Write-Log -Message "Deleting item: $expandedAppPackagePath" -Level Verbose
+            Remove-Item -Force -Recurse -Path $expandedAppPackagePath -ErrorAction SilentlyContinue | Out-Null
             Write-Log -Message "Deletion complete." -Level Verbose
         }
     }
@@ -1694,14 +1700,14 @@ function Read-AppxMetadata
     return $metadata
 }
 
-function Read-AppxUploadMetadata
+function Read-AppPackageUploadMetadata
 {
 <#
     .SYNOPSIS
-        Reads various metadata properties about the input .appxupload.
+        Reads various metadata properties about the input .appxupload or .msixupload.
 
     .DESCRIPTION
-        Reads various metadata properties about the input .appxupload.
+        Reads various metadata properties about the input .appxupload or .msixupload.
 
         The metadata read is "version", "architecture", "targetPlatform", "languages",
         "capabilities", "targetDeviceFamilies", "targetDeviceFamiliesEx"
@@ -1709,14 +1715,14 @@ function Read-AppxUploadMetadata
         part of the Store submission; some metadata is used as part of an app flighting
         workflow.
 
-        As part of processing the .appxupload, the file is opened to read metadata from
-        the inner .appx or .appxbundle file.  There must be exactly one inner .appx
-        or .appxbundle.
+        As part of processing the .appxupload/.msixupload, the file is opened to read metadata from
+        the inner .appx/.msix or .appxbundle/.msixbundle file.  There must be exactly one inner .appx/.msix
+        or .appxbundle/.msixbundle.
 
-    .PARAMETER AppxuploadPath
+    .PARAMETER AppPackageUploadPath
         A path to the .appxupload to be processed.
 
-    .PARAMETER AppxInfo
+    .PARAMETER AppPackageInfo
         If provided, will be updated to maintain information about the app being packaged
         (like AppName and Version) if the information can be determined.
 
@@ -1724,9 +1730,14 @@ function Read-AppxUploadMetadata
         Hasthable    A hashtable containing the various metadata values.
 
     .EXAMPLE
-        Read-AppxUploadMetadata -AppxbundlePath ".\my.appxupload" -AppxInfo ([ref] @())
+        Read-AppPackageUploadMetadata -AppPackageUploadPath ".\my.appxupload" -AppPackageInfo ([ref] @())
 
         Returns a hashtable containing metadata about the inner .appx file.
+
+    .EXAMPLE
+        Read-AppPackageUploadMetadata -AppPackageUploadPath ".\my.msixupload" -AppPackageInfo ([ref] @())
+
+        Returns a hashtable containing metadata about the inner .msix file.
 
     .NOTES
         An .appxupload file is just a .zip containing an .appxsym file and a
@@ -1737,49 +1748,50 @@ function Read-AppxUploadMetadata
         [Parameter(Mandatory)]
         [ValidateScript({
             if (Test-Path -PathType Leaf -Include "*.appxupload" -Path $_ -ErrorAction Ignore) { $true }
-            else { throw "$_ cannot be found or is not an .appxupload." } })]
-        [string] $AppxuploadPath,
+            else if (Test-Path -PathType Leaf -Include "*.msixupload" -Path $_ -ErrorAction Ignore) { $true }
+            else { throw "$_ cannot be found or is not an .appxupload or .msixupload." } })]
+        [string] $AppPackageUploadPath,
 
-        [ref] $AppxInfo
+        [ref] $AppPackageInfo
     )
 
     try
     {
-        $throwFormat = "`"$AppxuploadPath`" is not a proper .appxupload. There must be exactly one {0} inside the file."
+        $throwFormat = "`"$AppPackageUploadPath`" is not a proper .appxupload or .msixupload. There must be exactly one {0} inside the file."
 
-        Write-Log -Message "Opening `"$AppxuploadPath`"." -Level Verbose
-        $expandedContainerPath = Open-AppxContainer -AppxContainerPath $AppxuploadPath
+        Write-Log -Message "Opening `"$AppPackageUploadPath`"." -Level Verbose
+        $expandedContainerPath = Open-AppPackageContainer -AppPackageContainerPath $AppPackageUploadPath
 
-        $appxFilePath = (Get-ChildItem -Recurse -Path $expandedContainerPath -Include "*.appx").FullName
-        if ($null -ne $appxFilePath)
+        $appPackageFilePath = (Get-ChildItem -Recurse -Path $expandedContainerPath -Include "*.appx" "*.msix").FullName
+        if ($null -ne $appPackageFilePath)
         {
-            if ($appxFilePath.Count -ne 1)
+            if ($appPackageFilePath.Count -ne 1)
             {
-                Report-UnsupportedFile -Path $AppxuploadPath
+                Report-UnsupportedFile -Path $AppPackageUploadPath
 
-                $out = $throwFormat -f ".appx"
+                $out = $throwFormat -f ".appx or .msix"
                 Write-Log -Message $out -Level Error
                 throw $out
             }
             else
             {
-                return Read-AppxMetadata -AppxPath $appxFilePath -AppxInfo $AppxInfo
+                return Read-AppPackageMetadata -AppPackagePath $appPackageFilePath -AppPackageInfo $AppPackageInfo
             }
         }
 
         # Could not find an .appx inside. Maybe there is an .appxbundle.
-        $appxbundleFilePath = (Get-ChildItem -Recurse -Path $expandedContainerPath -Include "*.appxbundle").FullName
-        if (($null -eq $appxbundleFilePath) -or ($appxbundleFilePath.Count -ne 1))
+        $appPackageBundleFilePath = (Get-ChildItem -Recurse -Path $expandedContainerPath -Include "*.appxbundle" "*.msixbundle").FullName
+        if (($null -eq $appPackageBundleFilePath) -or ($appPackageBundleFilePath.Count -ne 1))
         {
-            Report-UnsupportedFile -Path $AppxuploadPath
+            Report-UnsupportedFile -Path $AppPackageUploadPath
 
-            $out = $throwFormat -f ".appx or .appxbundle"
+            $out = $throwFormat -f ".appx, .appxbundle, .msix, or .msixbundle"
             Write-Log -Message $out -Level Error
             throw $out
         }
         else
         {
-            return Read-AppxBundleMetadata -AppxbundlePath $appxbundleFilePath -AppxInfo $AppxInfo
+            return Read-AppPackageBundleMetadata -AppPackagebundlePath $appPackageBundleFilePath -AppPackageInfo $AppPackageInfo
         }
     }
     finally
@@ -1793,14 +1805,14 @@ function Read-AppxUploadMetadata
     }
 }
 
-function Read-AppxBundleMetadata
+function Read-AppPackageBundleMetadata
 {
 <#
     .SYNOPSIS
-        Reads various metadata properties about the input .appxbundle.
+        Reads various metadata properties about the input .appxbundle or .msixbundle.
 
     .DESCRIPTION
-        Reads various metadata properties about the input .appxbundle.
+        Reads various metadata properties about the input .appxbundle or .msixbundle.
 
         The metadata read is "version", "architecture", "targetPlatform", "languages",
         "capabilities", "targetDeviceFamilies", "targetDeviceFamiliesEx"
@@ -1808,13 +1820,13 @@ function Read-AppxBundleMetadata
         part of the Store submission; some metadata is used as part of an app flighting
         workflow.
 
-        As part of processing the .appxbundle, the file is opened to read metadata from
-        the inner .appx files.
+        As part of processing the .appxbundle/.msixbundle, the file is opened to read metadata from
+        the inner .appx/.msix files.
 
-    .PARAMETER AppxbundlePath
+    .PARAMETER AppPackageBundlePath
         A path to the .appxbundle to be processed.
 
-    .PARAMETER AppxInfo
+    .PARAMETER AppPackageInfo
         If provided, will be updated to maintain information about the app being packaged
         (like AppName and Version) if the information can be determined.
 
@@ -1822,7 +1834,7 @@ function Read-AppxBundleMetadata
         Hasthable    A hashtable containing the various metadata values.
 
     .EXAMPLE
-        Read-AppxBundleMetadata -AppxbundlePath ".\my.appxbundle" -AppxInfo ([ref] @())
+        Read-AppPackageBundleMetadata -AppPackageBundlePath ".\my.appxbundle" -AppPackageInfo ([ref] @())
 
         Returns a hashtable containing metadata about the .appxbundle and .appx files inside
         that bundle.
@@ -1832,17 +1844,18 @@ function Read-AppxBundleMetadata
         [Parameter(Mandatory)]
         [ValidateScript({
             if (Test-Path -PathType Leaf -Include "*.appxbundle" -Path $_ -ErrorAction Ignore) { $true }
-            else { throw "$_ cannot be found or is not an .appxbundle." } })]
-        [string] $AppxbundlePath,
+            else if (Test-Path -PathType Leaf -Include "*.msixbundle" -Path $_ -ErrorAction Ignore) { $true }
+            else { throw "$_ cannot be found or is not an .appxbundle or .msixbundle." } })]
+        [string] $AppPackageBundlePath,
 
-        [ref] $AppxInfo
+        [ref] $AppPackageInfo
     )
 
     $metadata = New-ApplicationMetadataTable
 
     try
     {
-        $expandedContainerPath = Open-AppxContainer -AppxContainerPath $AppxbundlePath
+        $expandedContainerPath = Open-AppPackageContainer -AppPackageContainerPath $AppPackageBundlePath
 
         # Get AppxBundleManifest.xml under the AppxMetadata folder.
         $bundleManifestPath = Join-Path -Path $expandedContainerPath -ChildPath 'AppxMetadata\AppxBundleManifest.xml' |
@@ -1851,8 +1864,8 @@ function Read-AppxBundleMetadata
 
         if ($null -eq $bundleManifestPath)
         {
-            Report-UnsupportedFile -Path $AppxbundlePath
-            throw "`"$AppxbundlePath`" is not a proper .appxbundle. Could not find an AppxBundleManifest.xml."
+            Report-UnsupportedFile -Path $AppPackageBundlePath
+            throw "`"$AppPackageBundlePath`" is not a proper .appxbundle or .msixbundle. Could not find an AppxBundleManifest.xml."
         }
 
         Write-Log -Message "Opening `"$bundleManifestPath`"." -Level Verbose
@@ -1884,24 +1897,24 @@ function Read-AppxBundleMetadata
         $applications = ($manifest.Bundle.Packages.ChildNodes | Where-Object Type -like "application").FileName
         foreach ($application in $applications)
         {
-            $appxFilePath = (Get-ChildItem -Recurse -Path $expandedContainerPath -Include $application).FullName
-            Write-Log -Message "Opening `"$appxFilePath`"." -Indent 2 -Level Verbose
-            $appxMetadata = Read-AppxMetadata -AppxPath $appxFilePath -AppxInfo $AppxInfo
+            $appPackageFilePath = (Get-ChildItem -Recurse -Path $expandedContainerPath -Include $application).FullName
+            Write-Log -Message "Opening `"$appPackageFilePath`"." -Indent 2 -Level Verbose
+            $appPackageMetadata = Read-AppPackageMetadata -AppPackagePath $appPackageFilePath -AppPackageInfo $AppPackageInfo
 
             # targetPlatform will always be the values of the last .appx processed.
-            $metadata.targetPlatform  = $appxMetadata.targetPlatform
+            $metadata.targetPlatform  = $appPackageMetadata.targetPlatform
 
-            $capabilities            += $appxMetadata.capabilities
-            $targetDeviceFamilies    += $appxMetadata.targetDeviceFamilies
-            $targetDeviceFamiliesEx  += $appxMetadata.targetDeviceFamiliesEx
+            $capabilities            += $appPackageMetadata.capabilities
+            $targetDeviceFamilies    += $appPackageMetadata.targetDeviceFamilies
+            $targetDeviceFamiliesEx  += $appPackageMetadata.targetDeviceFamiliesEx
 
-            $metadata.innerPackages.$($appxMetadata.architecture) = @{
-                version                = $appxMetadata.version;
-                targetDeviceFamiliesEx = $appxMetadata.targetDeviceFamiliesEx
-                targetDeviceFamilies   = $appxMetadata.targetDeviceFamiliesEx | ForEach-Object { $script:minVersionFormatString -f $_.name, $_.minOSVersion }
-                languages              = $appxMetadata.languages;
-                capabilities           = $appxMetadata.capabilities;
-                targetPlatform         = $appxMetadata.targetPlatform;
+            $metadata.innerPackages.$($appPackageMetadata.architecture) = @{
+                version                = $appPackageMetadata.version;
+                targetDeviceFamiliesEx = $appPackageMetadata.targetDeviceFamiliesEx
+                targetDeviceFamilies   = $appPackageMetadata.targetDeviceFamiliesEx | ForEach-Object { $script:minVersionFormatString -f $_.name, $_.minOSVersion }
+                languages              = $appPackageMetadata.languages;
+                capabilities           = $appPackageMetadata.capabilities;
+                targetPlatform         = $appPackageMetadata.targetPlatform;
             }
         }
 
@@ -1935,21 +1948,21 @@ function Get-FormattedFilename
 <#
     .SYNOPSIS
         Gets the ManifestType_AppName_Version_Architecture formatted filename for the
-        specified .appxbundle, .appxupload, or .appx.
+        specified .appxbundle, .appxupload, .appx, .msixbundle, .msixupload, or .msix.
 
     .DESCRIPTION
         Gets the ManifestType_AppName_Version_Architecture formatted filename for the
-        specified .appxbundle, .appxupload, or .appx.
+        specified .appxbundle, .appxupload, .appx, .msixbundle, .msixupload, or .msix.
 
-        ManifestType is specified by each .appx and includes "Desktop", "Mobile", "Universal", "Team".
+        ManifestType is specified by each .appx/.msix and includes "Desktop", "Mobile", "Universal", "Team".
         AppName is specified in the Identity element of the AppxManifest.xml file.
         Version is specified in the Identity element of the AppxManifest.xml file.
         Architecture is specified in the Identity element of the AppxManifest.xml file.
 
     .PARAMETER Metadata
         A hashtable with "targetDeviceFamiliesEx", "name", "version", and "architecture".
-        If the metadata table corresponds to an .appxbundle, there will likely be an "innerPackages"
-        value with metadata from the inner .appx files.
+        If the metadata table corresponds to an .appxbundle or .msixbundle, there will likely be an "innerPackages"
+        value with metadata from the inner .appx or .msix files.
 
     .OUTPUTS
         System.String. The ManifestType_AppName_Version_Architecture string.
@@ -1980,7 +1993,7 @@ function Get-FormattedFilename
     $version = $Metadata.version
     if ($Metadata.innerPackages.Count -gt 0)
     {
-        # For .appxbundle packages, we will use the architectures from the individual .appx files.
+        # For .appxbundle/.msixbundle packages, we will use the architectures from the individual .appx/.msixbundle files.
         # The Keys of the innerPackages object are the supported architectures.
         $architectureTag = ($Metadata.innerPackages.Keys | Sort-Object) -join '.'
 
@@ -2006,10 +2019,10 @@ function Read-ApplicationMetadata
 {
 <#
     .SYNOPSIS
-        Reads metadata used for submission of an .appx, .appxbundle, or appxupload.
+        Reads metadata used for submission of an .appxbundle, .appxupload, .appx, .msixbundle, .msixupload, or .msix.
 
     .DESCRIPTION
-        Reads metadata used for submission of an .appx, .appxbundle, or appxupload.
+        Reads metadata used for submission of an .appxbundle, .appxupload, .appx, .msixbundle, .msixupload, or .msix.
 
         The metadata read is "version", "architecture", "targetPlatform", "languages",
         "capabilities", "targetDeviceFamilies", "targetDeviceFamiliesEx",
@@ -2021,17 +2034,23 @@ function Read-ApplicationMetadata
         formatted name for the input package when it is stored in the StoreBroker .zip
         output.
 
-    .PARAMETER AppxPath
-        The path to the .appx, .appxbundle, or .appxupload to process.
+    .PARAMETER AppPackagePath
+        The path to the .appxbundle, .appxupload, .appx, .msixbundle, .msixupload, or .msix to process.
 
-    .PARAMETER AppxInfo
+    .PARAMETER AppPackageInfo
         If provided, will be updated to maintain information about the app being packaged
         (like AppName and Version) if the information can be determined.
 
     .EXAMPLE
-        Read-ApplicationMetadata -AppxPath ".\my.appxbundle" -AppxInfo ([ref] @())
+        Read-ApplicationMetadata -AppPackagePath ".\my.appxbundle" -AppPackageInfo ([ref] @())
 
         Returns a hashtable containing metadata about the .appxbundle and .appx files inside
+        that bundle.
+
+    .EXAMPLE
+        Read-ApplicationMetadata -AppPackagePath ".\my.msixbundle" -AppPackageInfo ([ref] @())
+
+        Returns a hashtable containing metadata about the .msixbundle and .msix files inside
         that bundle.
 
     .OUTPUTS
@@ -2043,29 +2062,29 @@ function Read-ApplicationMetadata
         [ValidateScript({
             if (Test-Path -PathType Leaf -Include ($script:extensionsSupportingInspection | ForEach-Object { "*" + $_ }) -Path $_ -ErrorAction Ignore) { $true }
             else { throw "$_ cannot be found or is not a supported extension that supports metadata inspection: $($script:extensionsSupportingInspection -join ", ")." } })]
-        [string] $AppxPath,
+        [string] $AppPackagePath,
 
-        [ref] $AppxInfo
+        [ref] $AppPackageInfo
     )
 
-    if ($PSCmdlet.ShouldProcess($AppxPath))
+    if ($PSCmdlet.ShouldProcess($AppPackagePath))
     {
         $metadata = $null
-        switch ([System.IO.Path]::GetExtension($AppxPath))
+        switch -Regex ([System.IO.Path]::GetExtension($AppPackagePath))
         {
-            ".appxbundle"
+            "^[.](appx|msix)bundle$"
             {
-                $metadata = Read-AppxBundleMetadata -AppxbundlePath $AppxPath -AppxInfo $AppxInfo
+                $metadata = Read-AppPackageBundleMetadata -AppPackageBundlePath $AppPackagePath -AppPackageInfo $AppPackageInfo
             }
 
-            ".appxupload"
+            "^[.](appx|msix)upload$"
             {
-                $metadata = Read-AppxUploadMetadata -AppxuploadPath $AppxPath -AppxInfo $AppxInfo
+                $metadata = Read-AppPackageUploadMetadata -AppPackageUploadPath $AppPackagePath -AppPackageInfo $AppPackageInfo
             }
 
-            ".appx"
+            "^[.](appx|msix)$"
             {
-                $metadata = Read-AppxMetadata -AppxPath $AppxPath -AppxInfo $AppxInfo
+                $metadata = Read-AppPackageMetadata -AppPackagePath $AppPackagePath -AppPackageInfo $AppPackageInfo
             }
         }
 
@@ -2080,17 +2099,17 @@ function Add-AppPackagesMetadata
 <#
     .SYNOPSIS
         Adds a property to the SubmissionObject with metadata about the
-        various .appxbundle, .appxupload, or .appx files being submitted.
+        various .appxbundle, .appxupload, .appx, .msixbundle, .msixupload, or .msix files being submitted.
 
     .PARAMETER PackagePath
-        Array of full paths to the .appxbundle, .appxupload, or .appx
+        Array of full paths to the .appxbundle, .appxupload, .appx, .msixbundle, .msixupload, or .msix
         files that will be uploaded as the new submission.
 
     .PARAMETER SubmissionObject
         A PSCustomObj representing the application submission request body.  This function
-        will add a property to this object with metadata about the .appx files being uploaded.
+        will add a property to this object with metadata about the .appx/.msix files being uploaded.
 
-    .PARAMETER AppxInfo
+    .PARAMETER AppPackageInfo
         If provided, will be updated to maintain information about the app being packaged
         (like AppName and Version) if the information can be determined.
 
@@ -2130,7 +2149,7 @@ function Add-AppPackagesMetadata
             ValueFromPipeline)]
         [PSCustomObject] $SubmissionObject,
 
-        [ref] $AppxInfo,
+        [ref] $AppPackageInfo,
 
         [switch] $EnableAutoPackageNameFormatting
     )
@@ -2144,19 +2163,19 @@ function Add-AppPackagesMetadata
 
             Write-Log -Message "Processing [$path]" -Level Verbose
 
-            $appxName = Split-Path -Leaf -Path $path
+            $appPackageName = Split-Path -Leaf -Path $path
 
             # We always calculate the formatted name, even if we won't use it, in order to
             # populate $AppxInfo with the additional metadata, but only if the package is
             # one that we can inspect.
             $submissionProperties = @{}
-            $packageExtension = [System.IO.Path]::GetExtension($appxName)
+            $packageExtension = [System.IO.Path]::GetExtension($appPackageName)
             if ($packageExtension -in $script:extensionsSupportingInspection)
             {
-                $appMetadata =  Read-ApplicationMetadata -AppxPath $path -AppxInfo $AppxInfo
+                $appMetadata =  Read-ApplicationMetadata -AppPackagePath $path -AppPackageInfo $AppPackageInfo
                 if ($EnableAutoPackageNameFormatting)
                 {
-                    $appxName = ($appMetadata.formattedFileName + [System.IO.Path]::GetExtension($appxName))
+                    $appPackageName = ($appMetadata.formattedFileName + [System.IO.Path]::GetExtension($appPackageName))
                 }
 
                 # Finalize the properties to be submitted
@@ -2166,7 +2185,7 @@ function Add-AppPackagesMetadata
                 }
             }
 
-            $submissionProperties.fileName              = $appxName
+            $submissionProperties.fileName              = $appPackageName
             $submissionProperties.fileStatus            = "PendingUpload"
             $submissionProperties.minimumDirectXVersion = "None"
             $submissionProperties.minimumSystemRam      = "None"
@@ -2175,7 +2194,7 @@ function Add-AppPackagesMetadata
 
             if ($script:tempFolderExists)
             {
-                $destinationPath = Join-Path -Path $script:tempFolderPath -ChildPath $appxName
+                $destinationPath = Join-Path -Path $script:tempFolderPath -ChildPath $appPackageName
 
                 Write-Log -Message "Copying (Item: $path) to (Target: $destinationPath)" -Level Verbose
                 Copy-Item -Path $path -Destination $destinationPath
@@ -2234,7 +2253,7 @@ function Get-SubmissionRequestBody
         Creates a PSCustomObject representing the JSON that will be sent with an
         application submission request.  Some property values are taken from the
         config file, some are given static values, some depend on the arch-specific
-        .appx files being submitted, and some are retrieved from localized metadata.
+        .appx/.msix files being submitted, and some are retrieved from localized metadata.
 
     .PARAMETER ConfigObj
         A PSCustomObject representing this tool's configuration file.  Some values of the

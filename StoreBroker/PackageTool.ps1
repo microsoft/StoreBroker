@@ -1613,7 +1613,7 @@ function Read-AppPackageMetadata
         [Parameter(Mandatory)]
         [ValidateScript({
             if (Test-Path -PathType Leaf -Include "*.appx" -Path $_ -ErrorAction Ignore) { $true }
-            else if (Test-Path -PathType Leaf -Include "*.msix" -Path $_ -ErrorAction Ignore) { $true }
+            elseif (Test-Path -PathType Leaf -Include "*.msix" -Path $_ -ErrorAction Ignore) { $true }
             else { throw "$_ cannot be found or is not an .appx or .msix." } })]
         [string] $AppPackagePath,
 
@@ -1748,7 +1748,7 @@ function Read-AppPackageUploadMetadata
         [Parameter(Mandatory)]
         [ValidateScript({
             if (Test-Path -PathType Leaf -Include "*.appxupload" -Path $_ -ErrorAction Ignore) { $true }
-            else if (Test-Path -PathType Leaf -Include "*.msixupload" -Path $_ -ErrorAction Ignore) { $true }
+            elseif (Test-Path -PathType Leaf -Include "*.msixupload" -Path $_ -ErrorAction Ignore) { $true }
             else { throw "$_ cannot be found or is not an .appxupload or .msixupload." } })]
         [string] $AppPackageUploadPath,
 
@@ -1844,7 +1844,7 @@ function Read-AppPackageBundleMetadata
         [Parameter(Mandatory)]
         [ValidateScript({
             if (Test-Path -PathType Leaf -Include "*.appxbundle" -Path $_ -ErrorAction Ignore) { $true }
-            else if (Test-Path -PathType Leaf -Include "*.msixbundle" -Path $_ -ErrorAction Ignore) { $true }
+            elseif (Test-Path -PathType Leaf -Include "*.msixbundle" -Path $_ -ErrorAction Ignore) { $true }
             else { throw "$_ cannot be found or is not an .appxbundle or .msixbundle." } })]
         [string] $AppPackageBundlePath,
 

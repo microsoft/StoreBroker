@@ -1633,7 +1633,7 @@ function Read-AppPackageMetadata
         if ($null -eq $appPackageManifest)
         {
             Report-UnsupportedFile -Path $AppPackagePath
-            throw "`"$AppPackagePath`" is not a proper .appx or .msix. Could not find an AppxManifest.xml."
+            throw "`"$AppPackagePath`" is not a proper .appx nor .msix. Could not find an AppxManifest.xml."
         }
 
         Write-Log -Message "Opening `"$appPackageManifest`"." -Level Verbose

@@ -1612,9 +1612,8 @@ function Read-AppPackageMetadata
     param(
         [Parameter(Mandatory)]
         [ValidateScript({
-            if (Test-Path -PathType Leaf -Include "*.appx" -Path $_ -ErrorAction Ignore) { $true }
-            elseif (Test-Path -PathType Leaf -Include "*.msix" -Path $_ -ErrorAction Ignore) { $true }
-            else { throw "$_ cannot be found or is not an .appx or .msix." } })]
+            if (Test-Path -PathType Leaf -Include ("*.appx", "*.msix") -Path $_ -ErrorAction Ignore) { $true }
+            else { throw "$_ cannot be found or is not an .appx nor .msix." } })]
         [string] $AppPackagePath,
 
         [ref] $AppPackageInfo
@@ -1720,7 +1719,7 @@ function Read-AppPackageUploadMetadata
         or .appxbundle/.msixbundle.
 
     .PARAMETER AppPackageUploadPath
-        A path to the .appxupload to be processed.
+        A path to the .appxupload/.msixupload to be processed.
 
     .PARAMETER AppPackageInfo
         If provided, will be updated to maintain information about the app being packaged
@@ -1747,9 +1746,8 @@ function Read-AppPackageUploadMetadata
     param(
         [Parameter(Mandatory)]
         [ValidateScript({
-            if (Test-Path -PathType Leaf -Include "*.appxupload" -Path $_ -ErrorAction Ignore) { $true }
-            elseif (Test-Path -PathType Leaf -Include "*.msixupload" -Path $_ -ErrorAction Ignore) { $true }
-            else { throw "$_ cannot be found or is not an .appxupload or .msixupload." } })]
+            if (Test-Path -PathType Leaf -Include ("*.appxupload", "*.msixupload") -Path $_ -ErrorAction Ignore) { $true }
+            else { throw "$_ cannot be found or is not an .appxupload nor .msixupload." } })]
         [string] $AppPackageUploadPath,
 
         [ref] $AppPackageInfo
@@ -1757,12 +1755,12 @@ function Read-AppPackageUploadMetadata
 
     try
     {
-        $throwFormat = "`"$AppPackageUploadPath`" is not a proper .appxupload or .msixupload. There must be exactly one {0} inside the file."
+        $throwFormat = "`"$AppPackageUploadPath`" is not a proper .appxupload nor .msixupload. There must be exactly one {0} inside the file."
 
         Write-Log -Message "Opening `"$AppPackageUploadPath`"." -Level Verbose
         $expandedContainerPath = Open-AppPackageContainer -AppPackageContainerPath $AppPackageUploadPath
 
-        $appPackageFilePath = (Get-ChildItem -Recurse -Path $expandedContainerPath -Include "*.appx" "*.msix").FullName
+        $appPackageFilePath = (Get-ChildItem -Recurse -Path $expandedContainerPath -Include ("*.appx", "*.msix")).FullName
         if ($null -ne $appPackageFilePath)
         {
             if ($appPackageFilePath.Count -ne 1)
@@ -1780,8 +1778,8 @@ function Read-AppPackageUploadMetadata
         }
 
         # Could not find an .appx inside. Maybe there is an .appxbundle.
-        $appPackageBundleFilePath = (Get-ChildItem -Recurse -Path $expandedContainerPath -Include "*.appxbundle" "*.msixbundle").FullName
-        if (($null -eq $appPackageBundleFilePath) -or ($appPackageBundleFilePath.Count -ne 1))
+        $appPackageBundleFilePath = (Get-ChildItem -Recurse -Path $expandedContainerPath -Include ("*.appxbundle", "*.msixbundle")).FullName
+        if (($null -eq $appPackageBundleFilePath) -or (1 -ne $appPackageBundleFilePath.Count))
         {
             Report-UnsupportedFile -Path $AppPackageUploadPath
 
@@ -1824,7 +1822,7 @@ function Read-AppPackageBundleMetadata
         the inner .appx/.msix files.
 
     .PARAMETER AppPackageBundlePath
-        A path to the .appxbundle to be processed.
+        A path to the .appxbundle/.msixbundle to be processed.
 
     .PARAMETER AppPackageInfo
         If provided, will be updated to maintain information about the app being packaged
@@ -1843,8 +1841,7 @@ function Read-AppPackageBundleMetadata
     param(
         [Parameter(Mandatory)]
         [ValidateScript({
-            if (Test-Path -PathType Leaf -Include "*.appxbundle" -Path $_ -ErrorAction Ignore) { $true }
-            elseif (Test-Path -PathType Leaf -Include "*.msixbundle" -Path $_ -ErrorAction Ignore) { $true }
+            if (Test-Path -PathType Leaf -Include ("*.appxbundle", "*.msixbundle") -Path $_ -ErrorAction Ignore) { $true }
             else { throw "$_ cannot be found or is not an .appxbundle or .msixbundle." } })]
         [string] $AppPackageBundlePath,
 
@@ -1865,7 +1862,7 @@ function Read-AppPackageBundleMetadata
         if ($null -eq $bundleManifestPath)
         {
             Report-UnsupportedFile -Path $AppPackageBundlePath
-            throw "`"$AppPackageBundlePath`" is not a proper .appxbundle or .msixbundle. Could not find an AppxBundleManifest.xml."
+            throw "`"$AppPackageBundlePath`" is not a proper .appxbundle nor .msixbundle. Could not find an AppxBundleManifest.xml."
         }
 
         Write-Log -Message "Opening `"$bundleManifestPath`"." -Level Verbose
@@ -1993,7 +1990,7 @@ function Get-FormattedFilename
     $version = $Metadata.version
     if ($Metadata.innerPackages.Count -gt 0)
     {
-        # For .appxbundle/.msixbundle packages, we will use the architectures from the individual .appx/.msixbundle files.
+        # For .appxbundle/.msixbundle packages, we will use the architectures from the individual .appx/.msix files.
         # The Keys of the innerPackages object are the supported architectures.
         $architectureTag = ($Metadata.innerPackages.Keys | Sort-Object) -join '.'
 
@@ -2072,17 +2069,17 @@ function Read-ApplicationMetadata
         $metadata = $null
         switch -Regex ([System.IO.Path]::GetExtension($AppPackagePath))
         {
-            "^[.](appx|msix)bundle$"
+            "^\.(appx|msix)bundle$"
             {
                 $metadata = Read-AppPackageBundleMetadata -AppPackageBundlePath $AppPackagePath -AppPackageInfo $AppPackageInfo
             }
 
-            "^[.](appx|msix)upload$"
+            "^\.(appx|msix)upload$"
             {
                 $metadata = Read-AppPackageUploadMetadata -AppPackageUploadPath $AppPackagePath -AppPackageInfo $AppPackageInfo
             }
 
-            "^[.](appx|msix)$"
+            "^\.(appx|msix)$"
             {
                 $metadata = Read-AppPackageMetadata -AppPackagePath $AppPackagePath -AppPackageInfo $AppPackageInfo
             }

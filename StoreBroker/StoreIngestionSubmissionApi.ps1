@@ -1134,7 +1134,7 @@ function Update-SubmissionDetail
             if ((-not $IsMinimalObject) -or
                 (Test-PropertyExists -InputObject $SubmissionData -Name 'targetPublishMode'))
             {
-                Set-ObjectProperty @setObjectPropertyParams -Name ([StoreBrokerSubmissionProperty]::isManualPublish) -Value ($SubmissionData.targetPublishMode -eq $script:keywordManual)
+                Set-ObjectProperty -InputObject $detail -Name ([StoreBrokerSubmissionProperty]::isManualPublish) -Value ($SubmissionData.targetPublishMode -eq $script:keywordManual)
             }
 
             # There is no equivalent of changing to "Immediate" from a specific date/time,

@@ -136,7 +136,7 @@ function New-ProductAvailability
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
             [StoreBrokerTelemetryProperty]::UsingObject = ($null -ne $Object)
             [StoreBrokerTelemetryProperty]::HasAudience = ($null -ne $Audience)
-            [StoreBrokerTelemetryProperty]::Visiblity = $Visibility
+            [StoreBrokerTelemetryProperty]::Visibility = $Visibility
             [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
             [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
         }
@@ -250,7 +250,7 @@ function Set-ProductAvailability
             [StoreBrokerTelemetryProperty]::ProductAvailabilityId = $ProductAvailabilityId
             [StoreBrokerTelemetryProperty]::UsingObject = ($null -ne $Object)
             [StoreBrokerTelemetryProperty]::HasAudience = ($null -ne $Audience)
-            [StoreBrokerTelemetryProperty]::Visiblity = $Visibility
+            [StoreBrokerTelemetryProperty]::Visibility = $Visibility
             [StoreBrokerTelemetryProperty]::RevisionToken = $RevisionToken
             [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
             [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId

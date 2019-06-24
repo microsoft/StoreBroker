@@ -74,6 +74,7 @@ Add-Type -TypeDefinition @"
        ListingVideo,
        Package,
        PackageConfiguration,
+       ProductAvailability,
        Rollout,
        Submission,
        SubmissionDetail

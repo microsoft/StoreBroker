@@ -392,7 +392,7 @@ function Update-ProductAvailability
             [StoreBrokerTelemetryProperty]::ProductId = $ProductId
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
             [StoreBrokerTelemetryProperty]::ProvidedSubmissionData = ($null -ne $SubmissionData)
-            [StoreBrokerTelemetryProperty]::Visbility = $Visibility
+            [StoreBrokerTelemetryProperty]::Visibility = $Visibility
             [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
             [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
         }

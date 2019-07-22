@@ -1668,7 +1668,7 @@ param(
 
     Set-TelemetryEvent -EventName Open-Store -Properties $telemetryProperties
 
-    if ($null -eq $ProductId)
+    if ([String]::IsNullOrWhiteSpace($ProductId))
     {
         $product = Get-Product -AppId $AppId
         $ProductId = $product.id

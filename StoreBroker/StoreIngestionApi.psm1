@@ -2103,8 +2103,9 @@ function Invoke-SBRestMethod
             {
                 Write-Log -Message "The server has indicated that the result is not yet ready (received status code of [$statusCode]).  Will retry in [$retryAfterHeaderValue] seconds."
                 Start-Sleep -Seconds ($retryAfterHeaderValue)
-                $PSBoundParameters['UriFragment'] = $locationHeaderValue
-                return (Invoke-SBRestMethod @PSBoundParameters)
+                $UriFragment = $locationHeaderValue
+                $stopwatch.Reset() # since we'll be re-using this same stopwatch on the next iteration, make sure it starts fresh.
+                continue # start the loop over using the new location, and see if we waited enough time for the API to be ready for us this time around.
             }
             else
             {

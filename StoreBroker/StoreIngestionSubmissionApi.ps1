@@ -1865,6 +1865,38 @@ function Update-Submission
 
         if ($PSCmdlet.ShouldProcess("Update Submission elements"))
         {
+            if ($UpdateListingText -or $UpdateImagesAndCaptions -or $UpdateVideos)
+            {
+                $listingParams = $commonParams.PSObject.Copy() # Get a new instance, not a reference
+                $listingParams.Add('SubmissionData', $jsonSubmission)
+                if ([string]::IsNullOrWhiteSpace($ZipPath))
+                {
+                    $listingParams.Add('MediaRootPath', $MediaRootPath)
+                }
+                else
+                {
+                    $listingParams.Add('MediaRootPath', $expandedZipPath)
+                }
+
+                $listingParams.Add('UpdateImagesAndCaptions', $UpdateImagesAndCaptions)
+                $listingParams.Add('UpdateListingText', $UpdateListingText)
+                $listingParams.Add('UpdateVideos', $UpdateVideos)
+                $listingParams.Add('IsMinimalObject', $IsMinimalObject)
+                $null = Update-Listing @listingParams
+            }
+
+            # The API will automatically create Listings (if they don't already exist)
+            # for any languages that update packages are newly supporting.  If our submission _starts_
+            # by uploading new packages (with newly supported languages) and doesn't leverage
+            # Wait-ProductPackageProcessed, we can run into a timing issue if the package is being
+            # processed (and thus slowly creating those new listings) while we're trying to create
+            # new Listings ourselves.  If we call Wait-ProductPackageProcessed, we're reducing our
+            # opportunity to parallelize other API calls.  So, we just need to make sure that we are
+            # doing package updates _after_ we've updated our listings in order to avoid this
+            # potential timing issue, but before everything else, to still allow us to parallelize
+            # as much of the submission upate as possible while the packages are being processed.
+            # We'll still call Wait-ProductPackageProcessed later on if -AutoCommit was specified by
+            # the user.
             if ($AddPackages -or $ReplacePackages -or $UpdatePackages)
             {
                 $packageParams = $commonParams.PSObject.Copy() # Get a new instance, not a reference
@@ -1884,26 +1916,6 @@ function Update-Submission
                     $packageParams.Add('RedundantPackagesToKeep', $RedundantPackagesToKeep)
                 }
                 $null = Update-ProductPackage @packageParams
-            }
-
-            if ($UpdateListingText -or $UpdateImagesAndCaptions -or $UpdateVideos)
-            {
-                $listingParams = $commonParams.PSObject.Copy() # Get a new instance, not a reference
-                $listingParams.Add('SubmissionData', $jsonSubmission)
-                if ([string]::IsNullOrWhiteSpace($ZipPath))
-                {
-                    $listingParams.Add('MediaRootPath', $MediaRootPath)
-                }
-                else
-                {
-                    $listingParams.Add('MediaRootPath', $expandedZipPath)
-                }
-
-                $listingParams.Add('UpdateImagesAndCaptions', $UpdateImagesAndCaptions)
-                $listingParams.Add('UpdateListingText', $UpdateListingText)
-                $listingParams.Add('UpdateVideos', $UpdateVideos)
-                $listingParams.Add('IsMinimalObject', $IsMinimalObject)
-                $null = Update-Listing @listingParams
             }
 
             if ($UpdateAppProperties -or $UpdateGamingOptions)

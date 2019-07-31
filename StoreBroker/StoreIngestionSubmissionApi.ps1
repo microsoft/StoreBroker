@@ -1638,7 +1638,8 @@ function Update-Submission
             'UpdatePricingAndAvailability',
             'UpdateAppProperties',
             'UpdateGamingOptions',
-            'UpdateVideos'
+            'UpdateVideos',
+            'Visibility'
         )
 
         foreach ($option in $unsupportedFlightingOptions)

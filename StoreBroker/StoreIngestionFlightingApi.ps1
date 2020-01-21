@@ -312,7 +312,7 @@ function Format-ApplicationFlight
         {
             # We are including a URL to view the Group because there currently exists no way to
             # get Flight Group information via the API
-            $output += "$(" " * $indentLength)$groupId  | https://developer.microsoft.com/en-us/dashboard/groups/editgroup/$groupId"
+            $output += "$(" " * $indentLength)$groupId  | https://partner.microsoft.com/en-us/dashboard/groups/editgroup/$groupId"
         }
 
         $output += "Last Published Submission : $(if ($null -eq $ApplicationFlightData.lastPublishedFlightSubmission.id) { "---" } else { $ApplicationFlightData.lastPublishedFlightSubmission.id } )"
@@ -359,7 +359,7 @@ function Get-FlightGroups
         Write-Log -Message "`n$($global:SBInternalGroupIds | Format-Table Name, @{ label="FlightGroupId"; Expression={ $_.Value }; }| Out-String)"
     }
 
-    Start-Process -FilePath "https://developer.microsoft.com/en-us/dashboard/groups"
+    Start-Process -FilePath "https://partner.microsoft.com/en-us/dashboard/groups"
 }
 
 function New-ApplicationFlight
@@ -1395,7 +1395,7 @@ function Update-ApplicationFlightSubmission
         Write-Log -Message @(
             "Successfully cloned the existing submission and modified its content.",
             "You can view it on the Dev Portal here:",
-            "    https://developer.microsoft.com/en-us/dashboard/apps/$AppId/submissions/$submissionId/",
+            "    https://partner.microsoft.com/en-us/dashboard/apps/$AppId/submissions/$submissionId/",
             "or by running this command:",
             "    Get-ApplicationFlightSubmission -AppId $AppId -FlightId $FlightId -SubmissionId $submissionId | Format-ApplicationFlightSubmission",
             "",
@@ -1895,7 +1895,7 @@ function Complete-ApplicationFlightSubmission
             "This is just the beginning though.",
             "It still has multiple phases of validation to get through, and there's no telling how long that might take.",
             "You can view the progress of the submission validation on the Dev Portal here:",
-            "    https://developer.microsoft.com/en-us/dashboard/apps/$AppId/submissions/$submissionId/",
+            "    https://partner.microsoft.com/en-us/dashboard/apps/$AppId/submissions/$submissionId/",
             "or by running this command:",
             "    Get-ApplicationFlightSubmission -AppId $AppId -Flight $FlightId -SubmissionId $submissionId | Format-ApplicationFlightSubmission",
             "You can automatically monitor this submission with this command:",

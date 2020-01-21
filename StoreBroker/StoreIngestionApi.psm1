@@ -1353,14 +1353,14 @@ function Start-SubmissionMonitor
                 if ($isIapSubmission)
                 {
                     $body += "Dev Portal URL"
-                    $body += "    https://dev.windows.com/en-us/dashboard/iaps/$IapId/submissions/$SubmissionId/"
+                    $body += "    https://partner.microsoft.com/en-us/dashboard/products/$IapId/submissions/$SubmissionId/"
                     $body += "StoreBroker command"
                     $body += "    Get-InAppProductSubmission -IapId $IapId -SubmissionId $SubmissionId"
                 }
                 else
                 {
                     $body += "Dev Portal URL"
-                    $body += "    https://dev.windows.com/en-us/dashboard/apps/$AppId/submissions/$SubmissionId/"
+                    $body += "    https://developer.microsoft.com/en-us/dashboard/apps/$AppId/submissions/$SubmissionId/"
                     $body += "StoreBroker command"
                     if ($isFlightingSubmission)
                     {

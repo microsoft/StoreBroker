@@ -29,7 +29,7 @@ It's designed for all Windows developers that publish their apps into the Window
 
 Most Microsoft-published applications in the Windows Store have metadata (screenshots, captions,
 descriptions, feature lists, etc...) localized across 64 languages; updating all of these values
-manually through the [Developer Portal](https://dev.windows.com) can take hours (or days).
+manually through the [Developer Portal](https://partner.microsoft.com) can take hours (or days).
 StoreBroker is able to complete a full metadata update in a matter of minutes with just two
 commands, and that's just the start of what it can do.
 

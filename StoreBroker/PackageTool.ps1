@@ -2303,11 +2303,16 @@ function Read-AppPackageBundleMetadata
         $targetDeviceFamilies            = @()
         $targetDeviceFamiliesEx          = @()
 
-        $applications = ($manifest.Bundle.Packages.ChildNodes | Where-Object Type -like "application").FileName
+        $applications = ($manifest.Bundle.Packages.ChildNodes | Where-Object Type -like "application")
         foreach ($application in $applications)
         {
-            $appPackageFilePath = (Get-ChildItem -Recurse -Path $expandedContainerPath -Include $application).FullName
-            Write-Log -Message "Opening `"$appPackageFilePath`"." -Indent 2 -Level Verbose
+            # Usually, the "application" attribute will just be a file that is in the root of the
+            # bundle, however sometimes it might be directly referencing a file in a sub-folder.
+            # Therefore, we need to split that path apart so that Get-ChildItem can search correctly.
+            $searchPath = Join-Path -Path $expandedContainerPath -ChildPath (Split-Path -Path $application.FileName -Parent)
+            $searchFilename = Split-Path -Path $application.FileName -Leaf
+            $appPackageFilePath = (Get-ChildItem -Recurse -Path $searchPath -Include $searchFilename).FullName
+            Write-Log -Message "Looked for [`"$($application.FileName)`"].  Opening it from [`"$appPackageFilePath`"]." -Indent 2 -Level Verbose
             $appPackageMetadata = Read-AppPackageMetadata -AppPackagePath $appPackageFilePath -AppPackageInfo $AppPackageInfo
 
             # targetPlatform will always be the values of the last .appx processed.
@@ -2316,6 +2321,12 @@ function Read-AppPackageBundleMetadata
             $capabilities            += $appPackageMetadata.capabilities
             $targetDeviceFamilies    += $appPackageMetadata.targetDeviceFamilies
             $targetDeviceFamiliesEx  += $appPackageMetadata.targetDeviceFamiliesEx
+
+            # Don't overwrite full app data with data from a stub
+            if ($application.IsStub -and $null -ne $metadata.innerPackages.$($appPackageMetadata.architecture))
+            {
+                continue
+            }
 
             $metadata.innerPackages.$($appPackageMetadata.architecture) = @{
                 version                = $appPackageMetadata.version;

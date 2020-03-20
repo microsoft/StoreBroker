@@ -124,6 +124,12 @@ values of these variables will be honored if they already exist, otherwise they 
    previous attempts result in an error code within the list of values in `$global:SBAutoRetryErrorCodes`.
    Defaults to `5`
 
+ **`$global:SBDefaultTransferConnectionLimit`** - [int] The default number of concurrent connections
+   that the Azure Storage Data Movement Library will use when transferring application packages
+   and listing media metadata (screenshots/trailers). _In general, you should never need to modify
+   this unless you're running multiple concurrent StoreBroker processes on the same machine._
+   Defaults to `[Environment]::ProcessorCount * 8`
+
 ### Common Switches
 
 All commands support the `-Verbose` switch in the event that you want fine-grained detail

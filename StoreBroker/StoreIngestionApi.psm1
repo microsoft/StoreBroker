@@ -151,6 +151,11 @@ function Initialize-StoreIngestionApiGlobalVariables
     {
         $global:SBStoreBrokerClientName = $null
     }
+
+    if (!(Get-Variable -Name SBDefaultTransferConnectionLimit -Scope Global -ValueOnly -ErrorAction Ignore))
+    {
+        $global:SBDefaultTransferConnectionLimit = [Environment]::ProcessorCount * 8
+    }
 }
 
 # We need to be sure to call this explicitly so that the global variables get initialized.
@@ -879,7 +884,7 @@ function Set-StoreFile
         if ($NoStatus)
         {
             # Recommendations per https://github.com/Azure/azure-storage-net-data-movement#best-practice
-            [System.Net.ServicePointManager]::DefaultConnectionLimit = [Environment]::ProcessorCount * 8
+            [System.Net.ServicePointManager]::DefaultConnectionLimit = $global:SBDefaultTransferConnectionLimit
             [System.Net.ServicePointManager]::Expect100Continue = $false
 
             $bytes = [System.IO.File]::ReadAllBytes($azureStorageDll)
@@ -905,10 +910,10 @@ function Set-StoreFile
             if ($PSCmdlet.ShouldProcess($jobName, "Start-Job"))
             {
                 [scriptblock]$scriptBlock = {
-                    param($SasUri, $FilePath, $AzureStorageDll, $AzureStorageDataMovementDll)
+                    param($SasUri, $FilePath, $AzureStorageDll, $AzureStorageDataMovementDll, $DefaultTransferConnectionLimit)
 
                     # Recommendations per https://github.com/Azure/azure-storage-net-data-movement#best-practice
-                    [System.Net.ServicePointManager]::DefaultConnectionLimit = [Environment]::ProcessorCount * 8
+                    [System.Net.ServicePointManager]::DefaultConnectionLimit = $DefaultTransferConnectionLimit
                     [System.Net.ServicePointManager]::Expect100Continue = $false
 
                     $bytes = [System.IO.File]::ReadAllBytes($AzureStorageDll)
@@ -925,7 +930,7 @@ function Set-StoreFile
                     $task.GetAwaiter().GetResult() | Out-Null
                 }
 
-                $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($SasUri, $FilePath, $azureStorageDll, $azureStorageDataMovementDll)
+                $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($SasUri, $FilePath, $azureStorageDll, $azureStorageDataMovementDll, $global:SBDefaultTransferConnectionLimit)
 
                 if ($PSCmdlet.ShouldProcess($jobName, "Wait-JobWithAnimation"))
                 {
@@ -1074,7 +1079,7 @@ function Get-StoreFile
         if ($NoStatus)
         {
             # Recommendations per https://github.com/Azure/azure-storage-net-data-movement#best-practice
-            [System.Net.ServicePointManager]::DefaultConnectionLimit = [Environment]::ProcessorCount * 8
+            [System.Net.ServicePointManager]::DefaultConnectionLimit = $global:SBDefaultTransferConnectionLimit
             [System.Net.ServicePointManager]::Expect100Continue = $false
 
             $bytes = [System.IO.File]::ReadAllBytes($azureStorageDll)
@@ -1105,10 +1110,10 @@ function Get-StoreFile
             if ($PSCmdlet.ShouldProcess($jobName, "Start-Job"))
             {
                 [scriptblock]$scriptBlock = {
-                    param($SasUri, $FilePath, $AzureStorageDll, $AzureStorageDataMovementDll)
+                    param($SasUri, $FilePath, $AzureStorageDll, $AzureStorageDataMovementDll, $DefaultTransferConnectionLimit)
 
                     # Recommendations per https://github.com/Azure/azure-storage-net-data-movement#best-practice
-                    [System.Net.ServicePointManager]::DefaultConnectionLimit = [Environment]::ProcessorCount * 8
+                    [System.Net.ServicePointManager]::DefaultConnectionLimit = $DefaultTransferConnectionLimit
                     [System.Net.ServicePointManager]::Expect100Continue = $false
 
                     $bytes = [System.IO.File]::ReadAllBytes($AzureStorageDll)
@@ -1130,7 +1135,7 @@ function Get-StoreFile
                     $task.GetAwaiter().GetResult() | Out-Null
                 }
 
-                $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($SasUri, $FilePath, $azureStorageDll, $azureStorageDataMovementDll)
+                $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($SasUri, $FilePath, $azureStorageDll, $azureStorageDataMovementDll, $global:SBDefaultTransferConnectionLimit)
 
                 if ($PSCmdlet.ShouldProcess($jobName, "Wait-JobWithAnimation"))
                 {

@@ -350,6 +350,10 @@ Thank you to all of our contributors, no matter how big or small the contributio
 - **[Petr Bartoň (@Pebin)](http://github.com/Pebin)**
 - **[Matt Perzel (@mattperzel)](http://github.com/mattperzel)**
 - **[Josh Wisniewski (@jowis41)](http://github.com/jowis41)**
+- **[Andres Zendejas Frias (@elendil326)](http://github.com/elendil326)**
+- **[Matthew Nasiatka (@mnasiatka)](http://github.com/mnasiatka)**
+- **[Pepe Rivera (@joseartrivera)](http://github.com/joseartrivera)**
+- **[Luke Cartwright (@cartwrightluke)](https://github.com/cartwrightluke)**
 
 ----------
 

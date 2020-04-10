@@ -1,6 +1,25 @@
 # StoreBroker PowerShell Module
 ## Changelog
 
+## [1.19.3](https://github.com/Microsoft/StoreBroker/tree/1.19.3) - (2020/04/10)
+### Fixes:
+
++ Updated all of the Partner Center URL's to follow the new location format.
+
+More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/https://github.com/Microsoft/StoreBroker/pull/185) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/0fbb6b9a702cf0edf52e8f5ef6d920fb859fc954)
+
+Author: [**@cartwrightluke**](https://github.com/cartwrightluke)
+
+## [1.19.2](https://github.com/Microsoft/StoreBroker/tree/1.19.2) - (2018/12/14)
+### Fixes:
+
++ Updated the logic for finding the appxbundle/appx manifests to use direct instead of relative
+  paths
+
+More Info: [[cl]](https://github.com/Microsoft/StoreBroker/commit/9f884ff367bca72c604e57f5ce9daad6b0f4b277)
+
+Author: [**@HowardWolosky**](https://github.com/HowardWolosky)
+
 ## [1.19.1](https://github.com/Microsoft/StoreBroker/tree/1.19.1) - (2018/11/14)
 ### Fixes:
 

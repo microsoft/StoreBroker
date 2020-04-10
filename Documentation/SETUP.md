@@ -357,7 +357,7 @@ call:
 The next steps require you to know the AppId for the App you are trying to use StoreBroker with.
 
 If you have easy access to the Dev Portal, you can get it directly from there by:
-  1. Log in to the [Dev Portal](https://developer.microsoft.com/en-us/dashboard/apps/overview)
+  1. Log in to the [Dev Portal](https://partner.microsoft.com/en-us/dashboard/apps/overview)
   2. Select the app
   3. Click on **App Management**
   4. Click on **App Identity**

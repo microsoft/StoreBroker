@@ -1,6 +1,15 @@
 # StoreBroker PowerShell Module
 ## Changelog
 
+## [2.1.9](https://github.com/Microsoft/StoreBroker/tree/2.1.9) - (2020/04/10)
+### Fixes:
+
++ Update the module to use TLS 1.2
+
+More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/https://github.com/Microsoft/StoreBroker/pull/184) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/636bb36e9a1f7e742a7bd0a1f3576c5f55573874)
+
+Author: [**@HowardWolosky**](https://github.com/HowardWolosky)
+
 ## [2.1.8](https://github.com/Microsoft/StoreBroker/tree/2.1.8) - (2020/04/10)
 ### Fixes:
 

@@ -1353,14 +1353,14 @@ function Start-SubmissionMonitor
                 if ($isIapSubmission)
                 {
                     $body += "Dev Portal URL"
-                    $body += "    https://dev.windows.com/en-us/dashboard/iaps/$IapId/submissions/$SubmissionId/"
+                    $body += "    https://partner.microsoft.com/en-us/dashboard/products/$IapId/submissions/$SubmissionId/"
                     $body += "StoreBroker command"
                     $body += "    Get-InAppProductSubmission -IapId $IapId -SubmissionId $SubmissionId"
                 }
                 else
                 {
                     $body += "Dev Portal URL"
-                    $body += "    https://dev.windows.com/en-us/dashboard/apps/$AppId/submissions/$SubmissionId/"
+                    $body += "    https://partner.microsoft.com/en-us/dashboard/apps/$AppId/submissions/$SubmissionId/"
                     $body += "StoreBroker command"
                     if ($isFlightingSubmission)
                     {
@@ -1510,9 +1510,9 @@ function Open-DevPortal
 
     Write-Log -Message "Opening Dev Portal in default web browser."
 
-    $appUrl        = "https://developer.microsoft.com/en-us/dashboard/apps/$AppId"
-    $submissionUrl = "https://developer.microsoft.com/en-us/dashboard/apps/$AppId/submissions/$SubmissionId/"
-    $flightUrl     = "https://developer.microsoft.com/en-us/dashboard/Application/GetFlight?appId=$AppId&submissionId=$SubmissionId"
+    $appUrl        = "https://partner.microsoft.com/en-us/dashboard/apps/$AppId"
+    $submissionUrl = "https://partner.microsoft.com/en-us/dashboard/apps/$AppId/submissions/$SubmissionId/"
+    $flightUrl     = "https://partner.microsoft.com/en-us/dashboard/Application/GetFlight?appId=$AppId&submissionId=$SubmissionId"
 
     if ($ShowFlight)
     {

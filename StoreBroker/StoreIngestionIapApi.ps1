@@ -1409,7 +1409,7 @@ function Update-InAppProductSubmission
         Write-Log -Message @(
             "Successfully cloned the existing submission and modified its content.",
             "You can view it on the Dev Portal here:",
-            "    https://dev.windows.com/en-us/dashboard/iaps/$IapId/submissions/$submissionId/",
+            "    https://partner.microsoft.com/en-us/dashboard/products/$IapId/submissions/$submissionId/",
             "or by running this command:",
             "    Get-InAppProductSubmission -IapId $IapId -SubmissionId $submissionId | Format-InAppProductSubmission",
             "",
@@ -1877,7 +1877,7 @@ function Complete-InAppProductSubmission
             "This is just the beginning though.",
             "It still has multiple phases of validation to get through, and there's no telling how long that might take.",
             "You can view the progress of the submission validation on the Dev Portal here:",
-            "    https://dev.windows.com/en-us/dashboard/iaps/$IapId/submissions/$submissionId/",
+            "    https://partner.microsoft.com/en-us/dashboard/products/$IapId/submissions/$submissionId/",
             "or by running this command:",
             "    Get-InAppProductSubmission -IapId $IapId -SubmissionId $submissionId | Format-InAppProductSubmission",
             "You can automatically monitor this submission with this command:",

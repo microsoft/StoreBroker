@@ -643,8 +643,8 @@ function Get-ServiceEndpoint
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars", "", Justification="We use global variables sparingly and intentionally for module configuration, and employ a consistent naming convention.")]
     param()
 
-    $serviceEndpointInt = "https://manage.devcenter.microsoft-int.com"
-    $serviceEndpointProd = "https://manage.devcenter.microsoft.com"
+    $serviceEndpointInt = "https://api.partner.microsoft-int.com"
+    $serviceEndpointProd = "https://api.partner.microsoft.com"
 
     if (-not [String]::IsNullOrEmpty($script:proxyEndpoint))
     {
@@ -1809,7 +1809,7 @@ function Invoke-SBRestMethod
         [switch] $NoStatus
     )
 
-    $serviceEndpointVersion = "2.0"
+    $serviceEndpointVersion = "1.0"
 
     # Normalize our Uri fragment.  It might be coming from a method implemented here, or it might
     # be coming from the Location header in a previous response.  Either way, we don't want there
@@ -1857,7 +1857,7 @@ function Invoke-SBRestMethod
         $stopwatch.Start()
 
         $serviceEndpoint = Get-ServiceEndpoint
-        $uriPreface = "v$serviceEndpointVersion/my"
+        $uriPreface = "v$serviceEndpointVersion/ingestion"
         $url = "$serviceEndpoint/$uriPreface/$UriFragment"
 
         # This scenario might happen if a client calls into here setting the UriFragment

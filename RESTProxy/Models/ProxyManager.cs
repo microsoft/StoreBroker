@@ -38,7 +38,7 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
         /// <summary>
         ///  The header name for the RequestId that the API adds for post-mortem diagnostics.
         /// </summary>
-        public const string MSRequestIdHeader = "MS-RequestId";
+        public const string RequestIdHeader = "Request-ID";
 
         /// <summary>
         ///  The header name for the RequestId that clients can set for tracking an individual request
@@ -208,7 +208,7 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
                     correlationId = headerValues.FirstOrDefault();
                 }
 
-                if (response.Headers.TryGetValues(ProxyManager.MSRequestIdHeader, out headerValues))
+                if (response.Headers.TryGetValues(ProxyManager.RequestIdHeader, out headerValues))
                 {
                     requestId = headerValues.FirstOrDefault();
                 }

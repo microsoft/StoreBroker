@@ -125,11 +125,11 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
             {
                 if (this.Type == EndpointType.Prod)
                 {
-                    return "https://manage.devcenter.microsoft.com";
+                    return "https://api.partner.microsoft.com";
                 }
                 else
                 {
-                    return "https://manage.devcenter.microsoft-int.com";
+                    return "https://api.partner.microsoft-int.com";
                 }
             }
         }

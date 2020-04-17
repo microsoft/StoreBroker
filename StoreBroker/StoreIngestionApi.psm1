@@ -51,7 +51,7 @@ $script:headerClientName = 'X-ClientName'
 
 # Special header added to Submission API responses that provides a unique ID
 # that the Submission API team can use to trace back problems with a specific request.
-$script:headerMSRequestId = 'MS-RequestId'
+$script:headerRequestId = 'Request-ID'
 
 # Special headers that clients can add to their requests to make it easier to track the
 # responses
@@ -1953,7 +1953,7 @@ function Invoke-SBRestMethod
 
                         # Because this is running in a different PowerShell process, we need to
                         # redefine this script variable (for use within the exception)
-                        $script:headerMSRequestId = $RequestIdHeaderName
+                        $script:headerRequestId = $RequestIdHeaderName
                         $script:headerMSClientRequestId = $ClientRequestIdHeaderName
                         $script:headerMSCorrelationId = $CorrelationIdHeaderName
 
@@ -2002,9 +2002,9 @@ function Invoke-SBRestMethod
                             $responseHeaders = $_.Exception.Response.Headers
                             if ($responseHeaders.Count -gt 0)
                             {
-                                if ($responseHeaders.AllKeys.Contains($script:headerMSRequestId))
+                                if ($responseHeaders.AllKeys.Contains($script:headerRequestId))
                                 {
-                                    $ex.RequestId = $responseHeaders[$script:headerMSRequestId]
+                                    $ex.RequestId = $responseHeaders[$script:headerRequestId]
                                 }
 
                                 if ($responseHeaders.AllKeys.Contains($script:headerMSClientRequestId))
@@ -2032,7 +2032,7 @@ function Invoke-SBRestMethod
                         }
                     }
 
-                    $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($url, $Method, $headers, $Body, $script:headerMSRequestId, $script:headerMSClientRequestId, $script:headerMSCorrelationId, $global:SBWebRequestTimeoutSec, $PSScriptRoot)
+                    $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($url, $Method, $headers, $Body, $script:headerRequestId, $script:headerMSClientRequestId, $script:headerMSCorrelationId, $global:SBWebRequestTimeoutSec, $PSScriptRoot)
 
                     if ($PSCmdlet.ShouldProcess($jobName, "Wait-JobWithAnimation"))
                     {
@@ -2056,11 +2056,11 @@ function Invoke-SBRestMethod
                 }
             }
 
-            $requestId = $result.Headers[$script:headerMSRequestId]
+            $requestId = $result.Headers[$script:headerRequestId]
             if (-not [String]::IsNullOrEmpty($requestId))
             {
-                $localTelemetryProperties[$script:headerMSRequestId] = $requestId
-                Write-Log -Message "$($script:headerMSRequestId) : $requestId" -Level Verbose
+                $localTelemetryProperties[$script:headerRequestId] = $requestId
+                Write-Log -Message "$($script:headerRequestId) : $requestId" -Level Verbose
             }
 
             $returnedClientRequestId = $result.Headers[$script:headerMSClientRequestId]
@@ -2174,9 +2174,9 @@ function Invoke-SBRestMethod
                 $responseHeaders = $ex.Response.Headers
                 if ($responseHeaders.Count -gt 0)
                 {
-                    if ($responseHeaders.AllKeys.Contains($script:headerMSRequestId))
+                    if ($responseHeaders.AllKeys.Contains($script:headerRequestId))
                     {
-                        $requestId = $responseHeaders[$script:headerMSRequestId]
+                        $requestId = $responseHeaders[$script:headerRequestId]
                     }
 
                     if ($responseHeaders.AllKeys.Contains($script:headerMSClientRequestId))
@@ -2305,8 +2305,8 @@ function Invoke-SBRestMethod
 
             if (-not [String]::IsNullOrEmpty($requestId))
             {
-                $localTelemetryProperties[$script:headerMSRequestId] = $requestId
-                $message = $script:headerMSRequestId + ': ' + $requestId
+                $localTelemetryProperties[$script:headerRequestId] = $requestId
+                $message = $script:headerRequestId + ': ' + $requestId
                 $output += $message
                 Write-Log -Message $message -Level Verbose
             }

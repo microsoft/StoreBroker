@@ -20,7 +20,7 @@ function Get-Group
 
         [switch] $SinglePage,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -34,11 +34,11 @@ function Get-Group
         $singleQuery = (-not [String]::IsNullOrWhiteSpace($GroupId))
         $telemetryProperties = @{
             [StoreBrokerTelemetryProperty]::SingleQuery = $singleQuery
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $params = @{
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Get-Group"
             "TelemetryProperties" = $telemetryProperties
@@ -91,7 +91,7 @@ function New-Group
             ParameterSetName="Individual")]
         [string] $Type,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -105,7 +105,7 @@ function New-Group
         $telemetryProperties = @{
                 [StoreBrokerTelemetryProperty]::UsingObject = ($null -ne $Object)
                 [StoreBrokerTelemetryProperty]::Type = $Type
-                [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+                [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         Test-ResourceType -Object $Object -ResourceType ([StoreBrokerResourceType]::Group)
@@ -128,7 +128,7 @@ function New-Group
             "Method" = 'Post'
             "Description" = "Creating new group"
             "Body" = $body
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "New-Group"
             "TelemetryProperties" = $telemetryProperties
@@ -176,7 +176,7 @@ function Set-Group
             ParameterSetName="Individual")]
         [string] $RevisionToken,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -196,7 +196,7 @@ function Set-Group
             [StoreBrokerTelemetryProperty]::UsingObject = ($null -ne $Object)
             [StoreBrokerTelemetryProperty]::Type = $Type
             [StoreBrokerTelemetryProperty]::RevisionToken = $RevisionToken
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         Test-ResourceType -Object $Object -ResourceType ([StoreBrokerResourceType]::Group)
@@ -220,7 +220,7 @@ function Set-Group
             "Method" = 'Put'
             "Description" = "Updating group $GroupId"
             "Body" = $body
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Set-Group"
             "TelemetryProperties" = $telemetryProperties

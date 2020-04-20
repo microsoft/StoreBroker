@@ -45,7 +45,7 @@ function Get-ProductProperty
 
         [switch] $SinglePage,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -62,7 +62,7 @@ function Get-ProductProperty
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
             [StoreBrokerTelemetryProperty]::PropertyId = $PropertyId
             [StoreBrokerTelemetryProperty]::SingleQuery = $singleQuery
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $getParams = @()
@@ -72,7 +72,7 @@ function Get-ProductProperty
         }
 
         $params = @{
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Get-ProductProperty"
             "TelemetryProperties" = $telemetryProperties
@@ -124,7 +124,7 @@ function New-ProductProperty
         [ValidateSet('ApplicationProperty', 'AddonProperty', 'BundleProperty', 'AvatarProperty', 'IoTProperty', 'AzureProperty')]
         [string] $Type,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -140,7 +140,7 @@ function New-ProductProperty
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
             [StoreBrokerTelemetryProperty]::UsingObject = ($null -ne $Object)
             [StoreBrokerTelemetryProperty]::ResourceType = $Type
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $getParams = @()
@@ -170,7 +170,7 @@ function New-ProductProperty
             "Method" = 'Post'
             "Description" = "Creating new property for $ProductId (SubmissionId: $SubmissionId)"
             "Body" = $body
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "New-ProductProperty"
             "TelemetryProperties" = $telemetryProperties
@@ -216,7 +216,7 @@ function Set-ProductProperty
         [Parameter(Mandatory)]
         [string] $RevisionToken,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -239,7 +239,7 @@ function Set-ProductProperty
             [StoreBrokerTelemetryProperty]::UsingObject = ($null -ne $Object)
             [StoreBrokerTelemetryProperty]::ResourceType = $Type
             [StoreBrokerTelemetryProperty]::RevisionToken = $RevisionToken
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $getParams = @()
@@ -270,7 +270,7 @@ function Set-ProductProperty
             "Method" = 'Put'
             "Description" = "Updating property $PropertyId for $ProductId (SubmissionId: $SubmissionId)"
             "Body" = $body
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Set-ProductProperty"
             "TelemetryProperties" = $telemetryProperties
@@ -309,7 +309,7 @@ function Update-ProductProperty
 
         [switch] $IsMinimalObject,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -339,7 +339,7 @@ function Update-ProductProperty
         $params = @{
             'ProductId' = $ProductId
             'SubmissionId' = $SubmissionId
-            'CorrelationId' = $CorrelationId
+            'ClientRequestId' = $ClientRequestId
             'AccessToken' = $AccessToken
             'NoStatus' = $NoStatus
         }
@@ -499,7 +499,7 @@ function Update-ProductProperty
             [StoreBrokerTelemetryProperty]::ProductId = $ProductId
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
             [StoreBrokerTelemetryProperty]::ProvidedSubmissionData = ($null -ne $SubmissionData)
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         Set-TelemetryEvent -EventName Update-ProductProperty -Properties $telemetryProperties -Metrics $telemetryMetrics

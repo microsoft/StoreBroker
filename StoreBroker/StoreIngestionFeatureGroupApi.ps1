@@ -25,7 +25,7 @@ function Get-FeatureGroup
 
         [switch] $SinglePage,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -42,11 +42,11 @@ function Get-FeatureGroup
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
             [StoreBrokerTelemetryProperty]::FeatureGroupId = $FeatureGroupId
             [StoreBrokerTelemetryProperty]::SingleQuery = $singleQuery
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $params = @{
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Get-FeatureGroup"
             "TelemetryProperties" = $telemetryProperties
@@ -95,7 +95,7 @@ function New-FeatureGroup
             ParameterSetName="Object")]
         [PSCustomObject[]] $Object,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -110,7 +110,7 @@ function New-FeatureGroup
             [StoreBrokerTelemetryProperty]::ProductId = $ProductId
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
             [StoreBrokerTelemetryProperty]::UsingObject = ($null -ne $Object)
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $getParams = @()
@@ -147,7 +147,7 @@ function New-FeatureGroup
             "Method" = 'Post'
             "Description" = $description
             "Body" = $body
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "New-FeatureGroup"
             "TelemetryProperties" = $telemetryProperties
@@ -165,7 +165,7 @@ function New-FeatureGroup
                 $params = @{
                     "UriFragment" = $result.nextLink
                     "Description" = "Getting remaining results"
-                    "CorrelationId" = $CorrelationId
+                    "ClientRequestId" = $ClientRequestId
                     "AccessToken" = $AccessToken
                     "TelemetryEventName" = "New-FeatureGroup"
                     "TelemetryProperties" = $telemetryProperties
@@ -204,7 +204,7 @@ function Remove-FeatureGroup
         [Parameter(Mandatory)]
         [string] $FeatureGroupId,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -219,7 +219,7 @@ function Remove-FeatureGroup
             [StoreBrokerTelemetryProperty]::ProductId = $ProductId
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
             [StoreBrokerTelemetryProperty]::FeatureGroupId = $FeatureGroupId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $getParams = @()
@@ -232,7 +232,7 @@ function Remove-FeatureGroup
             "UriFragment" = "products/$ProductId/featureGroups/$FeatureGroupId`?" + ($getParams -join '&')
             "Method" = "Delete"
             "Description" = "Deleting feature group $FeaureGroupId for $ProductId (SubmissionId: $SubmissionId)"
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Remove-FeatureGroup"
             "TelemetryProperties" = $telemetryProperties
@@ -276,7 +276,7 @@ function Set-FeatureGroup
             ParameterSetName="Individual")]
         [string] $RevisionToken,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -298,7 +298,7 @@ function Set-FeatureGroup
             [StoreBrokerTelemetryProperty]::FeatureGroupId = $GroupId
             [StoreBrokerTelemetryProperty]::UsingObject = ($null -ne $Object)
             [StoreBrokerTelemetryProperty]::RevisionToken = $RevisionToken
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $getParams = @()
@@ -327,7 +327,7 @@ function Set-FeatureGroup
             "Method" = 'Put'
             "Description" = "Updating feature group $FeatureGroupId for $ProductId (SubmissionId: $SubmissionId)"
             "Body" = $body
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Set-FeatureGroup"
             "TelemetryProperties" = $telemetryProperties

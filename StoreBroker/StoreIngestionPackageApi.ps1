@@ -38,7 +38,7 @@ function Get-ProductPackage
         [Parameter(ParameterSetName="Known")]
         [switch] $WithSasUri,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -54,7 +54,7 @@ function Get-ProductPackage
         [StoreBrokerTelemetryProperty]::PackageId = $PackageId
         [StoreBrokerTelemetryProperty]::SingleQuery = $singleQuery
         [StoreBrokerTelemetryProperty]::FeatureGroupId = $FeatureGroupId
-        [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+        [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
     }
 
     $getParams = @()
@@ -74,7 +74,7 @@ function Get-ProductPackage
     }
 
     $params = @{
-        "CorrelationId" = $CorrelationId
+        "ClientRequestId" = $ClientRequestId
         "AccessToken" = $AccessToken
         "TelemetryEventName" = "Get-ProductPackage"
         "TelemetryProperties" = $telemetryProperties
@@ -140,7 +140,7 @@ function Wait-ProductPackageProcessed
         as it has been detected that a package has entered the "ProcessFailed" state, the
         function will immediately fail.
 
-    .PARAMETER CorrelationId
+    .PARAMETER ClientRequestId
         An optional identifier that should be sent along to the Store to help with identifying
         this request during post-mortem debugging.  This is typically supplied when trying to
         associate a group of API requests with a single end-goal.
@@ -194,7 +194,7 @@ function Wait-ProductPackageProcessed
 
         [switch] $FailOnFirstError,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -203,13 +203,13 @@ function Wait-ProductPackageProcessed
 
     Write-InvocationLog
 
-    $CorrelationId = Get-CorrelationId -CorrelationId $CorrelationId -Identifier 'Wait-ProductPackageProcessed'
+    $ClientRequestId = Get-ClientRequestId -ClientRequestId $ClientRequestId -Identifier 'Wait-ProductPackageProcessed'
 
     $telemetryProperties = @{
         [StoreBrokerTelemetryProperty]::ProductId = $ProductId
         [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
         [StoreBrokerTelemetryProperty]::PackageId = $PackageId -join ', '
-        [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+        [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
     }
 
     Set-TelemetryEvent -EventName Wait-ProductPackageProcessed -Properties $telemetryProperties
@@ -218,7 +218,7 @@ function Wait-ProductPackageProcessed
         'ProductId' = $ProductId
         'SubmissionId' = $SubmissionId
         'FeatureGroupId' = $FeatureGroupId
-        'CorrelationId' = $CorrelationId
+        'ClientRequestId' = $ClientRequestId
         'AccessToken' = $AccessToken
         'NoStatus' = $NoStatus
     }
@@ -300,7 +300,7 @@ function New-ProductPackage
             ParameterSetName="Individual")]
         [string] $FileName,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -314,7 +314,7 @@ function New-ProductPackage
         [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
         [StoreBrokerTelemetryProperty]::FeatureGroupId = $FeatureGroupId
         [StoreBrokerTelemetryProperty]::UsingObject = ($null -ne $Object)
-        [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+        [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
     }
 
     $getParams = @()
@@ -347,7 +347,7 @@ function New-ProductPackage
         "Method" = 'Post'
         "Description" = "Creating new package for $ProductId (SubmissionId: $SubmissionId)"
         "Body" = $body
-        "CorrelationId" = $CorrelationId
+        "ClientRequestId" = $ClientRequestId
         "AccessToken" = $AccessToken
         "TelemetryEventName" = "New-ProductPackage"
         "TelemetryProperties" = $telemetryProperties
@@ -394,7 +394,7 @@ function Set-ProductPackage
             ParameterSetName="Individual")]
         [string] $RevisionToken,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -418,7 +418,7 @@ function Set-ProductPackage
             [StoreBrokerTelemetryProperty]::UsingObject = ($null -ne $Object)
             [StoreBrokerTelemetryProperty]::State = $State
             [StoreBrokerTelemetryProperty]::RevisionToken = $RevisionToken
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $getParams = @()
@@ -452,7 +452,7 @@ function Set-ProductPackage
             "Method" = 'Put'
             "Description" = "Updating package $PackageId for $ProductId (SubmissionId: $SubmissionId)"
             "Body" = $body
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Set-ProductPackage"
             "TelemetryProperties" = $telemetryProperties
@@ -485,7 +485,7 @@ function Remove-ProductPackage
 
         [string] $FeatureGroupId,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -501,7 +501,7 @@ function Remove-ProductPackage
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
             [StoreBrokerTelemetryProperty]::PackageId = $PackageId
             [StoreBrokerTelemetryProperty]::FeatureGroupId = $FeatureGroupId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $getParams = @()
@@ -519,7 +519,7 @@ function Remove-ProductPackage
             "UriFragment" = "products/$ProductId/packages/$PackageId`?" + ($getParams -join '&')
             "Method" = 'Delete'
             "Description" = "Removing package $PackageId for $ProductId (SubmissionId: $SubmissionId)"
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Remove-ProductPackage"
             "TelemetryProperties" = $telemetryProperties
@@ -701,7 +701,7 @@ function Update-ProductPackage
         [Parameter(ParameterSetName="UpdatePackages")]
         [int] $RedundantPackagesToKeep = 1,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -735,7 +735,7 @@ function Update-ProductPackage
         $params = @{
             'ProductId' = $ProductId
             'SubmissionId' = $SubmissionId
-            'CorrelationId' = $CorrelationId
+            'ClientRequestId' = $ClientRequestId
             'AccessToken' = $AccessToken
             'NoStatus' = $NoStatus
         }
@@ -795,7 +795,7 @@ function Update-ProductPackage
             [StoreBrokerTelemetryProperty]::ReplacePackages = ($ReplacePackages -eq $true)
             [StoreBrokerTelemetryProperty]::UpdatePackages = ($UpdatePackages -eq $true)
             [StoreBrokerTelemetryProperty]::RedundantPackagesToKeep = $RedundantPackagesToKeep
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         Set-TelemetryEvent -EventName Update-ProductPackage -Properties $telemetryProperties -Metrics $telemetryMetrics

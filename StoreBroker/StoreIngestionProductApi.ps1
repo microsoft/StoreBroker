@@ -35,7 +35,7 @@ function Get-Product
         [Parameter(ParameterSetName="Search")]
         [switch] $SinglePage,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -53,7 +53,7 @@ function Get-Product
             [StoreBrokerTelemetryProperty]::AppId = $AppId
             [StoreBrokerTelemetryProperty]::SpecifiedType = ($Type.Count -gt 0)
             [StoreBrokerTelemetryProperty]::SingleQuery = $singleQuery
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $searchDescription = "Getting information for all products"
@@ -71,7 +71,7 @@ function Get-Product
         }
 
         $params = @{
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Get-Product"
             "TelemetryProperties" = $telemetryProperties
@@ -130,7 +130,7 @@ function New-Product
         [ValidateSet('AvatarItem', 'Bundle', 'Consumable', 'ManagedConsumable', 'Durable', 'DurableWithBits', 'Subscription', 'SeasonPass', 'InternetOfThings')]
         [string] $Type,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -146,7 +146,7 @@ function New-Product
             [StoreBrokerTelemetryProperty]::UsingObject = ($null -ne $Object)
             [StoreBrokerTelemetryProperty]::Name = $Name
             [StoreBrokerTelemetryProperty]::ResourceType = $Type
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $hashBody = $Object
@@ -165,7 +165,7 @@ function New-Product
             "Method" = "Post"
             "Description" = "Creating a new product called: $Name"
             "Body" = $body
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "New-Product"
             "TelemetryProperties" = $telemetryProperties
@@ -190,7 +190,7 @@ function Remove-Product
         [ValidateScript({if ($_.Length -le 12) { throw "It looks like you supplied an AppId instead of a ProductId.  Use Get-Product with -AppId to find the ProductId for this AppId." } else { $true }})]
         [string] $ProductId,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -203,14 +203,14 @@ function Remove-Product
     {
         $telemetryProperties = @{
             [StoreBrokerTelemetryProperty]::ProductId = $ProductId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $params = @{
             "UriFragment" = "products/$ProductId"
             "Method" = "Delete"
             "Description" = "Deleting product: $ProductId"
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Remove-Product"
             "TelemetryProperties" = $telemetryProperties
@@ -234,7 +234,7 @@ function Get-ProductPackageIdentity
         [ValidateScript({if ($_.Length -le 12) { throw "It looks like you supplied an AppId instead of a ProductId.  Use Get-Product with -AppId to find the ProductId for this AppId." } else { $true }})]
         [string] $ProductId,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -247,14 +247,14 @@ function Get-ProductPackageIdentity
     {
         $telemetryProperties = @{
             [StoreBrokerTelemetryProperty]::AppId = $AppId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $params = @{
             "UriFragment" = "products/$ProductId/packageIdentity"
             "Method" = "Get"
             "Description" = "Getting package identity for product: $ProductId"
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Get-ProductPackageIdentity"
             "TelemetryProperties" = $telemetryProperties
@@ -278,7 +278,7 @@ function Get-ProductStoreLink
         [ValidateScript({if ($_.Length -le 12) { throw "It looks like you supplied an AppId instead of a ProductId.  Use Get-Product with -AppId to find the ProductId for this AppId." } else { $true }})]
         [string] $ProductId,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -291,14 +291,14 @@ function Get-ProductStoreLink
     {
         $telemetryProperties = @{
             [StoreBrokerTelemetryProperty]::AppId = $AppId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $params = @{
             "UriFragment" = "products/$ProductId/storelink"
             "Method" = "Get"
             "Description" = "Getting store link for product: $ProductId"
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Get-ProductStoreLink"
             "TelemetryProperties" = $telemetryProperties
@@ -328,7 +328,7 @@ function Get-ProductRelated
 
         [switch] $SinglePage,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -341,7 +341,7 @@ function Get-ProductRelated
     {
         $telemetryProperties = @{
             [StoreBrokerTelemetryProperty]::AppId = $AppId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $getParams = @()
@@ -350,7 +350,7 @@ function Get-ProductRelated
         $params = @{
             "UriFragment" = "products/$ProductId/related`?" + ($getParams -join '&')
             "Description" = "Getting related products for product: $ProductId"
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Get-ProductRelated"
             "TelemetryProperties" = $telemetryProperties

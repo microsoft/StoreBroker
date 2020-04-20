@@ -33,7 +33,7 @@ function Get-Flight
 
         [switch] $SinglePage,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -49,11 +49,11 @@ function Get-Flight
             [StoreBrokerTelemetryProperty]::ProductId = $ProductId
             [StoreBrokerTelemetryProperty]::FlightId = $FlightId
             [StoreBrokerTelemetryProperty]::SingleQuery = $singleQuery
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $params = @{
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Get-Flight"
             "TelemetryProperties" = $telemetryProperties
@@ -112,7 +112,7 @@ function New-Flight
         [Parameter(ParameterSetName="Individual")]
         [int] $RelativeRank,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -127,7 +127,7 @@ function New-Flight
             [StoreBrokerTelemetryProperty]::ProductId = $ProductId
             [StoreBrokerTelemetryProperty]::UsingObject = ($null -ne $Object)
             [StoreBrokerTelemetryProperty]::RelativeRank = $RelativeRank
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         Test-ResourceType -Object $Object -ResourceType ([StoreBrokerResourceType]::Flight)
@@ -156,7 +156,7 @@ function New-Flight
             "Method" = 'Post'
             "Description" = "Creating new flight for $ProductId"
             "Body" = $body
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "New-Flight"
             "TelemetryProperties" = $telemetryProperties
@@ -184,7 +184,7 @@ function Remove-Flight
         [Parameter(Mandatory)]
         [string] $FlightId,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -198,14 +198,14 @@ function Remove-Flight
         $telemetryProperties = @{
             [StoreBrokerTelemetryProperty]::ProductId = $ProductId
             [StoreBrokerTelemetryProperty]::FlightId = $FlightId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $params = @{
             "UriFragment" = "products/$ProductId/flights/$FlightId"
             "Method" = "Delete"
             "Description" = "Deleting flight $FlightId for $ProductId"
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Remove-Flight"
             "TelemetryProperties" = $telemetryProperties
@@ -260,7 +260,7 @@ function Set-Flight
             ParameterSetName="Individual")]
         [string] $RevisionToken,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -282,7 +282,7 @@ function Set-Flight
             [StoreBrokerTelemetryProperty]::UsingObject = ($null -ne $Object)
             [StoreBrokerTelemetryProperty]::RelativeRank = $RelativeRank
             [StoreBrokerTelemetryProperty]::RevisionToken = $RevisionToken
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         Test-ResourceType -Object $Object -ResourceType ([StoreBrokerResourceType]::Flight)
@@ -312,7 +312,7 @@ function Set-Flight
             "Method" = 'Put'
             "Description" = "Updating flight $FlightId for $ProductId"
             "Body" = $body
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Set-Flight"
             "TelemetryProperties" = $telemetryProperties
@@ -344,7 +344,7 @@ function Update-Flight
 
         [int] $RelativeRank,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -357,12 +357,12 @@ function Update-Flight
     {
         $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
-        $CorrelationId = Get-CorrelationId -CorrelationId $CorrelationId -Identifier 'Update-Flight'
+        $ClientRequestId = Get-ClientRequestId -ClientRequestId $ClientRequestId -Identifier 'Update-Flight'
 
         $params = @{
             'ProductId' = $ProductId
             'FlightId' = $FlightId
-            'CorrelationId' = $CorrelationId
+            'ClientRequestId' = $ClientRequestId
             'AccessToken' = $AccessToken
             'NoStatus' = $NoStatus
         }
@@ -392,7 +392,7 @@ function Update-Flight
         $telemetryProperties = @{
             [StoreBrokerTelemetryProperty]::ProductId = $ProductId
             [StoreBrokerTelemetryProperty]::FlightId = $FlightId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         Set-TelemetryEvent -EventName Update-Flight -Properties $telemetryProperties -Metrics $telemetryMetrics

@@ -43,7 +43,7 @@ function Get-ListingVideo
 
         [switch] $SinglePage,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -61,7 +61,7 @@ function Get-ListingVideo
             [StoreBrokerTelemetryProperty]::LanguageCode = $LanguageCode
             [StoreBrokerTelemetryProperty]::VideoId = $VideoId
             [StoreBrokerTelemetryProperty]::SingleQuery = $singleQuery
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $getParams = @()
@@ -71,7 +71,7 @@ function Get-ListingVideo
         }
 
         $params = @{
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Get-ListingVideo"
             "TelemetryProperties" = $telemetryProperties
@@ -145,7 +145,7 @@ function New-ListingVideo
         [Parameter(ParameterSetName="Individual")]
         [int] $ThumbnailOrientation = 0,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -161,7 +161,7 @@ function New-ListingVideo
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
             [StoreBrokerTelemetryProperty]::LanguageCode = $LanguageCode
             [StoreBrokerTelemetryProperty]::Orientation = $ThumbnailOrientation
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $getParams = @()
@@ -204,7 +204,7 @@ function New-ListingVideo
             "Method" = 'Post'
             "Description" = $description
             "Body" = $body
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "New-ListingVideo"
             "TelemetryProperties" = $telemetryProperties
@@ -222,7 +222,7 @@ function New-ListingVideo
                 $params = @{
                     "UriFragment" = $result.nextLink
                     "Description" = "Getting remaining results"
-                    "CorrelationId" = $CorrelationId
+                    "ClientRequestId" = $ClientRequestId
                     "AccessToken" = $AccessToken
                     "TelemetryEventName" = "New-ListingVideo"
                     "TelemetryProperties" = $telemetryProperties
@@ -265,7 +265,7 @@ function Remove-ListingVideo
         [Parameter(Mandatory)]
         [string] $VideoId,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -281,7 +281,7 @@ function Remove-ListingVideo
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
             [StoreBrokerTelemetryProperty]::LanguageCode = $LanguageCode
             [StoreBrokerTelemetryProperty]::VideoId = $VideoId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $getParams = @()
@@ -294,7 +294,7 @@ function Remove-ListingVideo
             "UriFragment" = "products/$ProductId/listings/$LanguageCode/videos/$VideoId`?" + ($getParams -join '&')
             "Method" = "Delete"
             "Description" = "Deleting video $VideoId from the $LanguageCode listing for $ProductId (SubmissionId: $SubmissionId)"
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Remove-ListingVideo"
             "TelemetryProperties" = $telemetryProperties
@@ -365,7 +365,7 @@ function Set-ListingVideo
             ParameterSetName="Individual")]
         [string] $RevisionToken,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -390,7 +390,7 @@ function Set-ListingVideo
             [StoreBrokerTelemetryProperty]::State = $State
             [StoreBrokerTelemetryProperty]::Orientation = $ThumbnailOrientation
             [StoreBrokerTelemetryProperty]::RevisionToken = $RevisionToken
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $getParams = @()
@@ -424,7 +424,7 @@ function Set-ListingVideo
             "Method" = 'Put'
             "Description" = "Updating listing video $VideoId for $ProductId (SubmissionId: $SubmissionId)"
             "Body" = $body
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Set-ListingVideo"
             "TelemetryProperties" = $telemetryProperties
@@ -469,7 +469,7 @@ function Update-ListingVideo
         [Parameter(ParameterSetName="RemoveOnly")]
         [switch] $RemoveOnly,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -488,7 +488,7 @@ function Update-ListingVideo
             'ProductId' = $ProductId
             'SubmissionId' = $SubmissionId
             'LanguageCode' = $LanguageCode
-            'CorrelationId' = $CorrelationId
+            'ClientRequestId' = $ClientRequestId
             'AccessToken' = $AccessToken
             'NoStatus' = $NoStatus
         }
@@ -544,7 +544,7 @@ function Update-ListingVideo
             [StoreBrokerTelemetryProperty]::MediaRootPath = (Get-PiiSafeString -PlainText $MediaRootPath)
             [StoreBrokerTelemetryProperty]::LanguageCode = $LanguageCode
             [StoreBrokerTelemetryProperty]::RemoveOnly = $RemoveOnly
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         Set-TelemetryEvent -EventName Update-ListingVideo -Properties $telemetryProperties -Metrics $telemetryMetrics

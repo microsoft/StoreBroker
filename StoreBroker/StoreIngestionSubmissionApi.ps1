@@ -109,7 +109,7 @@ function Get-Submission
         If not specified, then the API continuously be queried until all results have been
         retrieved, and then the final combined result set will be returned.
 
-    .PARAMETER CorrelationId
+    .PARAMETER ClientRequestId
         An optional identifier that should be sent along to the Store to help with identifying
         this request during post-mortem debugging.  This is typically supplied when trying to
         associate a group of API requests with a single end-goal.
@@ -191,7 +191,7 @@ function Get-Submission
         [Parameter(ParameterSetName="Search")]
         [switch] $SinglePage,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -214,11 +214,11 @@ function Get-Submission
             [StoreBrokerTelemetryProperty]::GetValidation = $Validation
             [StoreBrokerTelemetryProperty]::WaitUntilReady = ($WaitUntilReady -eq $true)
             [StoreBrokerTelemetryProperty]::SingleQuery = $singleQuery
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $commonParams = @{
-            'CorrelationId' = $CorrelationId
+            'ClientRequestId' = $ClientRequestId
             'AccessToken' = $AccessToken
             'NoStatus' = $NoStatus
         }
@@ -332,7 +332,7 @@ function New-Submission
         objects asynchronously, and thus the information in the Submission cannot be "trusted"
         until all of its resources are "ready".
 
-    .PARAMETER CorrelationId
+    .PARAMETER ClientRequestId
         An optional identifier that should be sent along to the Store to help with identifying
         this request during post-mortem debugging.  This is typically supplied when trying to
         associate a group of API requests with a single end-goal.
@@ -414,7 +414,7 @@ function New-Submission
 
         [switch] $WaitUntilReady,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -434,12 +434,12 @@ function New-Submission
             [StoreBrokerTelemetryProperty]::Scope = $Scope
             [StoreBrokerTelemetryProperty]::Force = ($Force -eq $true)
             [StoreBrokerTelemetryProperty]::WaitUntilReady = ($WaitUntilReady -eq $true)
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $commonParams = @{
             'ProductId' = $ProductId
-            'CorrelationId' = $CorrelationId
+            'ClientRequestId' = $ClientRequestId
             'AccessToken' = $AccessToken
             'NoStatus' = $NoStatus
         }
@@ -530,7 +530,7 @@ function New-Submission
             "Method" = 'Post'
             "Description" = "Creating a new submission for product: $ProductId"
             "Body" = $body
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "New-Submission"
             "TelemetryProperties" = $telemetryProperties
@@ -572,7 +572,7 @@ function Remove-Submission
     .PARAMETER SubmissionId
         The ID of the Submission for the Product that is to be deleted.
 
-    .PARAMETER CorrelationId
+    .PARAMETER ClientRequestId
         An optional identifier that should be sent along to the Store to help with identifying
         this request during post-mortem debugging.  This is typically supplied when trying to
         associate a group of API requests with a single end-goal.
@@ -602,7 +602,7 @@ function Remove-Submission
         [Parameter(Mandatory)]
         [string] $SubmissionId,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -616,14 +616,14 @@ function Remove-Submission
         $telemetryProperties = @{
             [StoreBrokerTelemetryProperty]::ProductId = $ProductId
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $params = @{
             "UriFragment" = "products/$ProductId/submissions/$SubmissionId"
             "Method" = "Delete"
             "Description" = "Deleting submission $SubmissionId for product: $ProductId"
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Remove-Submission"
             "TelemetryProperties" = $telemetryProperties
@@ -658,7 +658,7 @@ function Stop-Submission
     .PARAMETER SubmissionId
         The ID of the Submission for the Product that is to be stopped/cancelled.
 
-    .PARAMETER CorrelationId
+    .PARAMETER ClientRequestId
         An optional identifier that should be sent along to the Store to help with identifying
         this request during post-mortem debugging.  This is typically supplied when trying to
         associate a group of API requests with a single end-goal.
@@ -691,7 +691,7 @@ function Stop-Submission
         [Parameter(Mandatory)]
         [string] $SubmissionId,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -705,14 +705,14 @@ function Stop-Submission
         $telemetryProperties = @{
             [StoreBrokerTelemetryProperty]::ProductId = $ProductId
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $params = @{
             "UriFragment" = "products/$ProductId/submissions/$SubmissionId/cancel"
             "Method" = 'Post'
             "Description" = "Cancelling submission $SubmissionId"
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Stop-Submission"
             "TelemetryProperties" = $telemetryProperties
@@ -744,7 +744,7 @@ function Get-SubmissionDetail
     .PARAMETER SubmissionId
         The ID of the Submission for the Product whose details are to be retrieved.
 
-    .PARAMETER CorrelationId
+    .PARAMETER ClientRequestId
         An optional identifier that should be sent along to the Store to help with identifying
         this request during post-mortem debugging.  This is typically supplied when trying to
         associate a group of API requests with a single end-goal.
@@ -776,7 +776,7 @@ function Get-SubmissionDetail
         [Parameter(Mandatory)]
         [string] $SubmissionId,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -790,14 +790,14 @@ function Get-SubmissionDetail
         $telemetryProperties = @{
             [StoreBrokerTelemetryProperty]::ProductId = $ProductId
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $params = @{
             "UriFragment" = "products/$ProductId/submissions/$SubmissionId/detail"
             "Method" = 'Get'
             "Description" = "Getting details of submission $SubmissionId for $ProductId"
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Get-SubmissionDetail"
             "TelemetryProperties" = $telemetryProperties
@@ -857,7 +857,7 @@ function Set-SubmissionDetail
         To change the corresponding value, you must explicitly specify either $true or $false
         with this switch.
 
-    .PARAMETER CorrelationId
+    .PARAMETER ClientRequestId
         An optional identifier that should be sent along to the Store to help with identifying
         this request during post-mortem debugging.  This is typically supplied when trying to
         associate a group of API requests with a single end-goal.
@@ -918,7 +918,7 @@ function Set-SubmissionDetail
         [Parameter(ParameterSetName="Individual")]
         [switch] $AutoPromote,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -934,7 +934,7 @@ function Set-SubmissionDetail
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
             [StoreBrokerTelemetryProperty]::UsingObject = ($null -ne $Object)
             [StoreBrokerTelemetryProperty]::UpdateCertificationNotes = ($null -ne $CertificationNotes)
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         Test-ResourceType -Object $Object -ResourceType ([StoreBrokerResourceType]::SubmissionDetail)
@@ -985,7 +985,7 @@ function Set-SubmissionDetail
             "Method" = 'Post'
             "Description" = "Updating detail for submission: $SubmissionId"
             "Body" = $body
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Set-SubmissionDetail"
             "TelemetryProperties" = $telemetryProperties
@@ -1025,7 +1025,7 @@ function Update-SubmissionDetail
 
         [switch] $IsMinimalObject,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -1064,7 +1064,7 @@ function Update-SubmissionDetail
         $params = @{
             'ProductId' = $ProductId
             'SubmissionId' = $SubmissionId
-            'CorrelationId' = $CorrelationId
+            'ClientRequestId' = $ClientRequestId
             'AccessToken' = $AccessToken
             'NoStatus' = $NoStatus
         }
@@ -1151,7 +1151,7 @@ function Update-SubmissionDetail
             [StoreBrokerTelemetryProperty]::UpdateCertificationNotes = $UpdateCertificationNotes
             [StoreBrokerTelemetryProperty]::ProvidedCertificationNotes = $providedCertificationNotes
             [StoreBrokerTelemetryProperty]::ProvidedSubmissionData = $providedSubmissionData
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         Set-TelemetryEvent -EventName Update-SubmissionDetail -Properties $telemetryProperties -Metrics $telemetryMetrics
@@ -1177,7 +1177,7 @@ function Push-Submission
         [Parameter(Mandatory)]
         [string] $SubmissionId,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -1191,14 +1191,14 @@ function Push-Submission
         $telemetryProperties = @{
             [StoreBrokerTelemetryProperty]::ProductId = $ProductId
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $params = @{
             "UriFragment" = "products/$ProductId/submissions/$SubmissionId/promote"
             "Method" = 'Post'
             "Description" = "Promoting submission $SubmissionId"
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Push-Submission"
             "TelemetryProperties" = $telemetryProperties
@@ -1225,7 +1225,7 @@ function Publish-Submission
         [Parameter(Mandatory)]
         [string] $SubmissionId,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -1239,14 +1239,14 @@ function Publish-Submission
         $telemetryProperties = @{
             [StoreBrokerTelemetryProperty]::ProductId = $ProductId
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $params = @{
             "UriFragment" = "products/$ProductId/submissions/$SubmissionId/publish"
             "Method" = 'Post'
             "Description" = "Publishing submission $SubmissionId"
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Publish-Submission"
             "TelemetryProperties" = $telemetryProperties
@@ -1275,7 +1275,7 @@ function Get-SubmissionReport
 
         [switch] $SinglePage,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -1289,13 +1289,13 @@ function Get-SubmissionReport
         $telemetryProperties = @{
             [StoreBrokerTelemetryProperty]::ProductId = $ProductId
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $params = @{
             "UriFragment" = "products/$ProductId/submissions/$SubmissionId/reports"
             "Description" = "Getting reports of submission $SubmissionId for $ProductId"
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Get-SubmissionReport"
             "TelemetryProperties" = $telemetryProperties
@@ -1327,7 +1327,7 @@ function Submit-Submission
 
         [switch] $Auto,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -1342,7 +1342,7 @@ function Submit-Submission
             [StoreBrokerTelemetryProperty]::ProductId = $ProductId
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
             [StoreBrokerTelemetryProperty]::Auto = $Auto
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $getParams = @()
@@ -1355,7 +1355,7 @@ function Submit-Submission
             "UriFragment" = "products/$ProductId/submissions/$SubmissionId/submit`?" + ($getParams -join '&')
             "Method" = 'Post'
             "Description" = "Submitting submission $SubmissionId"
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Submit-Submission"
             "TelemetryProperties" = $telemetryProperties
@@ -1364,7 +1364,7 @@ function Submit-Submission
 
         $result = Invoke-SBRestMethod @params
 
-        $product = Get-Product -ProductId $ProductId -CorrelationId $CorrelationId -AccessToken $AccessToken -NoStatus:$NoStatus
+        $product = Get-Product -ProductId $ProductId -ClientRequestId $ClientRequestId -AccessToken $AccessToken -NoStatus:$NoStatus
         $appId = ($product.externalIds | Where-Object { $_.type -eq 'StoreId' }).value
         Write-Log -Message @(
             "The submission has been successfully submitted.",
@@ -1400,7 +1400,7 @@ function Get-SubmissionValidation
 
         [switch] $WaitForCompletion,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -1415,7 +1415,7 @@ function Get-SubmissionValidation
             [StoreBrokerTelemetryProperty]::ProductId = $ProductId
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
             [StoreBrokerTelemetryProperty]::WaitForCompletion = ($WaitForCompletion -eq $true)
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $params = @{
@@ -1423,7 +1423,7 @@ function Get-SubmissionValidation
             "Method" = 'Get'
             "Description" = "Getting validation of submission $SubmissionId for $ProductId"
             "WaitForCompletion" = $WaitForCompletion
-            "CorrelationId" = $CorrelationId
+            "ClientRequestId" = $ClientRequestId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Get-SubmissionValidation"
             "TelemetryProperties" = $telemetryProperties
@@ -1532,7 +1532,7 @@ function Update-Submission
         # be updated.
         [switch] $IsMinimalObject,
 
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $AccessToken,
 
@@ -1614,10 +1614,10 @@ function Update-Submission
         throw $message
     }
 
-    $CorrelationId = Get-CorrelationId -CorrelationId $CorrelationId -Identifier $ProductId
+    $ClientRequestId = Get-ClientRequestId -ClientRequestId $ClientRequestId -Identifier $ProductId
 
     $commonParams = @{
-        'CorrelationId' = $CorrelationId
+        'ClientRequestId' = $ClientRequestId
         'AccessToken' = $AccessToken
         'NoStatus' = $NoStatus
     }
@@ -1980,7 +1980,7 @@ function Update-Submission
             [StoreBrokerTelemetryProperty]::UpdateCertificationNotes = ($UpdateCertificationNotes -eq $true)
             [StoreBrokerTelemetryProperty]::ProvidedCertificationNotes = (-not [String]::IsNullOrWhiteSpace($CertificationNotes))
             [StoreBrokerTelemetryProperty]::IsMinimalObject = ($IsMinimalObject -eq $true)
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
             [StoreBrokerTelemetryProperty]::SeekEnabled = $SeekEnabled
         }
 

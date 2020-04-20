@@ -15,7 +15,7 @@ Add-Type -TypeDefinition @"
       Auto,
       AutoSubmit,
       ClientName,
-      CorrelationId,
+      ClientRequestId,
       DayOfWeek,
       EndingConfigVersion,
       ErrorBucket,

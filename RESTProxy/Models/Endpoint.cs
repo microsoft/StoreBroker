@@ -261,7 +261,6 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
             HttpMethod method,
             IPrincipal onBehalfOf,
             string body = null,
-            string correlationId = null,
             string clientRequestId = null,
             string clientName = null)
         {
@@ -298,11 +297,6 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
                 }
 
                 // Add any additional headers that the client may have specified in their request
-                if (!string.IsNullOrWhiteSpace(correlationId))
-                {
-                    request.Headers[ProxyManager.MSCorrelationIdHeader] = correlationId;
-                }
-
                 if (!string.IsNullOrWhiteSpace(clientRequestId))
                 {
                     request.Headers[ProxyManager.MSClientRequestIdHeader] = clientRequestId;
@@ -366,7 +360,7 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
             }
 
             // Proxy all of the special headers that the API returns
-            // (which all begin with "MS-").  One example is "MS-CorrelationId"
+            // (which all begin with "MS-").  One example is "MS-Client-RequestId"
             // which is needed by the Windows Store Submission API team when they
             // are investigating bug reports with the API.
             const string MSHeaderPreface = "MS-";

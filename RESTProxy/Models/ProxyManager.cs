@@ -30,12 +30,6 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
         public const string JsonMediaType = "application/json";
 
         /// <summary>
-        ///  The header name for the CorrelationId that the user or API sets for tracking a series of related requests
-        ///  for post-mortem diagnostics.
-        /// </summary>
-        public const string MSCorrelationIdHeader = "MS-CorrelationId";
-
-        /// <summary>
         ///  The header name for the RequestId that the API adds for post-mortem diagnostics.
         /// </summary>
         public const string RequestIdHeader = "Request-ID";
@@ -154,9 +148,6 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
         /// be used for this request.
         /// </param>
         /// <param name="endpointType">The type of endpoint that should be used for the request.</param>
-        /// <param name="correlationId">
-        /// An ID that a client may have set in the header (which we must proxy) to track a string of related requests.
-        /// </param>
         /// <param name="clientRequestId">
         /// An ID that a client may have set in the header (which we must proxy) to track an individual request.
         /// </param>
@@ -173,7 +164,6 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
             string tenantId = null,
             string tenantName = null,
             EndpointType endpointType = EndpointType.Prod,
-            string correlationId = null,
             string clientRequestId = null,
             string clientName = null)
         {
@@ -196,7 +186,7 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
                 if (ProxyManager.TryGetEndpoint(tenantId, tenantName, endpointType, out endpoint, out response))
                 {
                     clientId = endpoint.ClientId;
-                    response = await endpoint.PerformRequestAsync(pathAndQuery, method, onBehalfOf, body, correlationId, clientRequestId, clientName);
+                    response = await endpoint.PerformRequestAsync(pathAndQuery, method, onBehalfOf, body, clientRequestId, clientName);
                 }
 
                 // We'll capture the status code for use in the finally block.
@@ -204,12 +194,6 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
 
                 // Get any of the request ID headers that can be used for post-mortem diagnostics.  We'll use them in the finally block.
                 IEnumerable<string> headerValues;
-                if (response.Headers.TryGetValues(ProxyManager.MSCorrelationIdHeader, out headerValues))
-                {
-                    // If the client supplied a correlationId, the value we're getting back from the API should be identical.
-                    correlationId = headerValues.FirstOrDefault();
-                }
-
                 if (response.Headers.TryGetValues(ProxyManager.RequestIdHeader, out headerValues))
                 {
                     requestId = headerValues.FirstOrDefault();
@@ -235,7 +219,6 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
                     clientId,
                     endpointType,
                     statusCode,
-                    correlationId,
                     requestId,
                     clientRequestId,
                     stopwatch.Elapsed.TotalSeconds);
@@ -382,9 +365,6 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
         /// <param name="clientId">The id of the <see cref="Endpoint"/> that owned the request.</param>
         /// <param name="endpointType">The type of endpoint that should be used for the request.</param>
         /// <param name="statusCode">The <see cref="HttpStatusCode"/> for the result of the request.</param>
-        /// <param name="correlationId">
-        /// An ID that a client (or the API) may have set in the header to track a string of related requests.
-        /// </param>
         /// <param name="requestId">The ID given to the request by the API to enable post-mortem analysis.</param>
         /// <param name="clientRequestId">
         /// An ID that a client may have set in the header to track an individual request.
@@ -399,7 +379,6 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
             string clientId,
             EndpointType endpointType,
             HttpStatusCode statusCode,
-            string correlationId,
             string requestId,
             string clientRequestId,
             double duration)
@@ -412,7 +391,6 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
             properties.Add("PathAndQuery", pathAndQuery);
             properties.Add("Method", method.ToString());
             properties.Add("StatusCode", statusCode.ToString());
-            properties.Add("CorrelationId", correlationId);
             properties.Add("RequestId", requestId);
             properties.Add("ClientRequestId", clientRequestId);
             properties.Add("EndpointType", endpointType.ToString());

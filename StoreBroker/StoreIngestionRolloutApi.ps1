@@ -34,8 +34,6 @@ function Get-SubmissionRollout
         [Parameter(Mandatory)]
         [string] $SubmissionId,
 
-        [string] $ClientRequestId,
-
         [string] $CorrelationId,
 
         [string] $AccessToken,
@@ -50,7 +48,6 @@ function Get-SubmissionRollout
         $telemetryProperties = @{
             [StoreBrokerTelemetryProperty]::ProductId = $ProductId
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
             [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
         }
 
@@ -58,7 +55,6 @@ function Get-SubmissionRollout
             "UriFragment" = "products/$ProductId/submissions/$SubmissionId/rollout"
             "Method" = 'Get'
             "Description" = "Getting rollout info for product: $ProductId submissionId: $SubmissionId"
-            "ClientRequestId" = $ClientRequestId
             "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Get-SubmissionRollout"
@@ -107,8 +103,6 @@ function Set-SubmissionRollout
         [Parameter(ParameterSetName="Individual")]
         [switch] $SeekEnabled,
 
-        [string] $ClientRequestId,
-
         [string] $CorrelationId,
 
         [string] $AccessToken,
@@ -125,7 +119,6 @@ function Set-SubmissionRollout
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
             [StoreBrokerTelemetryProperty]::UsingObject = ($null -ne $Object)
             [StoreBrokerTelemetryProperty]::State = $State
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
             [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
         }
 
@@ -174,7 +167,6 @@ function Set-SubmissionRollout
             "Method" = 'Post'
             "Description" = "Updating rollout details for submission: $SubmissionId"
             "Body" = $body
-            "ClientRequestId" = $ClientRequestId
             "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Set-SubmissionRollout"
@@ -233,8 +225,6 @@ function Update-SubmissionRollout
 
         [switch] $SeekEnabled,
 
-        [string] $ClientRequestId,
-
         [string] $CorrelationId,
 
         [string] $AccessToken,
@@ -251,7 +241,6 @@ function Update-SubmissionRollout
         $params = @{
             'ProductId' = $ProductId
             'SubmissionId' = $SubmissionId
-            'ClientRequestId' = $ClientRequestId
             'CorrelationId' = $CorrelationId
             'AccessToken' = $AccessToken
             'NoStatus' = $NoStatus
@@ -293,7 +282,6 @@ function Update-SubmissionRollout
             [StoreBrokerTelemetryProperty]::ProductId = $ProductId
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
             [StoreBrokerTelemetryProperty]::Percentage = $Percentage
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
             [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
         }
 

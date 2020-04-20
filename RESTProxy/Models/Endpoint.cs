@@ -245,9 +245,6 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
         /// The <see cref="IPrincipal"/> of the user that we're performing the API request on behalf of.
         /// </param>
         /// <param name="body">The body content of the REST request (if needed).</param>
-        /// <param name="correlationId">
-        /// An ID that a client may have set in the header (which we must proxy) to track a string of related requests.
-        /// </param>
         /// <param name="clientRequestId">
         /// An ID that a client may have set in the header (which we must proxy) to track an individual request.
         /// </param>

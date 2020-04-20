@@ -27,8 +27,6 @@ function Get-ProductAvailability
 
         [switch] $SinglePage,
 
-        [string] $ClientRequestId,
-
         [string] $CorrelationId,
 
         [string] $AccessToken,
@@ -46,7 +44,6 @@ function Get-ProductAvailability
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
             [StoreBrokerTelemetryProperty]::ProductAvailabilityId = $ProductAvailabilityId
             [StoreBrokerTelemetryProperty]::SingleQuery = $singleQuery
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
             [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
         }
 
@@ -57,7 +54,6 @@ function Get-ProductAvailability
         }
 
         $params = @{
-            "ClientRequestId" = $ClientRequestId
             "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Get-ProductAvailability"
@@ -118,8 +114,6 @@ function New-ProductAvailability
 
         [switch] $SinglePage,
 
-        [string] $ClientRequestId,
-
         [string] $CorrelationId,
 
         [string] $AccessToken,
@@ -137,7 +131,6 @@ function New-ProductAvailability
             [StoreBrokerTelemetryProperty]::UsingObject = ($null -ne $Object)
             [StoreBrokerTelemetryProperty]::HasAudience = ($null -ne $Audience)
             [StoreBrokerTelemetryProperty]::Visibility = $Visibility
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
             [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
         }
 
@@ -172,7 +165,6 @@ function New-ProductAvailability
             "Method" = 'Post'
             "Description" = "Creating new product availability for $ProductId (SubmissionId: $SubmissionId)"
             "Body" = $body
-            "ClientRequestId" = $ClientRequestId
             "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "New-ProductAvailability"
@@ -226,8 +218,6 @@ function Set-ProductAvailability
             ParameterSetName="Individual")]
         [string] $RevisionToken,
 
-        [string] $ClientRequestId,
-
         [string] $CorrelationId,
 
         [string] $AccessToken,
@@ -252,7 +242,6 @@ function Set-ProductAvailability
             [StoreBrokerTelemetryProperty]::HasAudience = ($null -ne $Audience)
             [StoreBrokerTelemetryProperty]::Visibility = $Visibility
             [StoreBrokerTelemetryProperty]::RevisionToken = $RevisionToken
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
             [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
         }
 
@@ -288,7 +277,6 @@ function Set-ProductAvailability
             "Method" = 'Put'
             "Description" = "Updating product availability $ProductAvailabilityId for $ProductId (SubmissionId: $SubmissionId)"
             "Body" = $body
-            "ClientRequestId" = $ClientRequestId
             "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Set-ProductAvailability"
@@ -324,8 +312,6 @@ function Update-ProductAvailability
 
         [switch] $IsMinimalObject,
 
-        [string] $ClientRequestId,
-
         [string] $CorrelationId,
 
         [string] $AccessToken,
@@ -357,7 +343,6 @@ function Update-ProductAvailability
         $params = @{
             'ProductId' = $ProductId
             'SubmissionId' = $SubmissionId
-            'ClientRequestId' = $ClientRequestId
             'CorrelationId' = $CorrelationId
             'AccessToken' = $AccessToken
             'NoStatus' = $NoStatus
@@ -393,7 +378,6 @@ function Update-ProductAvailability
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
             [StoreBrokerTelemetryProperty]::ProvidedSubmissionData = ($null -ne $SubmissionData)
             [StoreBrokerTelemetryProperty]::Visibility = $Visibility
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
             [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
         }
 

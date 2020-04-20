@@ -142,8 +142,6 @@ function ConvertFrom-ExistingSubmission
 
         [switch] $DownloadMedia,
 
-        [string] $ClientRequestId,
-
         [string] $CorrelationId,
 
         [string] $AccessToken,
@@ -159,7 +157,6 @@ function ConvertFrom-ExistingSubmission
         $CorrelationId = Get-CorrelationId -CorrelationId $CorrelationId -Identifier 'ConvertFrom-ExistingSubmission'
 
         $commonParams = @{
-            'ClientRequestId' = $ClientRequestId
             'CorrelationId' = $CorrelationId
             'AccessToken' = $AccessToken
             'NoStatus' = $NoStatus
@@ -242,7 +239,6 @@ function ConvertFrom-ExistingSubmission
             [StoreBrokerTelemetryProperty]::ProductId = $ProductId
             [StoreBrokerTelemetryProperty]::AppId = $AppId
             [StoreBrokerTelemetryProperty]::SubmissionId = $submissionId
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
             [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
         }
 
@@ -1556,8 +1552,6 @@ function ConvertFrom-Listing
 
         [switch] $DownloadMedia,
 
-        [string] $ClientRequestId,
-
         [string] $CorrelationId,
 
         [string] $AccessToken,
@@ -1571,7 +1565,6 @@ function ConvertFrom-Listing
             'ProductId' = $ProductId
             'SubmissionId' = $SubmissionId
             'LanguageCode' = $Listing.languageCode
-            'ClientRequestId' = $ClientRequestId
             'CorrelationId' = $CorrelationId
             'AccessToken' = $AccessToken
             'NoStatus' = $NoStatus

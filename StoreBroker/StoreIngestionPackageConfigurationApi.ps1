@@ -36,8 +36,6 @@ function Get-ProductPackageConfiguration
 
         [switch] $SinglePage,
 
-        [string] $ClientRequestId,
-
         [string] $CorrelationId,
 
         [string] $AccessToken,
@@ -56,7 +54,6 @@ function Get-ProductPackageConfiguration
             [StoreBrokerTelemetryProperty]::PackageConfigurationId = $PackageConfigurationId
             [StoreBrokerTelemetryProperty]::SingleQuery = $singleQuery
             [StoreBrokerTelemetryProperty]::FeatureGroupId = $FeatureGroupId
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
             [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
         }
 
@@ -72,7 +69,6 @@ function Get-ProductPackageConfiguration
         }
 
         $params = @{
-            "ClientRequestId" = $ClientRequestId
             "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Get-ProductPackageConfiguration"
@@ -130,8 +126,6 @@ function New-ProductPackageConfiguration
         [Parameter(ParameterSetName="Individual")]
         [DateTime] $MandatoryUpdateEffectiveDate,
 
-        [string] $ClientRequestId,
-
         [string] $CorrelationId,
 
         [string] $AccessToken,
@@ -148,7 +142,6 @@ function New-ProductPackageConfiguration
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
             [StoreBrokerTelemetryProperty]::FeatureGroupId = $FeatureGroupId
             [StoreBrokerTelemetryProperty]::UsingObject = ($null -ne $Object)
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
             [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
         }
 
@@ -208,7 +201,6 @@ function New-ProductPackageConfiguration
             "Method" = 'Post'
             "Description" = "Creating new package configuration for $ProductId (SubmissionId: $SubmissionId)"
             "Body" = $body
-            "ClientRequestId" = $ClientRequestId
             "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "New-ProductPackageConfiguration"
@@ -261,8 +253,6 @@ function Set-ProductPackageConfiguration
             ParameterSetName="Individual")]
         [string] $RevisionToken,
 
-        [string] $ClientRequestId,
-
         [string] $CorrelationId,
 
         [string] $AccessToken,
@@ -286,7 +276,6 @@ function Set-ProductPackageConfiguration
             [StoreBrokerTelemetryProperty]::FeatureGroupId = $FeatureGroupId
             [StoreBrokerTelemetryProperty]::UsingObject = ($null -ne $Object)
             [StoreBrokerTelemetryProperty]::RevisionToken = $RevisionToken
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
             [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
         }
 
@@ -345,7 +334,6 @@ function Set-ProductPackageConfiguration
             "Method" = 'Put'
             "Description" = "Updating package configuration $PackageConfigurationId for $ProductId (SubmissionId: $SubmissionId)"
             "Body" = $body
-            "ClientRequestId" = $ClientRequestId
             "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Set-ProductPackageConfiguration"
@@ -376,8 +364,6 @@ function Update-ProductPackageConfiguration
 
         [DateTime] $MandatoryUpdateEffectiveDate,
 
-        [string] $ClientRequestId,
-
         [string] $CorrelationId,
 
         [string] $AccessToken,
@@ -394,7 +380,6 @@ function Update-ProductPackageConfiguration
         $params = @{
             'ProductId' = $ProductId
             'SubmissionId' = $SubmissionId
-            'ClientRequestId' = $ClientRequestId
             'CorrelationId' = $CorrelationId
             'AccessToken' = $AccessToken
             'NoStatus' = $NoStatus
@@ -423,7 +408,6 @@ function Update-ProductPackageConfiguration
         $telemetryProperties = @{
             [StoreBrokerTelemetryProperty]::ProductId = $ProductId
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
             [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
         }
 

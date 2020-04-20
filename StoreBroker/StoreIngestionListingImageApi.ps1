@@ -37,8 +37,6 @@ function Get-ListingImage
 
         [switch] $SinglePage,
 
-        [string] $ClientRequestId,
-
         [string] $CorrelationId,
 
         [string] $AccessToken,
@@ -58,7 +56,6 @@ function Get-ListingImage
             [StoreBrokerTelemetryProperty]::ImageId = $ImageId
             [StoreBrokerTelemetryProperty]::SingleQuery = $singleQuery
             [StoreBrokerTelemetryProperty]::WithSasUri = $WithSasUri.ToBool()
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
             [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
         }
 
@@ -74,7 +71,6 @@ function Get-ListingImage
         }
 
         $params = @{
-            "ClientRequestId" = $ClientRequestId
             "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Get-ListingImage"
@@ -148,8 +144,6 @@ function New-ListingImage
         [Parameter(ParameterSetName="Individual")]
         [int] $Orientation = 0,
 
-        [string] $ClientRequestId,
-
         [string] $CorrelationId,
 
         [string] $AccessToken,
@@ -167,7 +161,6 @@ function New-ListingImage
             [StoreBrokerTelemetryProperty]::LanguageCode = $LanguageCode
             [StoreBrokerTelemetryProperty]::Type = $Type
             [StoreBrokerTelemetryProperty]::Orientation = $Orientation
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
             [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
         }
 
@@ -207,7 +200,6 @@ function New-ListingImage
             "Method" = 'Post'
             "Description" = $description
             "Body" = $body
-            "ClientRequestId" = $ClientRequestId
             "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "New-ListingImage"
@@ -226,7 +218,6 @@ function New-ListingImage
                 $params = @{
                     "UriFragment" = $result.nextLink
                     "Description" = "Getting remaining results"
-                    "ClientRequestId" = $ClientRequestId
                     "CorrelationId" = $CorrelationId
                     "AccessToken" = $AccessToken
                     "TelemetryEventName" = "New-ListingImage"
@@ -270,8 +261,6 @@ function Remove-ListingImage
         [Parameter(Mandatory)]
         [string] $ImageId,
 
-        [string] $ClientRequestId,
-
         [string] $CorrelationId,
 
         [string] $AccessToken,
@@ -288,7 +277,6 @@ function Remove-ListingImage
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
             [StoreBrokerTelemetryProperty]::LanguageCode = $LanguageCode
             [StoreBrokerTelemetryProperty]::ImageId = $ImageId
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
             [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
         }
 
@@ -302,7 +290,6 @@ function Remove-ListingImage
             "UriFragment" = "products/$ProductId/listings/$LanguageCode/images/$ImageId`?" + ($getParams -join '&')
             "Method" = "Delete"
             "Description" = "Deleting image $ImageId from the $LanguageCode listing for $ProductId (SubmissionId: $SubmissionId)"
-            "ClientRequestId" = $ClientRequestId
             "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Remove-ListingImage"
@@ -362,8 +349,6 @@ function Set-ListingImage
             ParameterSetName="Individual")]
         [string] $RevisionToken,
 
-        [string] $ClientRequestId,
-
         [string] $CorrelationId,
 
         [string] $AccessToken,
@@ -388,7 +373,6 @@ function Set-ListingImage
             [StoreBrokerTelemetryProperty]::State = $State
             [StoreBrokerTelemetryProperty]::Orientation = $Orientation
             [StoreBrokerTelemetryProperty]::RevisionToken = $RevisionToken
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
             [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
         }
 
@@ -419,7 +403,6 @@ function Set-ListingImage
             "Method" = 'Put'
             "Description" = "Updating listing image $ImageId for $ProductId (SubmissionId: $SubmissionId)"
             "Body" = $body
-            "ClientRequestId" = $ClientRequestId
             "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Set-ListingImage"
@@ -466,8 +449,6 @@ function Update-ListingImage
         [Parameter(ParameterSetName="RemoveOnly")]
         [switch] $RemoveOnly,
 
-        [string] $ClientRequestId,
-
         [string] $CorrelationId,
 
         [string] $AccessToken,
@@ -487,7 +468,6 @@ function Update-ListingImage
             'ProductId' = $ProductId
             'SubmissionId' = $SubmissionId
             'LanguageCode' = $LanguageCode
-            'ClientRequestId' = $ClientRequestId
             'CorrelationId' = $CorrelationId
             'AccessToken' = $AccessToken
             'NoStatus' = $NoStatus
@@ -529,7 +509,6 @@ function Update-ListingImage
             [StoreBrokerTelemetryProperty]::MediaRootPath = (Get-PiiSafeString -PlainText $MediaRootPath)
             [StoreBrokerTelemetryProperty]::LanguageCode = $LanguageCode
             [StoreBrokerTelemetryProperty]::RemoveOnly = $RemoveOnly
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
             [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
         }
 

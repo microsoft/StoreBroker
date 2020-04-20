@@ -1298,8 +1298,6 @@ function Start-SubmissionMonitor
 
         [int] $PollingInterval = 5,
 
-        [string] $ClientRequestId,
-
         [string] $CorrelationId,
 
         [string] $AccessToken,
@@ -1328,7 +1326,6 @@ function Start-SubmissionMonitor
     $CorrelationId = Get-CorrelationId -CorrelationId $CorrelationId -Identifier $ProductId
 
     $commonParams = @{
-        'ClientRequestId' = $ClientRequestId
         'CorrelationId' = $CorrelationId
         'NoStatus' = $NoStatus
     }
@@ -1794,8 +1791,6 @@ function Invoke-SBRestMethod
 
         [switch] $WaitForCompletion,
 
-        [string] $ClientRequestId,
-
         [string] $CorrelationId,
 
         [string] $AccessToken = "",
@@ -1894,12 +1889,6 @@ function Invoke-SBRestMethod
             }
         }
 
-        # Add any headers that clients can add to track specific requests
-        if (-not [String]::IsNullOrWhiteSpace($ClientRequestId))
-        {
-            $headers.Add($script:headerMSClientRequestId, $ClientRequestId)
-        }
-
         if (-not [String]::IsNullOrWhiteSpace($correlationId))
         {
             $headers.Add($script:headerMSCorrelationId, $CorrelationId)
@@ -1944,7 +1933,7 @@ function Invoke-SBRestMethod
                 if ($PSCmdlet.ShouldProcess($jobName, "Start-Job"))
                 {
                     [scriptblock]$scriptBlock = {
-                        param($Url, $method, $Headers, $Body, $RequestIdHeaderName, $ClientRequestIdHeaderName, $CorrelationIdHeaderName, $TimeoutSec, $ScriptRootPath)
+                        param($Url, $method, $Headers, $Body, $RequestIdHeaderName, $CorrelationIdHeaderName, $TimeoutSec, $ScriptRootPath)
 
                         # We need to "dot invoke" Helpers.ps1 within the context of this script block since
                         # we're running in a different PowerShell process and need access to
@@ -1954,7 +1943,6 @@ function Invoke-SBRestMethod
                         # Because this is running in a different PowerShell process, we need to
                         # redefine this script variable (for use within the exception)
                         $script:headerRequestId = $RequestIdHeaderName
-                        $script:headerMSClientRequestId = $ClientRequestIdHeaderName
                         $script:headerMSCorrelationId = $CorrelationIdHeaderName
 
                         $params = @{}
@@ -2007,11 +1995,6 @@ function Invoke-SBRestMethod
                                     $ex.RequestId = $responseHeaders[$script:headerRequestId]
                                 }
 
-                                if ($responseHeaders.AllKeys.Contains($script:headerMSClientRequestId))
-                                {
-                                    $ex.ClientRequestId = $responseHeaders[$script:headerMSClientRequestId]
-                                }
-
                                 if ($responseHeaders.AllKeys.Contains($script:headerMSCorrelationId))
                                 {
                                     $ex.CorrelationId = $responseHeaders[$script:headerMSCorrelationId]
@@ -2032,7 +2015,7 @@ function Invoke-SBRestMethod
                         }
                     }
 
-                    $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($url, $Method, $headers, $Body, $script:headerRequestId, $script:headerMSClientRequestId, $script:headerMSCorrelationId, $global:SBWebRequestTimeoutSec, $PSScriptRoot)
+                    $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($url, $Method, $headers, $Body, $script:headerRequestId, $script:headerMSCorrelationId, $global:SBWebRequestTimeoutSec, $PSScriptRoot)
 
                     if ($PSCmdlet.ShouldProcess($jobName, "Wait-JobWithAnimation"))
                     {
@@ -2061,13 +2044,6 @@ function Invoke-SBRestMethod
             {
                 $localTelemetryProperties[$script:headerRequestId] = $requestId
                 Write-Log -Message "$($script:headerRequestId) : $requestId" -Level Verbose
-            }
-
-            $returnedClientRequestId = $result.Headers[$script:headerMSClientRequestId]
-            if (-not [String]::IsNullOrEmpty($returnedClientRequestId))
-            {
-                $localTelemetryProperties[$script:headerMSClientRequestId] = $returnedClientRequestId
-                Write-Log -Message "$($script:headerMSClientRequestId) : $returnedClientRequestId" -Level Verbose
             }
 
             $returnedCorrelationId = $result.Headers[$script:headerMSCorrelationId]
@@ -2148,7 +2124,6 @@ function Invoke-SBRestMethod
             $statusCode = $null
             $statusDescription = $null
             $requestId = $null
-            $returnedClientRequestId = $null
             $returnedCorrelationId = $null
             $innerMessage = $null
             $retryAfterHeaderValue = $null
@@ -2179,11 +2154,6 @@ function Invoke-SBRestMethod
                         $requestId = $responseHeaders[$script:headerRequestId]
                     }
 
-                    if ($responseHeaders.AllKeys.Contains($script:headerMSClientRequestId))
-                    {
-                        $returnedClientRequestId = $responseHeaders[$script:headerMSClientRequestId]
-                    }
-
                     if ($responseHeaders.AllKeys.Contains($script:headerMSCorrelationId))
                     {
                         $returnedCorrelationId = $responseHeaders[$script:headerMSCorrelationId]
@@ -2212,7 +2182,6 @@ function Invoke-SBRestMethod
                     $statusDescription = $deserialized.StatusDescription
                     $innerMessage = $deserialized.InnerMessage
                     $requestId = $deserialized.RequestId
-                    $returnedClientRequestId = $deserialized.ClientRequestId
                     $returnedCorrelationId = $deserialized.CorrelationId
                     $retryAfterHeaderValue = $deserialized.RetryAfter
                     $locationHeaderValue = $deserialized.Location
@@ -2307,14 +2276,6 @@ function Invoke-SBRestMethod
             {
                 $localTelemetryProperties[$script:headerRequestId] = $requestId
                 $message = $script:headerRequestId + ': ' + $requestId
-                $output += $message
-                Write-Log -Message $message -Level Verbose
-            }
-
-            if (-not [String]::IsNullOrEmpty($returnedClientRequestId))
-            {
-                $localTelemetryProperties[$script:headerMSClientRequestId] = $returnedClientRequestId
-                $message = $script:headerMSClientRequestId + ': ' + $returnedClientRequestId
                 $output += $message
                 Write-Log -Message $message -Level Verbose
             }
@@ -2553,8 +2514,6 @@ function Invoke-SBRestMethodMultipleResult
         [Parameter(Mandatory)]
         [string] $Description,
 
-        [string] $ClientRequestId,
-
         [string] $CorrelationId,
 
         [string] $AccessToken = "",
@@ -2594,7 +2553,6 @@ function Invoke-SBRestMethodMultipleResult
                 "UriFragment" = $nextLink
                 "Method" = 'Get'
                 "Description" = $currentDescription
-                "ClientRequestId" = $ClientRequestId
                 "CorrelationId" = $CorrelationId
                 "AccessToken" = $AccessToken
                 "TelemetryProperties" = $telemetryProperties

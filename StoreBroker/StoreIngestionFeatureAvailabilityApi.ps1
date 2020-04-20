@@ -33,8 +33,6 @@ function Get-FeatureAvailability
 
         [switch] $SinglePage,
 
-        [string] $ClientRequestId,
-
         [string] $CorrelationId,
 
         [string] $AccessToken,
@@ -56,7 +54,6 @@ function Get-FeatureAvailability
             [StoreBrokerTelemetryProperty]::IncludeMarketStates = ($IncludeMarketStates -eq $true)
             [StoreBrokerTelemetryProperty]::IncludeTrial = ($IncludeTrial -eq $true)
             [StoreBrokerTelemetryProperty]::IncludePricing = ($IncludePricing -eq $true)
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
             [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
         }
 
@@ -76,7 +73,6 @@ function Get-FeatureAvailability
         }
 
         $params = @{
-            "ClientRequestId" = $ClientRequestId
             "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Get-FeatureAvailability"
@@ -134,8 +130,6 @@ function New-FeatureAvailability
             ParameterSetName="Object")]
         [PSCustomObject] $Object,
 
-        [string] $ClientRequestId,
-
         [string] $CorrelationId,
 
         [string] $AccessToken,
@@ -155,7 +149,6 @@ function New-FeatureAvailability
             [StoreBrokerTelemetryProperty]::IncludeTrial = ($IncludeTrial -eq $true)
             [StoreBrokerTelemetryProperty]::IncludePricing = ($IncludePricing -eq $true)
             [StoreBrokerTelemetryProperty]::UsingObject = ($null -ne $Object)
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
             [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
         }
 
@@ -168,7 +161,6 @@ function New-FeatureAvailability
             "Method" = 'Post'
             "Description" = "Creating new feature availability for $ProductId (SubmissionId: $SubmissionId)"
             "Body" = $body
-            "ClientRequestId" = $ClientRequestId
             "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "New-FeatureAvailability"
@@ -216,8 +208,6 @@ function Set-FeatureAvailability
             ParameterSetName="Object")]
         [PSCustomObject] $Object,
 
-        [string] $ClientRequestId,
-
         [string] $CorrelationId,
 
         [string] $AccessToken,
@@ -243,7 +233,6 @@ function Set-FeatureAvailability
             [StoreBrokerTelemetryProperty]::IncludeTrial = ($IncludeTrial -eq $true)
             [StoreBrokerTelemetryProperty]::IncludePricing = ($IncludePricing -eq $true)
             [StoreBrokerTelemetryProperty]::UsingObject = ($null -ne $Object)
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
             [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
         }
 
@@ -256,7 +245,6 @@ function Set-FeatureAvailability
             "Method" = 'Put'
             "Description" = "Updating feature availability $FeatureAvailabilityId for $ProductId (SubmissionId: $SubmissionId)"
             "Body" = $body
-            "ClientRequestId" = $ClientRequestId
             "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Set-FeatureAvailability"

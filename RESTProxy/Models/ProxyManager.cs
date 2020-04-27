@@ -38,7 +38,7 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
         ///  The header name for the RequestId that clients can set for tracking an individual request
         ///  during post-mortem diagnostics.
         /// </summary>
-        public const string MSClientRequestIdHeader = "MS-Client-RequestId";
+        public const string MSClientRequestIdHeader = "Client-Request-ID";
 
         /// <summary>
         /// The header name for a special header that the API uses for telemetry/tracking of API clients.

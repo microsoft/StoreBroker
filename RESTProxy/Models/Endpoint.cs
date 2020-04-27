@@ -357,17 +357,17 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
             }
 
             // Proxy all of the special headers that the API returns
-            // (which all begin with "MS-").  One example is "MS-Client-RequestId"
+            // One example is "Client-Request-ID"
             // which is needed by the Windows Store Submission API team when they
             // are investigating bug reports with the API.
-            const string MSHeaderPreface = "MS-";
-            const string RequestHeaderPreface = "Request-";
+            const string ClientRequestIdHeader = "Client-Request-ID";
+            const string RequestHeader = "Request-ID";
             const string RetryHeader = "retry";
             const string LocationHeader = "Location";
             foreach (string key in httpResponseFromApi.Headers.AllKeys)
             {
-                if (key.StartsWith(MSHeaderPreface, StringComparison.InvariantCultureIgnoreCase) ||
-                    key.StartsWith(RequestHeaderPreface, StringComparison.InvariantCultureIgnoreCase) ||
+                if (key.ToLowerInvariant().Contains(RequestHeader.ToLowerInvariant()) ||
+                    key.ToLowerInvariant().Contains(ClientRequestIdHeader.ToLowerInvariant()) ||
                     key.ToLowerInvariant().Contains(RetryHeader.ToLowerInvariant()) ||
                     (key.ToLowerInvariant() == LocationHeader.ToLowerInvariant()))
                 {

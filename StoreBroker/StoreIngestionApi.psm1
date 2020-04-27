@@ -53,9 +53,9 @@ $script:headerClientName = 'X-ClientName'
 # that the Submission API team can use to trace back problems with a specific request.
 $script:headerRequestId = 'Request-ID'
 
-# Special headers that clients can add to their requests to make it easier to track the
+# Special header that clients can add to their requests to make it easier to track the
 # responses
-$script:headerMSClientRequestId = 'MS-Client-RequestId'
+$script:headerMSClientRequestId = 'Client-Request-ID'
 
 # Other headers that we may need for processing a response
 $script:headerRetryAfter = 'Retry-After'
@@ -948,7 +948,7 @@ function Set-StoreFile
 
             if ($remoteErrors.Count -gt 0)
             {
-               throw $remoteErrors[0].Exception
+                throw $remoteErrors[0].Exception
             }
         }
 
@@ -1888,6 +1888,7 @@ function Invoke-SBRestMethod
             }
         }
 
+        # Add header that the clients can add to track groups of requests
         if (-not [String]::IsNullOrWhiteSpace($ClientRequestId))
         {
             $headers.Add($script:headerMSClientRequestId, $ClientRequestId)

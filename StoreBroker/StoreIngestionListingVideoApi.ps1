@@ -45,8 +45,6 @@ function Get-ListingVideo
 
         [string] $ClientRequestId,
 
-        [string] $CorrelationId,
-
         [string] $AccessToken,
 
         [switch] $NoStatus
@@ -63,8 +61,7 @@ function Get-ListingVideo
             [StoreBrokerTelemetryProperty]::LanguageCode = $LanguageCode
             [StoreBrokerTelemetryProperty]::VideoId = $VideoId
             [StoreBrokerTelemetryProperty]::SingleQuery = $singleQuery
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $getParams = @()
@@ -75,7 +72,6 @@ function Get-ListingVideo
 
         $params = @{
             "ClientRequestId" = $ClientRequestId
-            "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Get-ListingVideo"
             "TelemetryProperties" = $telemetryProperties
@@ -151,8 +147,6 @@ function New-ListingVideo
 
         [string] $ClientRequestId,
 
-        [string] $CorrelationId,
-
         [string] $AccessToken,
 
         [switch] $NoStatus
@@ -167,8 +161,7 @@ function New-ListingVideo
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
             [StoreBrokerTelemetryProperty]::LanguageCode = $LanguageCode
             [StoreBrokerTelemetryProperty]::Orientation = $ThumbnailOrientation
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $getParams = @()
@@ -212,7 +205,6 @@ function New-ListingVideo
             "Description" = $description
             "Body" = $body
             "ClientRequestId" = $ClientRequestId
-            "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "New-ListingVideo"
             "TelemetryProperties" = $telemetryProperties
@@ -231,7 +223,6 @@ function New-ListingVideo
                     "UriFragment" = $result.nextLink
                     "Description" = "Getting remaining results"
                     "ClientRequestId" = $ClientRequestId
-                    "CorrelationId" = $CorrelationId
                     "AccessToken" = $AccessToken
                     "TelemetryEventName" = "New-ListingVideo"
                     "TelemetryProperties" = $telemetryProperties
@@ -276,8 +267,6 @@ function Remove-ListingVideo
 
         [string] $ClientRequestId,
 
-        [string] $CorrelationId,
-
         [string] $AccessToken,
 
         [switch] $NoStatus
@@ -292,8 +281,7 @@ function Remove-ListingVideo
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
             [StoreBrokerTelemetryProperty]::LanguageCode = $LanguageCode
             [StoreBrokerTelemetryProperty]::VideoId = $VideoId
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $getParams = @()
@@ -307,7 +295,6 @@ function Remove-ListingVideo
             "Method" = "Delete"
             "Description" = "Deleting video $VideoId from the $LanguageCode listing for $ProductId (SubmissionId: $SubmissionId)"
             "ClientRequestId" = $ClientRequestId
-            "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Remove-ListingVideo"
             "TelemetryProperties" = $telemetryProperties
@@ -380,8 +367,6 @@ function Set-ListingVideo
 
         [string] $ClientRequestId,
 
-        [string] $CorrelationId,
-
         [string] $AccessToken,
 
         [switch] $NoStatus
@@ -405,8 +390,7 @@ function Set-ListingVideo
             [StoreBrokerTelemetryProperty]::State = $State
             [StoreBrokerTelemetryProperty]::Orientation = $ThumbnailOrientation
             [StoreBrokerTelemetryProperty]::RevisionToken = $RevisionToken
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $getParams = @()
@@ -441,7 +425,6 @@ function Set-ListingVideo
             "Description" = "Updating listing video $VideoId for $ProductId (SubmissionId: $SubmissionId)"
             "Body" = $body
             "ClientRequestId" = $ClientRequestId
-            "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Set-ListingVideo"
             "TelemetryProperties" = $telemetryProperties
@@ -488,8 +471,6 @@ function Update-ListingVideo
 
         [string] $ClientRequestId,
 
-        [string] $CorrelationId,
-
         [string] $AccessToken,
 
         [switch] $NoStatus
@@ -508,7 +489,6 @@ function Update-ListingVideo
             'SubmissionId' = $SubmissionId
             'LanguageCode' = $LanguageCode
             'ClientRequestId' = $ClientRequestId
-            'CorrelationId' = $CorrelationId
             'AccessToken' = $AccessToken
             'NoStatus' = $NoStatus
         }
@@ -564,8 +544,7 @@ function Update-ListingVideo
             [StoreBrokerTelemetryProperty]::MediaRootPath = (Get-PiiSafeString -PlainText $MediaRootPath)
             [StoreBrokerTelemetryProperty]::LanguageCode = $LanguageCode
             [StoreBrokerTelemetryProperty]::RemoveOnly = $RemoveOnly
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         Set-TelemetryEvent -EventName Update-ListingVideo -Properties $telemetryProperties -Metrics $telemetryMetrics

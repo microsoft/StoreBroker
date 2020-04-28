@@ -29,8 +29,6 @@ function Get-ProductAvailability
 
         [string] $ClientRequestId,
 
-        [string] $CorrelationId,
-
         [string] $AccessToken,
 
         [switch] $NoStatus
@@ -46,8 +44,7 @@ function Get-ProductAvailability
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
             [StoreBrokerTelemetryProperty]::ProductAvailabilityId = $ProductAvailabilityId
             [StoreBrokerTelemetryProperty]::SingleQuery = $singleQuery
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $getParams = @()
@@ -58,7 +55,6 @@ function Get-ProductAvailability
 
         $params = @{
             "ClientRequestId" = $ClientRequestId
-            "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Get-ProductAvailability"
             "TelemetryProperties" = $telemetryProperties
@@ -120,8 +116,6 @@ function New-ProductAvailability
 
         [string] $ClientRequestId,
 
-        [string] $CorrelationId,
-
         [string] $AccessToken,
 
         [switch] $NoStatus
@@ -137,8 +131,7 @@ function New-ProductAvailability
             [StoreBrokerTelemetryProperty]::UsingObject = ($null -ne $Object)
             [StoreBrokerTelemetryProperty]::HasAudience = ($null -ne $Audience)
             [StoreBrokerTelemetryProperty]::Visibility = $Visibility
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $getParams = @()
@@ -173,7 +166,6 @@ function New-ProductAvailability
             "Description" = "Creating new product availability for $ProductId (SubmissionId: $SubmissionId)"
             "Body" = $body
             "ClientRequestId" = $ClientRequestId
-            "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "New-ProductAvailability"
             "TelemetryProperties" = $telemetryProperties
@@ -228,8 +220,6 @@ function Set-ProductAvailability
 
         [string] $ClientRequestId,
 
-        [string] $CorrelationId,
-
         [string] $AccessToken,
 
         [switch] $NoStatus
@@ -252,8 +242,7 @@ function Set-ProductAvailability
             [StoreBrokerTelemetryProperty]::HasAudience = ($null -ne $Audience)
             [StoreBrokerTelemetryProperty]::Visibility = $Visibility
             [StoreBrokerTelemetryProperty]::RevisionToken = $RevisionToken
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $getParams = @()
@@ -289,7 +278,6 @@ function Set-ProductAvailability
             "Description" = "Updating product availability $ProductAvailabilityId for $ProductId (SubmissionId: $SubmissionId)"
             "Body" = $body
             "ClientRequestId" = $ClientRequestId
-            "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Set-ProductAvailability"
             "TelemetryProperties" = $telemetryProperties
@@ -326,8 +314,6 @@ function Update-ProductAvailability
 
         [string] $ClientRequestId,
 
-        [string] $CorrelationId,
-
         [string] $AccessToken,
 
         [switch] $NoStatus
@@ -358,7 +344,6 @@ function Update-ProductAvailability
             'ProductId' = $ProductId
             'SubmissionId' = $SubmissionId
             'ClientRequestId' = $ClientRequestId
-            'CorrelationId' = $CorrelationId
             'AccessToken' = $AccessToken
             'NoStatus' = $NoStatus
         }
@@ -393,8 +378,7 @@ function Update-ProductAvailability
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
             [StoreBrokerTelemetryProperty]::ProvidedSubmissionData = ($null -ne $SubmissionData)
             [StoreBrokerTelemetryProperty]::Visibility = $Visibility
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         Set-TelemetryEvent -EventName Patch-ProductAvailability -Properties $telemetryProperties -Metrics $telemetryMetrics

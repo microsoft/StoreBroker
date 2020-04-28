@@ -44,8 +44,6 @@ function Get-Listing
 
         [string] $ClientRequestId,
 
-        [string] $CorrelationId,
-
         [string] $AccessToken,
 
         [switch] $NoStatus
@@ -62,8 +60,7 @@ function Get-Listing
             [StoreBrokerTelemetryProperty]::LanguageCode = $LanguageCode
             [StoreBrokerTelemetryProperty]::SingleQuery = $singleQuery
             [StoreBrokerTelemetryProperty]::FeatureGroupId = $FeatureGroupId
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $getParams = @()
@@ -79,7 +76,6 @@ function Get-Listing
 
         $params = @{
             "ClientRequestId" = $ClientRequestId
-            "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Get-Listing"
             "TelemetryProperties" = $telemetryProperties
@@ -178,8 +174,6 @@ function New-Listing
 
         [string] $ClientRequestId,
 
-        [string] $CorrelationId,
-
         [string] $AccessToken,
 
         [switch] $NoStatus
@@ -195,8 +189,7 @@ function New-Listing
             [StoreBrokerTelemetryProperty]::LanguageCode = $LanguageCode
             [StoreBrokerTelemetryProperty]::FeatureGroupId = $FeatureGroupId
             [StoreBrokerTelemetryProperty]::UsingObject = ($null -ne $Object)
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $getParams = @()
@@ -305,7 +298,6 @@ function New-Listing
             "Description" = "Creating new $LanguageCode listing for $ProductId (SubmissionId: $SubmissionId)"
             "Body" = $body
             "ClientRequestId" = $ClientRequestId
-            "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "New-Listing"
             "TelemetryProperties" = $telemetryProperties
@@ -341,8 +333,6 @@ function Remove-Listing
 
         [string] $ClientRequestId,
 
-        [string] $CorrelationId,
-
         [string] $AccessToken,
 
         [switch] $NoStatus
@@ -357,8 +347,7 @@ function Remove-Listing
             [StoreBrokerTelemetryProperty]::SubmissionId = $SubmissionId
             [StoreBrokerTelemetryProperty]::LanguageCode = $LanguageCode
             [StoreBrokerTelemetryProperty]::FeatureGroupId = $FeatureGroupId
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $getParams = @()
@@ -377,7 +366,6 @@ function Remove-Listing
             "Method" = "Delete"
             "Description" = "Deleting the $LanguageCode listing for $ProductId (SubmissionId: $SubmissionId)"
             "ClientRequestId" = $ClientRequestId
-            "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Remove-Listing"
             "TelemetryProperties" = $telemetryProperties
@@ -468,8 +456,6 @@ function Set-Listing
 
         [string] $ClientRequestId,
 
-        [string] $CorrelationId,
-
         [string] $AccessToken,
 
         [switch] $NoStatus
@@ -491,8 +477,7 @@ function Set-Listing
             [StoreBrokerTelemetryProperty]::FeatureGroupId = $FeatureGroupId
             [StoreBrokerTelemetryProperty]::UsingObject = ($null -ne $Object)
             [StoreBrokerTelemetryProperty]::RevisionToken = $RevisionToken
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $getParams = @()
@@ -599,7 +584,6 @@ function Set-Listing
             "Description" = "Updating $LanguageCode listing for $ProductId (SubmissionId: $SubmissionId)"
             "Body" = $body
             "ClientRequestId" = $ClientRequestId
-            "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Set-Listing"
             "TelemetryProperties" = $telemetryProperties
@@ -642,8 +626,6 @@ function Update-Listing
 
         [string] $ClientRequestId,
 
-        [string] $CorrelationId,
-
         [string] $AccessToken,
 
         [switch] $NoStatus
@@ -671,7 +653,6 @@ function Update-Listing
             'ProductId' = $ProductId
             'SubmissionId' = $SubmissionId
             'ClientRequestId' = $ClientRequestId
-            'CorrelationId' = $CorrelationId
             'AccessToken' = $AccessToken
             'NoStatus' = $NoStatus
         }
@@ -871,8 +852,7 @@ function Update-Listing
             [StoreBrokerTelemetryProperty]::UpdateListingText = $UpdateListingText
             [StoreBrokerTelemetryProperty]::UpdateImagesAndCaptions = $UpdateImagesAndCaptions
             [StoreBrokerTelemetryProperty]::UpdateVideos = $UpdateVideos
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         Set-TelemetryEvent -EventName Update-Listing -Properties $telemetryProperties -Metrics $telemetryMetrics

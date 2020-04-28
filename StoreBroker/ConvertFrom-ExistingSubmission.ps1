@@ -144,8 +144,6 @@ function ConvertFrom-ExistingSubmission
 
         [string] $ClientRequestId,
 
-        [string] $CorrelationId,
-
         [string] $AccessToken,
 
         [switch] $NoStatus
@@ -156,11 +154,10 @@ function ConvertFrom-ExistingSubmission
 
     try
     {
-        $CorrelationId = Get-CorrelationId -CorrelationId $CorrelationId -Identifier 'ConvertFrom-ExistingSubmission'
+        $ClientRequestId = Get-ClientRequestId -ClientRequestId $ClientRequestId -Identifier 'ConvertFrom-ExistingSubmission'
 
         $commonParams = @{
             'ClientRequestId' = $ClientRequestId
-            'CorrelationId' = $CorrelationId
             'AccessToken' = $AccessToken
             'NoStatus' = $NoStatus
         }
@@ -242,8 +239,7 @@ function ConvertFrom-ExistingSubmission
             [StoreBrokerTelemetryProperty]::ProductId = $ProductId
             [StoreBrokerTelemetryProperty]::AppId = $AppId
             [StoreBrokerTelemetryProperty]::SubmissionId = $submissionId
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         Set-TelemetryEvent -EventName ConvertFrom-ExistingSubmission -Properties $telemetryProperties -Metrics $telemetryMetrics
@@ -1558,8 +1554,6 @@ function ConvertFrom-Listing
 
         [string] $ClientRequestId,
 
-        [string] $CorrelationId,
-
         [string] $AccessToken,
 
         [switch] $NoStatus
@@ -1572,7 +1566,6 @@ function ConvertFrom-Listing
             'SubmissionId' = $SubmissionId
             'LanguageCode' = $Listing.languageCode
             'ClientRequestId' = $ClientRequestId
-            'CorrelationId' = $CorrelationId
             'AccessToken' = $AccessToken
             'NoStatus' = $NoStatus
         }

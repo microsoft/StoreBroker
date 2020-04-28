@@ -51,12 +51,11 @@ $script:headerClientName = 'X-ClientName'
 
 # Special header added to Submission API responses that provides a unique ID
 # that the Submission API team can use to trace back problems with a specific request.
-$script:headerMSRequestId = 'MS-RequestId'
+$script:headerRequestId = 'Request-ID'
 
-# Special headers that clients can add to their requests to make it easier to track the
+# Special header that clients can add to their requests to make it easier to track the
 # responses
-$script:headerMSClientRequestId = 'MS-Client-RequestId'
-$script:headerMSCorrelationId = 'MS-CorrelationId'
+$script:headerMSClientRequestId = 'Client-Request-ID'
 
 # Other headers that we may need for processing a response
 $script:headerRetryAfter = 'Retry-After'
@@ -643,8 +642,8 @@ function Get-ServiceEndpoint
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars", "", Justification="We use global variables sparingly and intentionally for module configuration, and employ a consistent naming convention.")]
     param()
 
-    $serviceEndpointInt = "https://manage.devcenter.microsoft-int.com"
-    $serviceEndpointProd = "https://manage.devcenter.microsoft.com"
+    $serviceEndpointInt = "https://api.partner.microsoft-int.com"
+    $serviceEndpointProd = "https://api.partner.microsoft.com"
 
     if (-not [String]::IsNullOrEmpty($script:proxyEndpoint))
     {
@@ -949,7 +948,7 @@ function Set-StoreFile
 
             if ($remoteErrors.Count -gt 0)
             {
-               throw $remoteErrors[0].Exception
+                throw $remoteErrors[0].Exception
             }
         }
 
@@ -1300,8 +1299,6 @@ function Start-SubmissionMonitor
 
         [string] $ClientRequestId,
 
-        [string] $CorrelationId,
-
         [string] $AccessToken,
 
         [switch] $NoStatus,
@@ -1325,11 +1322,10 @@ function Start-SubmissionMonitor
     $shouldMonitor = $true
     $indentLength = 5
 
-    $CorrelationId = Get-CorrelationId -CorrelationId $CorrelationId -Identifier $ProductId
+    $ClientRequestId = Get-ClientRequestId -ClientRequestId $ClientRequestId -Identifier $ProductId
 
     $commonParams = @{
         'ClientRequestId' = $ClientRequestId
-        'CorrelationId' = $CorrelationId
         'NoStatus' = $NoStatus
     }
 
@@ -1796,8 +1792,6 @@ function Invoke-SBRestMethod
 
         [string] $ClientRequestId,
 
-        [string] $CorrelationId,
-
         [string] $AccessToken = "",
 
         [string] $TelemetryEventName = $null,
@@ -1809,7 +1803,7 @@ function Invoke-SBRestMethod
         [switch] $NoStatus
     )
 
-    $serviceEndpointVersion = "2.0"
+    $serviceEndpointVersion = "1.0"
 
     # Normalize our Uri fragment.  It might be coming from a method implemented here, or it might
     # be coming from the Location header in a previous response.  Either way, we don't want there
@@ -1857,7 +1851,7 @@ function Invoke-SBRestMethod
         $stopwatch.Start()
 
         $serviceEndpoint = Get-ServiceEndpoint
-        $uriPreface = "v$serviceEndpointVersion/my"
+        $uriPreface = "v$serviceEndpointVersion/ingestion"
         $url = "$serviceEndpoint/$uriPreface/$UriFragment"
 
         # This scenario might happen if a client calls into here setting the UriFragment
@@ -1894,15 +1888,10 @@ function Invoke-SBRestMethod
             }
         }
 
-        # Add any headers that clients can add to track specific requests
+        # Add header that the clients can add to track groups of requests
         if (-not [String]::IsNullOrWhiteSpace($ClientRequestId))
         {
             $headers.Add($script:headerMSClientRequestId, $ClientRequestId)
-        }
-
-        if (-not [String]::IsNullOrWhiteSpace($correlationId))
-        {
-            $headers.Add($script:headerMSCorrelationId, $CorrelationId)
         }
 
         try
@@ -1944,7 +1933,7 @@ function Invoke-SBRestMethod
                 if ($PSCmdlet.ShouldProcess($jobName, "Start-Job"))
                 {
                     [scriptblock]$scriptBlock = {
-                        param($Url, $method, $Headers, $Body, $RequestIdHeaderName, $ClientRequestIdHeaderName, $CorrelationIdHeaderName, $TimeoutSec, $ScriptRootPath)
+                        param($Url, $method, $Headers, $Body, $RequestIdHeaderName, $ClientRequestIdHeaderName, $TimeoutSec, $ScriptRootPath)
 
                         # We need to "dot invoke" Helpers.ps1 within the context of this script block since
                         # we're running in a different PowerShell process and need access to
@@ -1953,9 +1942,8 @@ function Invoke-SBRestMethod
 
                         # Because this is running in a different PowerShell process, we need to
                         # redefine this script variable (for use within the exception)
-                        $script:headerMSRequestId = $RequestIdHeaderName
+                        $script:headerRequestId = $RequestIdHeaderName
                         $script:headerMSClientRequestId = $ClientRequestIdHeaderName
-                        $script:headerMSCorrelationId = $CorrelationIdHeaderName
 
                         $params = @{}
                         $params.Add("Uri", $Url)
@@ -2002,19 +1990,14 @@ function Invoke-SBRestMethod
                             $responseHeaders = $_.Exception.Response.Headers
                             if ($responseHeaders.Count -gt 0)
                             {
-                                if ($responseHeaders.AllKeys.Contains($script:headerMSRequestId))
+                                if ($responseHeaders.AllKeys.Contains($script:headerRequestId))
                                 {
-                                    $ex.RequestId = $responseHeaders[$script:headerMSRequestId]
+                                    $ex.RequestId = $responseHeaders[$script:headerRequestId]
                                 }
 
                                 if ($responseHeaders.AllKeys.Contains($script:headerMSClientRequestId))
                                 {
                                     $ex.ClientRequestId = $responseHeaders[$script:headerMSClientRequestId]
-                                }
-
-                                if ($responseHeaders.AllKeys.Contains($script:headerMSCorrelationId))
-                                {
-                                    $ex.CorrelationId = $responseHeaders[$script:headerMSCorrelationId]
                                 }
 
                                 if ($responseHeaders.AllKeys.Contains($script:headerRetryAfter))
@@ -2032,7 +2015,7 @@ function Invoke-SBRestMethod
                         }
                     }
 
-                    $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($url, $Method, $headers, $Body, $script:headerMSRequestId, $script:headerMSClientRequestId, $script:headerMSCorrelationId, $global:SBWebRequestTimeoutSec, $PSScriptRoot)
+                    $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($url, $Method, $headers, $Body, $script:headerRequestId, $script:headerMSClientRequestId, $global:SBWebRequestTimeoutSec, $PSScriptRoot)
 
                     if ($PSCmdlet.ShouldProcess($jobName, "Wait-JobWithAnimation"))
                     {
@@ -2056,11 +2039,11 @@ function Invoke-SBRestMethod
                 }
             }
 
-            $requestId = $result.Headers[$script:headerMSRequestId]
+            $requestId = $result.Headers[$script:headerRequestId]
             if (-not [String]::IsNullOrEmpty($requestId))
             {
-                $localTelemetryProperties[$script:headerMSRequestId] = $requestId
-                Write-Log -Message "$($script:headerMSRequestId) : $requestId" -Level Verbose
+                $localTelemetryProperties[$script:headerRequestId] = $requestId
+                Write-Log -Message "$($script:headerRequestId) : $requestId" -Level Verbose
             }
 
             $returnedClientRequestId = $result.Headers[$script:headerMSClientRequestId]
@@ -2068,13 +2051,6 @@ function Invoke-SBRestMethod
             {
                 $localTelemetryProperties[$script:headerMSClientRequestId] = $returnedClientRequestId
                 Write-Log -Message "$($script:headerMSClientRequestId) : $returnedClientRequestId" -Level Verbose
-            }
-
-            $returnedCorrelationId = $result.Headers[$script:headerMSCorrelationId]
-            if (-not [String]::IsNullOrEmpty($returnedCorrelationId))
-            {
-                $localTelemetryProperties[$script:headerMSCorrelationId] = $returnedCorrelationId
-                Write-Log -Message "$($script:headerMSCorrelationId) : $returnedCorrelationId" -Level Verbose
             }
 
             $statusCode = $result.StatusCode
@@ -2149,7 +2125,6 @@ function Invoke-SBRestMethod
             $statusDescription = $null
             $requestId = $null
             $returnedClientRequestId = $null
-            $returnedCorrelationId = $null
             $innerMessage = $null
             $retryAfterHeaderValue = $null
             $locationHeaderValue = $null
@@ -2174,19 +2149,14 @@ function Invoke-SBRestMethod
                 $responseHeaders = $ex.Response.Headers
                 if ($responseHeaders.Count -gt 0)
                 {
-                    if ($responseHeaders.AllKeys.Contains($script:headerMSRequestId))
+                    if ($responseHeaders.AllKeys.Contains($script:headerRequestId))
                     {
-                        $requestId = $responseHeaders[$script:headerMSRequestId]
+                        $requestId = $responseHeaders[$script:headerRequestId]
                     }
 
                     if ($responseHeaders.AllKeys.Contains($script:headerMSClientRequestId))
                     {
                         $returnedClientRequestId = $responseHeaders[$script:headerMSClientRequestId]
-                    }
-
-                    if ($responseHeaders.AllKeys.Contains($script:headerMSCorrelationId))
-                    {
-                        $returnedCorrelationId = $responseHeaders[$script:headerMSCorrelationId]
                     }
 
                     if ($responseHeaders.AllKeys.Contains($script:headerRetryAfter))
@@ -2213,7 +2183,6 @@ function Invoke-SBRestMethod
                     $innerMessage = $deserialized.InnerMessage
                     $requestId = $deserialized.RequestId
                     $returnedClientRequestId = $deserialized.ClientRequestId
-                    $returnedCorrelationId = $deserialized.CorrelationId
                     $retryAfterHeaderValue = $deserialized.RetryAfter
                     $locationHeaderValue = $deserialized.Location
                     $rawContent = $deserialized.RawContent
@@ -2305,8 +2274,8 @@ function Invoke-SBRestMethod
 
             if (-not [String]::IsNullOrEmpty($requestId))
             {
-                $localTelemetryProperties[$script:headerMSRequestId] = $requestId
-                $message = $script:headerMSRequestId + ': ' + $requestId
+                $localTelemetryProperties[$script:headerRequestId] = $requestId
+                $message = $script:headerRequestId + ': ' + $requestId
                 $output += $message
                 Write-Log -Message $message -Level Verbose
             }
@@ -2315,14 +2284,6 @@ function Invoke-SBRestMethod
             {
                 $localTelemetryProperties[$script:headerMSClientRequestId] = $returnedClientRequestId
                 $message = $script:headerMSClientRequestId + ': ' + $returnedClientRequestId
-                $output += $message
-                Write-Log -Message $message -Level Verbose
-            }
-
-            if (-not [String]::IsNullOrEmpty($returnedCorrelationId))
-            {
-                $localTelemetryProperties[$script:headerMSCorrelationId] = $returnedCorrelationId
-                $message = $script:headerMSCorrelationId + ': ' + $returnedCorrelationId
                 $output += $message
                 Write-Log -Message $message -Level Verbose
             }
@@ -2555,8 +2516,6 @@ function Invoke-SBRestMethodMultipleResult
 
         [string] $ClientRequestId,
 
-        [string] $CorrelationId,
-
         [string] $AccessToken = "",
 
         [string] $TelemetryEventName = $null,
@@ -2595,7 +2554,6 @@ function Invoke-SBRestMethodMultipleResult
                 "Method" = 'Get'
                 "Description" = $currentDescription
                 "ClientRequestId" = $ClientRequestId
-                "CorrelationId" = $CorrelationId
                 "AccessToken" = $AccessToken
                 "TelemetryProperties" = $telemetryProperties
                 "TelemetryExceptionBucket" = $errorBucket
@@ -2644,21 +2602,21 @@ function Test-ResourceType
     }
 }
 
-function Get-CorrelationId
+function Get-ClientRequestId
 {
     [CmdletBinding()]
     [OutputType([String])]
     param(
-        [string] $CorrelationId,
+        [string] $ClientRequestId,
 
         [string] $Identifier
     )
 
     # We'll provide a unique value if one wasn't provided to us already.
-    if ([String]::IsNullOrWhiteSpace($CorrelationId))
+    if ([String]::IsNullOrWhiteSpace($ClientRequestId))
     {
         return "$((Get-Date).ToString("yyyyMMddssmm.ffff"))-$Identifier"
     }
 
-    return $CorrelationId
+    return $ClientRequestId
 }

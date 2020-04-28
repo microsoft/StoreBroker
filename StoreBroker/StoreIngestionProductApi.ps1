@@ -37,8 +37,6 @@ function Get-Product
 
         [string] $ClientRequestId,
 
-        [string] $CorrelationId,
-
         [string] $AccessToken,
 
         [switch] $NoStatus
@@ -55,8 +53,7 @@ function Get-Product
             [StoreBrokerTelemetryProperty]::AppId = $AppId
             [StoreBrokerTelemetryProperty]::SpecifiedType = ($Type.Count -gt 0)
             [StoreBrokerTelemetryProperty]::SingleQuery = $singleQuery
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $searchDescription = "Getting information for all products"
@@ -75,7 +72,6 @@ function Get-Product
 
         $params = @{
             "ClientRequestId" = $ClientRequestId
-            "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Get-Product"
             "TelemetryProperties" = $telemetryProperties
@@ -136,8 +132,6 @@ function New-Product
 
         [string] $ClientRequestId,
 
-        [string] $CorrelationId,
-
         [string] $AccessToken,
 
         [switch] $NoStatus
@@ -152,8 +146,7 @@ function New-Product
             [StoreBrokerTelemetryProperty]::UsingObject = ($null -ne $Object)
             [StoreBrokerTelemetryProperty]::Name = $Name
             [StoreBrokerTelemetryProperty]::ResourceType = $Type
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $hashBody = $Object
@@ -173,7 +166,6 @@ function New-Product
             "Description" = "Creating a new product called: $Name"
             "Body" = $body
             "ClientRequestId" = $ClientRequestId
-            "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "New-Product"
             "TelemetryProperties" = $telemetryProperties
@@ -200,8 +192,6 @@ function Remove-Product
 
         [string] $ClientRequestId,
 
-        [string] $CorrelationId,
-
         [string] $AccessToken,
 
         [switch] $NoStatus
@@ -213,8 +203,7 @@ function Remove-Product
     {
         $telemetryProperties = @{
             [StoreBrokerTelemetryProperty]::ProductId = $ProductId
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $params = @{
@@ -222,7 +211,6 @@ function Remove-Product
             "Method" = "Delete"
             "Description" = "Deleting product: $ProductId"
             "ClientRequestId" = $ClientRequestId
-            "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Remove-Product"
             "TelemetryProperties" = $telemetryProperties
@@ -248,8 +236,6 @@ function Get-ProductPackageIdentity
 
         [string] $ClientRequestId,
 
-        [string] $CorrelationId,
-
         [string] $AccessToken,
 
         [switch] $NoStatus
@@ -261,8 +247,7 @@ function Get-ProductPackageIdentity
     {
         $telemetryProperties = @{
             [StoreBrokerTelemetryProperty]::AppId = $AppId
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $params = @{
@@ -270,7 +255,6 @@ function Get-ProductPackageIdentity
             "Method" = "Get"
             "Description" = "Getting package identity for product: $ProductId"
             "ClientRequestId" = $ClientRequestId
-            "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Get-ProductPackageIdentity"
             "TelemetryProperties" = $telemetryProperties
@@ -296,8 +280,6 @@ function Get-ProductStoreLink
 
         [string] $ClientRequestId,
 
-        [string] $CorrelationId,
-
         [string] $AccessToken,
 
         [switch] $NoStatus
@@ -309,8 +291,7 @@ function Get-ProductStoreLink
     {
         $telemetryProperties = @{
             [StoreBrokerTelemetryProperty]::AppId = $AppId
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $params = @{
@@ -318,7 +299,6 @@ function Get-ProductStoreLink
             "Method" = "Get"
             "Description" = "Getting store link for product: $ProductId"
             "ClientRequestId" = $ClientRequestId
-            "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Get-ProductStoreLink"
             "TelemetryProperties" = $telemetryProperties
@@ -350,8 +330,6 @@ function Get-ProductRelated
 
         [string] $ClientRequestId,
 
-        [string] $CorrelationId,
-
         [string] $AccessToken,
 
         [switch] $NoStatus
@@ -363,8 +341,7 @@ function Get-ProductRelated
     {
         $telemetryProperties = @{
             [StoreBrokerTelemetryProperty]::AppId = $AppId
-            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequesId
-            [StoreBrokerTelemetryProperty]::CorrelationId = $CorrelationId
+            [StoreBrokerTelemetryProperty]::ClientRequestId = $ClientRequestId
         }
 
         $getParams = @()
@@ -374,7 +351,6 @@ function Get-ProductRelated
             "UriFragment" = "products/$ProductId/related`?" + ($getParams -join '&')
             "Description" = "Getting related products for product: $ProductId"
             "ClientRequestId" = $ClientRequestId
-            "CorrelationId" = $CorrelationId
             "AccessToken" = $AccessToken
             "TelemetryEventName" = "Get-ProductRelated"
             "TelemetryProperties" = $telemetryProperties

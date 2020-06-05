@@ -1242,6 +1242,21 @@ function Convert-EnumToString
 
         return $modified
     }
+    elseif ($InputObject -is [PSCustomObject])
+    {
+        $modified = $InputObject.PSObject.Copy() # Get a new instance, not a reference
+        $modified | Get-Member -type NoteProperty | Select-Object -ExpandProperty Name | ForEach-Object {
+            $converted = (Convert-EnumToString -InputObject $modified.$_)
+            if ($modified.$_ -is [array])
+            {
+                $converted = @(converted)
+            }
+
+            $modified.$_ = $converted
+        }
+
+        return $modified
+    }
     elseif ($InputObject -is [System.Enum])
     {
         return $InputObject.ToString()

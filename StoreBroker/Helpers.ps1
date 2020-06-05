@@ -1249,7 +1249,7 @@ function Convert-EnumToString
             $converted = (Convert-EnumToString -InputObject $modified.$_)
             if ($modified.$_ -is [array])
             {
-                $converted = @(converted)
+                $converted = @($converted)
             }
 
             $modified.$_ = $converted

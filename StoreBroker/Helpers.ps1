@@ -1211,6 +1211,7 @@ function Convert-EnumToString
         [Parameter(
             ValueFromPipeline,
             Mandatory)]
+        [AllowNull()]
         $InputObject
     )
 

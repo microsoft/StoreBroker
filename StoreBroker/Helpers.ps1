@@ -1211,6 +1211,7 @@ function Convert-EnumToString
         [Parameter(
             ValueFromPipeline,
             Mandatory)]
+        [AllowNull()]
         $InputObject
     )
 
@@ -1246,16 +1247,13 @@ function Convert-EnumToString
     {
         $modified = $InputObject.PSObject.Copy() # Get a new instance, not a reference
         $modified | Get-Member -type NoteProperty | Select-Object -ExpandProperty Name | ForEach-Object {
-            if ($null -ne $modified.$_)
-            {
-                $converted = (Convert-EnumToString -InputObject $modified.$_)
-                if ($modified.$_ -is [array])
-                {
-                    $converted = @($converted)
-                }
-    
-                $modified.$_ = $converted
-            }
+        $converted = (Convert-EnumToString -InputObject $modified.$_)
+        if ($modified.$_ -is [array])
+        {
+            $converted = @($converted)
+        }
+
+        $modified.$_ = $converted
         }
 
         return $modified

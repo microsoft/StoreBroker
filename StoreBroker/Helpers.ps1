@@ -1254,7 +1254,7 @@ function Convert-EnumToString
             }
 
             $modified.$_ = $converted
-            }
+        }
 
         return $modified
     }

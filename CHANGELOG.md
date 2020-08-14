@@ -1,6 +1,17 @@
 # StoreBroker PowerShell Module
 ## Changelog
 
+## [2.1.13](https://github.com/Microsoft/StoreBroker/tree/2.1.13) - (2020/08/14)
+### Fixes:
+
+- Fixes the logic for config generation when `tag` or `notesForCertification` from Partner Center
+  had an encoded character or a URL value.  The encoded character wasn't getting re-encoded properly
+  in the generated config, and everything after the `//` in the URL was being treated as a comment.
+
+More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/https://github.com/Microsoft/StoreBroker/pull/199) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/...)
+
+Author: [**@HowardWolosky**](https://github.com/HowardWolosky)
+
 ## [2.1.9](https://github.com/Microsoft/StoreBroker/tree/2.1.9) - (2020/04/10)
 ### Fixes:
 

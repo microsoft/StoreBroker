@@ -371,57 +371,6 @@ function Get-SHA512Hash
     return [System.BitConverter]::ToString($sha512.ComputeHash($utf8.GetBytes($PlainText))) -replace '-', ''
 }
 
-function Get-EscapedJsonValue
-{
-<#
-    .SYNOPSIS
-        Escapes special characters within a string for use within a JSON value.
-
-    .DESCRIPTION
-        Escapes special characters within a string for use within a JSON value.
-
-        The Git repo for this module can be found here: http://aka.ms/StoreBroker
-
-    .PARAMETER Value
-        The string that needs to be escaped
-
-    .EXAMPLE
-        Get-EscapedJsonValue -Value 'This is my "quote". Look here: c:\windows\'
-
-        Returns back the string 'This is my \"quote\". Look here: c:\\windows\\'
-
-    .OUTPUTS
-        System.String - A string with special characters escaped for use within JSON.
-
-    .NOTES
-        Normalizes newlines and carriage returns to always be \r\n.
-#>
-    [CmdletBinding()]
-    param(
-        [Parameter(
-            Mandatory,
-            ValueFromPipeline)]
-        [AllowNull()]
-        [AllowEmptyString()]
-        [string] $Value
-    )
-
-    # The syntax of -replace is a bit confusing, so it's worth a note here.
-    # The first parameter is a regular expression match pattern.  The second parameter is a replacement string.
-    # So, when we try to do "-replace '\\', '\\", that's matching a single backslash (which has to be
-    # escaped within the match regular expression as a double-backslash), and replacing it with a
-    # string containing literally two backslashes.
-    # (And as a reminder, PowerShell's escape character is actually the backtick (`) and not backslash (\).)
-
-    # \, ", <tab>
-    $escaped = $Value -replace '\\', '\\' -replace '"', '\"' -replace '\t', '\t'
-
-    # Now normalize actual CR's and LF's with their control codes.  We'll ensure all variations are uniformly formatted as \r\n
-    $escaped = $escaped -replace '\r\n', '\r\n' -replace '\r', '\r\n' -replace '\n', '\r\n'
-
-    return $escaped
-}
-
 function ConvertTo-Array
 {
 <#

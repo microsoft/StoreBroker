@@ -1,10 +1,21 @@
 # StoreBroker PowerShell Module
 ## Changelog
 
+## [1.19.4](https://github.com/Microsoft/StoreBroker/tree/1.19.4) - (2020/08/14)
+### Fixes:
+
+- Fixes the logic for config generation when `tag` or `notesForCertification` from Partner Center
+  had an encoded character or a URL value.  The encoded character wasn't getting re-encoded properly
+  in the generated config, and everything after the `//` in the URL was being treated as a comment.
+
+More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/https://github.com/Microsoft/StoreBroker/pull/198) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/...)
+
+Author: [**@HowardWolosky**](https://github.com/HowardWolosky)
+
 ## [1.19.3](https://github.com/Microsoft/StoreBroker/tree/1.19.3) - (2020/04/10)
 ### Fixes:
 
-+ Updated all of the Partner Center URL's to follow the new location format.
+- Updated all of the Partner Center URL's to follow the new location format.
 
 More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/https://github.com/Microsoft/StoreBroker/pull/185) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/0fbb6b9a702cf0edf52e8f5ef6d920fb859fc954)
 
@@ -13,7 +24,7 @@ Author: [**@cartwrightluke**](https://github.com/cartwrightluke)
 ## [1.19.2](https://github.com/Microsoft/StoreBroker/tree/1.19.2) - (2018/12/14)
 ### Fixes:
 
-+ Updated the logic for finding the appxbundle/appx manifests to use direct instead of relative
+- Updated the logic for finding the appxbundle/appx manifests to use direct instead of relative
   paths
 
 More Info: [[cl]](https://github.com/Microsoft/StoreBroker/commit/9f884ff367bca72c604e57f5ce9daad6b0f4b277)

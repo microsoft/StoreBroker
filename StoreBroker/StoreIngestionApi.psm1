@@ -230,7 +230,7 @@ function Set-StoreBrokerAuthentication
         [string] $TenantName = $null
     )
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     if ($UseProxy)
     {
@@ -336,7 +336,7 @@ function Clear-StoreBrokerAuthentication
 
     Set-TelemetryEvent -EventName Clear-StoreBrokerAuthentication
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     if ($PSCmdlet.ShouldProcess("", "Clear tenantId"))
     {
@@ -809,7 +809,7 @@ function Set-SubmissionPackage
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::PackagePath = (Get-PiiSafeString -PlainText $PackagePath) }
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     Write-Log -Message "Attempting to upload the package ($PackagePath) for the submission to $UploadUrl..." -Level Verbose
 
@@ -1005,7 +1005,7 @@ function Get-SubmissionPackage
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::PackagePath = (Get-PiiSafeString -PlainText $PackagePath) }
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     Write-Log -Message "Attempting to download the contents of $UploadUrl to $PackagePath..." -Level Verbose
 
@@ -1248,7 +1248,7 @@ function Start-SubmissionMonitor
         [switch] $PassThru
     )
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     # Telemetry-related
     $telemetryProperties = @{

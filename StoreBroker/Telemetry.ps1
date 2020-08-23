@@ -1,9 +1,10 @@
 ﻿# Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-# Singleton telemetry client. Don't directly access this though....always get it
-# by calling Get-TelemetryClient to ensure that the singleton is properly initialized.
-$script:SBTelemetryClient = $null
+# Singleton. Don't directly access this though....always get it
+# by calling Get-BaseTelemetryEvent to ensure that it has been initialized and that you're always
+# getting a fresh copy.
+$script:SBBaseTelemetryEvent = $null
 
 Add-Type -TypeDefinition @"
    public enum StoreBrokerTelemetryProperty
@@ -218,275 +219,208 @@ function Get-PiiSafeString
     }
 }
 
-function Get-ApplicationInsightsDllPath
+function Get-BaseTelemetryEvent
 {
-<#
+    <#
     .SYNOPSIS
-        Makes sure that the Microsoft.ApplicationInsights.dll assembly is available
-        on the machine, and returns the path to it.
+        Returns back the base object for an Application Insights telemetry event.
 
     .DESCRIPTION
-        Makes sure that the Microsoft.ApplicationInsights.dll assembly is available
-        on the machine, and returns the path to it.
+        Returns back the base object for an Application Insights telemetry event.
 
-        This will first look for the assembly in the module's script directory.
-
-        Next it will look for the assembly in the location defined by
-        $SBAlternateAssemblyDir.  This value would have to be defined by the user
-        prior to execution of this cmdlet.
-
-        If not found there, it will look in a temp folder established during this
-        PowerShell session.
-
-        If still not found, it will download the nuget package
-        for it to a temp folder accessible during this PowerShell session.
-
-        The Git repo for this module can be found here: http://aka.ms/StoreBroker
-
-    .PARAMETER NoStatus
-        If this switch is specified, long-running commands will run on the main thread
-        with no commandline status update.  When not specified, those commands run in
-        the background, enabling the command prompt to provide status information.
+        The Git repo for this module can be found here: http://aka.ms/PowerShellForGitHub
 
     .EXAMPLE
-        Get-ApplicationInsightsDllPath
+        Get-BaseTelemetryEvent
 
-        Returns back the path to the assembly as found.  If the package has to
-        be downloaded via nuget, the command prompt will show a time duration
-        status counter while the package is being downloaded.
-
-    .EXAMPLE
-        Get-ApplicationInsightsDllPath -NoStatus
-
-        Returns back the path to the assembly as found.  If the package has to
-        be downloaded via nuget, the command prompt will appear to hang during
-        this time.
+        Returns back a base telemetry event, populated with the minimum properties necessary
+        to correctly report up to this project's telemetry.  Callers can then add on to the
+        event as nececessary.
 
     .OUTPUTS
-        System.String - The path to the Microsoft.ApplicationInsights.dll assembly.
+        [PSCustomObject]
 #>
-    [CmdletBinding(SupportsShouldProcess)]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
-    param(
-        [switch] $NoStatus
-    )
+    [CmdletBinding()]
+    param()
 
-    $nugetPackageName = "Microsoft.ApplicationInsights"
-    $nugetPackageVersion = "2.0.1"
-    $assemblyPackageTailDir = "Microsoft.ApplicationInsights.2.0.1\lib\net45"
-    $assemblyName = "Microsoft.ApplicationInsights.dll"
-
-    return Get-NugetPackageDllPath -NugetPackageName $nugetPackageName -NugetPackageVersion $nugetPackageVersion -AssemblyPackageTailDirectory $assemblyPackageTailDir -AssemblyName $assemblyName -NoStatus:$NoStatus
-}
-
-function Get-DiagnosticsTracingDllPath
-{
-<#
-    .SYNOPSIS
-        Makes sure that the Microsoft.Diagnostics.Tracing.EventSource.dll assembly is available
-        on the machine, and returns the path to it.
-
-    .DESCRIPTION
-        Makes sure that the Microsoft.Diagnostics.Tracing.EventSource.dll assembly is available
-        on the machine, and returns the path to it.
-
-        This will first look for the assembly in the module's script directory.
-
-        Next it will look for the assembly in the location defined by
-        $SBAlternateAssemblyDir.  This value would have to be defined by the user
-        prior to execution of this cmdlet.
-
-        If not found there, it will look in a temp folder established during this
-        PowerShell session.
-
-        If still not found, it will download the nuget package
-        for it to a temp folder accessible during this PowerShell session.
-
-        The Git repo for this module can be found here: http://aka.ms/StoreBroker
-
-    .PARAMETER NoStatus
-        If this switch is specified, long-running commands will run on the main thread
-        with no commandline status update.  When not specified, those commands run in
-        the background, enabling the command prompt to provide status information.
-
-    .EXAMPLE
-        Get-DiagnosticsTracingDllPath
-
-        Returns back the path to the assembly as found.  If the package has to
-        be downloaded via nuget, the command prompt will show a time duration
-        status counter while the package is being downloaded.
-
-    .EXAMPLE
-        Get-DiagnosticsTracingDllPath -NoStatus
-
-        Returns back the path to the assembly as found.  If the package has to
-        be downloaded via nuget, the command prompt will appear to hang during
-        this time.
-
-    .OUTPUTS
-        System.String - The path to the Microsoft.ApplicationInsights.dll assembly.
-#>
-    [CmdletBinding(SupportsShouldProcess)]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
-    param(
-        [switch] $NoStatus
-    )
-
-    $nugetPackageName = "Microsoft.Diagnostics.Tracing.EventSource.Redist"
-    $nugetPackageVersion = "1.1.24"
-    $assemblyPackageTailDir = "Microsoft.Diagnostics.Tracing.EventSource.Redist.1.1.24\lib\net35"
-    $assemblyName = "Microsoft.Diagnostics.Tracing.EventSource.dll"
-
-    return Get-NugetPackageDllPath -NugetPackageName $nugetPackageName -NugetPackageVersion $nugetPackageVersion -AssemblyPackageTailDirectory $assemblyPackageTailDir -AssemblyName $assemblyName -NoStatus:$NoStatus
-}
-
-function Get-ThreadingTasksDllPath
-{
-<#
-    .SYNOPSIS
-        Makes sure that the Microsoft.Threading.Tasks.dll assembly is available
-        on the machine, and returns the path to it.
-
-    .DESCRIPTION
-        Makes sure that the Microsoft.Threading.Tasks.dll assembly is available
-        on the machine, and returns the path to it.
-
-        This will first look for the assembly in the module's script directory.
-
-        Next it will look for the assembly in the location defined by
-        $SBAlternateAssemblyDir.  This value would have to be defined by the user
-        prior to execution of this cmdlet.
-
-        If not found there, it will look in a temp folder established during this
-        PowerShell session.
-
-        If still not found, it will download the nuget package
-        for it to a temp folder accessible during this PowerShell session.
-
-        The Git repo for this module can be found here: http://aka.ms/StoreBroker
-
-    .PARAMETER NoStatus
-        If this switch is specified, long-running commands will run on the main thread
-        with no commandline status update.  When not specified, those commands run in
-        the background, enabling the command prompt to provide status information.
-
-    .EXAMPLE
-        Get-ThreadingTasksDllPath
-
-        Returns back the path to the assembly as found.  If the package has to
-        be downloaded via nuget, the command prompt will show a time duration
-        status counter while the package is being downloaded.
-
-    .EXAMPLE
-        Get-ThreadingTasksDllPath -NoStatus
-
-        Returns back the path to the assembly as found.  If the package has to
-        be downloaded via nuget, the command prompt will appear to hang during
-        this time.
-
-    .OUTPUTS
-        System.String - The path to the Microsoft.ApplicationInsights.dll assembly.
-#>
-    [CmdletBinding(SupportsShouldProcess)]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
-    param(
-        [switch] $NoStatus
-    )
-
-    $nugetPackageName = "Microsoft.Bcl.Async"
-    $nugetPackageVersion = "1.0.168.0"
-    $assemblyPackageTailDir = "Microsoft.Bcl.Async.1.0.168\lib\net40"
-    $assemblyName = "Microsoft.Threading.Tasks.dll"
-
-    return Get-NugetPackageDllPath -NugetPackageName $nugetPackageName -NugetPackageVersion $nugetPackageVersion -AssemblyPackageTailDirectory $assemblyPackageTailDir -AssemblyName $assemblyName -NoStatus:$NoStatus
-}
-
-function Get-TelemetryClient
-{
-<#
-    .SYNOPSIS
-        Returns back the singleton instance of the Application Insights TelemetryClient for
-        this module.
-
-    .DESCRIPTION
-        Returns back the singleton instance of the Application Insights TelemetryClient for
-        this module.
-
-        If the singleton hasn't been initialized yet, this will ensure all dependenty assemblies
-        are available on the machine, create the client and initialize its properties.
-
-        This will first look for the dependent assemblies in the module's script directory.
-
-        Next it will look for the assemblies in the location defined by
-        $SBAlternateAssemblyDir.  This value would have to be defined by the user
-        prior to execution of this cmdlet.
-
-        If not found there, it will look in a temp folder established during this
-        PowerShell session.
-
-        If still not found, it will download the nuget package
-        for it to a temp folder accessible during this PowerShell session.
-
-        The Git repo for this module can be found here: http://aka.ms/StoreBroker
-
-    .PARAMETER NoStatus
-        If this switch is specified, long-running commands will run on the main thread
-        with no commandline status update.  When not specified, those commands run in
-        the background, enabling the command prompt to provide status information.
-
-    .EXAMPLE
-        Get-TelemetryClient
-
-        Returns back the singleton instance to the TelemetryClient for the module.
-        If any nuget packages have to be downloaded in order to load the TelemetryClient, the
-        command prompt will show a time duration status counter during the download process.
-
-    .EXAMPLE
-        Get-TelemetryClient -NoStatus
-
-        Returns back the singleton instance to the TelemetryClient for the module.
-        If any nuget packages have to be downloaded in order to load the TelemetryClient, the
-        command prompt will appear to hang during this time.
-
-    .OUTPUTS
-        Microsoft.ApplicationInsights.TelemetryClient
-#>
-    [CmdletBinding(SupportsShouldProcess)]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars", "", Justification="We use global variables sparingly and intentionally for module configuration, and employ a consistent naming convention.")]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
-    param(
-        [switch] $NoStatus
-    )
-
-    if ($null -eq $script:SBTelemetryClient)
+    if ($null -eq $script:SBBaseTelemetryEvent)
     {
-        Write-Log -Message "Telemetry is currently enabled.  It can be disabled by setting ""`$global:SBDisableTelemetry = `$true"". Refer to USAGE.md#telemetry for more information."
-        Write-Log -Message "Initializing telemetry client." -Level Verbose
-
-        $dlls = @(
-                    (Get-ThreadingTasksDllPath -NoStatus:$NoStatus),
-                    (Get-DiagnosticsTracingDllPath -NoStatus:$NoStatus),
-                    (Get-ApplicationInsightsDllPath -NoStatus:$NoStatus)
-        )
-
-        foreach ($dll in $dlls)
+        if (-not (Get-GitHubConfiguration -Name SuppressTelemetryReminder))
         {
-            $bytes = [System.IO.File]::ReadAllBytes($dll)
-            [System.Reflection.Assembly]::Load($bytes) | Out-Null
+            Write-Log -Message "Telemetry is currently enabled.  It can be disabled by setting ""`$global:SBDisableTelemetry = `$true"". Refer to USAGE.md#telemetry for more information."
         }
 
         $username = Get-PiiSafeString -PlainText $env:USERNAME
 
-        $script:SBTelemetryClient = New-Object Microsoft.ApplicationInsights.TelemetryClient
-        $script:SBTelemetryClient.InstrumentationKey = $global:SBApplicationInsightsKey
-        $script:SBTelemetryClient.Context.User.Id = $username
-        $script:SBTelemetryClient.Context.Session.Id = [System.GUID]::NewGuid().ToString()
-        $script:SBTelemetryClient.Context.Properties[[StoreBrokerTelemetryProperty]::Username] = $username
-        $script:SBTelemetryClient.Context.Properties[[StoreBrokerTelemetryProperty]::DayOfWeek] = (Get-Date).DayOfWeek
-        $script:SBTelemetryClient.Context.Component.Version = $MyInvocation.MyCommand.Module.Version.ToString()
+        $script:SBBaseTelemetryEvent = [PSCustomObject] @{
+            'name' = 'Microsoft.ApplicationInsights.66d83c523070489b886b09860e05e78a.Event'
+            'time' = (Get-Date).ToUniversalTime().ToString("O")
+            'iKey' = $global:SBApplicationInsightsKey
+            'tags' = [PSCustomObject] @{
+                'ai.user.id' = $username
+                'ai.session.id' = [System.GUID]::NewGuid().ToString()
+                'ai.application.ver' = $MyInvocation.MyCommand.Module.Version.ToString()
+                'ai.internal.sdkVersion' = '2.0.1.33027' # The version this schema was based off of.
+            }
+
+            'data' = [PSCustomObject] @{
+                'baseType' = 'EventData'
+                'baseData' = [PSCustomObject] @{
+                    'ver' = 2
+                    'properties' = [PSCustomObject] @{
+                        'DayOfWeek' = (Get-Date).DayOfWeek.ToString()
+                        'Username' = $username
+                    }
+                }
+            }
+        }
     }
 
-    return $script:SBTelemetryClient
+    return $script:SBBaseTelemetryEvent.PSObject.Copy() # Get a new instance, not a reference
+}
+
+function Invoke-SendTelemetryEvent
+{
+<#
+    .SYNOPSIS
+        Sends an event to Application Insights directly using its REST API.
+
+    .DESCRIPTION
+        Sends an event to Application Insights directly using its REST API.
+
+        A very heavy wrapper around Invoke-WebRequest that understands Application Insights and
+        how to perform its requests with and without console status updates.  It also
+        understands how to parse and handle errors from the REST calls.
+
+        The Git repo for this module can be found here: http://aka.ms/StoreBroker
+
+    .PARAMETER TelemetryEvent
+        The raw object representing the event data to send to Application Insights.
+
+    .OUTPUTS
+        [PSCustomObject] - The result of the REST operation, in whatever form it comes in.
+
+    .NOTES
+        This mirrors Invoke-SBRestMethod extensively, however the error handling is slightly
+        different.  There wasn't a clear way to refactor the code to make both of these
+        Invoke-* methods share a common base code.  Leaving this as-is to make this file
+        easier to share out with other PowerShell projects.
+#>
+    [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars", "", Justification="We use global variables sparingly and intentionally for module configuration, and employ a consistent naming convention.")]
+    param(
+        [Parameter(Mandatory)]
+        [PSCustomObject] $TelemetryEvent
+    )
+
+    $jsonConversionDepth = 20 # Seems like it should be more than sufficient
+    $uri = 'https://dc.services.visualstudio.com/v2/track'
+    $method = 'POST'
+    $headers = @{'Content-Type' = 'application/json; charset=UTF-8'}
+
+    $body = ConvertTo-Json -InputObject $TelemetryEvent -Depth $jsonConversionDepth -Compress
+    $bodyAsBytes = [System.Text.Encoding]::UTF8.GetBytes($body)
+
+    try
+    {
+        Write-Log -Message "Sending telemetry event data to $uri [Timeout = $global:SBWebRequestTimeoutSec]" -Level Verbose
+
+        $params = @{}
+        $params.Add("Uri", $uri)
+        $params.Add("Method", $method)
+        $params.Add("Headers", $headers)
+        $params.Add("UseDefaultCredentials", $true)
+        $params.Add("UseBasicParsing", $true)
+        $params.Add("TimeoutSec", $global:SBWebRequestTimeoutSec)
+        $params.Add("Body", $bodyAsBytes)
+
+        # Disable Progress Bar in function scope during Invoke-WebRequest
+        $ProgressPreference = 'SilentlyContinue'
+
+        return Invoke-WebRequest @params
+    }
+    catch
+    {
+        $ex = $null
+        $message = $null
+        $statusCode = $null
+        $statusDescription = $null
+        $innerMessage = $null
+        $rawContent = $null
+
+        if ($_.Exception -is [System.Net.WebException])
+        {
+            $ex = $_.Exception
+            $message = $_.Exception.Message
+            $statusCode = $ex.Response.StatusCode.value__ # Note that value__ is not a typo.
+            $statusDescription = $ex.Response.StatusDescription
+            $innerMessage = $_.ErrorDetails.Message
+            try
+            {
+                $rawContent = Get-HttpWebResponseContent -WebResponse $ex.Response
+            }
+            catch
+            {
+                Write-Log -Message "Unable to retrieve the raw HTTP Web Response:" -Exception $_ -Level Warning
+            }
+        }
+        else
+        {
+            Write-Log -Exception $_ -Level Error
+            throw
+        }
+
+        $output = @()
+        $output += $message
+
+        if (-not [string]::IsNullOrEmpty($statusCode))
+        {
+            $output += "$statusCode | $($statusDescription.Trim())"
+        }
+
+        if (-not [string]::IsNullOrEmpty($innerMessage))
+        {
+            try
+            {
+                $innerMessageJson = ($innerMessage | ConvertFrom-Json)
+                if ($innerMessageJson -is [String])
+                {
+                    $output += $innerMessageJson.Trim()
+                }
+                elseif (-not [String]::IsNullOrWhiteSpace($innerMessageJson.itemsReceived))
+                {
+                    $output += "Items Received: $($innerMessageJson.itemsReceived)"
+                    $output += "Items Accepted: $($innerMessageJson.itemsAccepted)"
+                    if ($innerMessageJson.errors.Count -gt 0)
+                    {
+                        $output += "Errors:"
+                        $output += ($innerMessageJson.errors | Format-Table | Out-String)
+                    }
+                }
+                else
+                {
+                    # In this case, it's probably not a normal message from the API
+                    $output += ($innerMessageJson | Out-String)
+                }
+            }
+            catch [System.ArgumentException]
+            {
+                # Will be thrown if $innerMessage isn't JSON content
+                $output += $innerMessage.Trim()
+            }
+        }
+
+        # It's possible that the API returned JSON content in its error response.
+        if (-not [String]::IsNullOrWhiteSpace($rawContent))
+        {
+            $output += $rawContent
+        }
+
+        $output += "Original body: $body"
+        $newLineOutput = ($output -join [Environment]::NewLine)
+        Write-Log -Message $newLineOutput -Level Error
+        throw $newLineOutput
+    }
 }
 
 function Set-TelemetryEvent
@@ -510,49 +444,31 @@ function Set-TelemetryEvent
         A collection of name/value pair metrics (string/double) that should be associated with
         this event.
 
-    .PARAMETER NoStatus
-        If this switch is specified, long-running commands will run on the main thread
-        with no commandline status update.  When not specified, those commands run in
-        the background, enabling the command prompt to provide status information.
-
     .EXAMPLE
         Set-TelemetryEvent "zFooTest1"
 
-        Posts a "zFooTest1" event with the default set of properties and metrics.  If the telemetry
-        client needs to be created to accomplish this, and the required assemblies are not available
-        on the local machine, the download status will be presented at the command prompt.
+        Posts a "zFooTest1" event with the default set of properties and metrics.
 
     .EXAMPLE
         Set-TelemetryEvent "zFooTest1" @{"Prop1" = "Value1"}
 
         Posts a "zFooTest1" event with the default set of properties and metrics along with an
-        additional property named "Prop1" with a value of "Value1".  If the telemetry client
-        needs to be created to accomplish this, and the required assemblies are not available
-        on the local machine, the download status will be presented at the command prompt.
-
-    .EXAMPLE
-        Set-TelemetryEvent "zFooTest1" -NoStatus
-
-        Posts a "zFooTest1" event with the default set of properties and metrics.  If the telemetry
-        client needs to be created to accomplish this, and the required assemblies are not available
-        on the local machine, the command prompt will appear to hang while they are downloaded.
+        additional property named "Prop1" with a value of "Value1".
 
     .NOTES
         Because of the short-running nature of this module, we always "flush" the events as soon
         as they have been posted to ensure that they make it to Application Insights.
 #>
-    [CmdletBinding(SupportsShouldProcess)]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars", "", Justification="We use global variables sparingly and intentionally for module configuration, and employ a consistent naming convention.")]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
+    [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '',
+        Justification='Function is not state changing')]
     param(
         [Parameter(Mandatory)]
         [string] $EventName,
 
         [hashtable] $Properties = @{},
 
-        [hashtable] $Metrics = @{},
-
-        [switch] $NoStatus
+        [hashtable] $Metrics = @{}
     )
 
     if ($global:SBDisableTelemetry)
@@ -565,25 +481,38 @@ function Set-TelemetryEvent
 
     try
     {
-        $telemetryClient = Get-TelemetryClient -NoStatus:$NoStatus
+        $telemetryEvent = Get-BaseTelemetryEvent
 
-        $propertiesDictionary = New-Object 'System.Collections.Generic.Dictionary[string, string]'
-        $propertiesDictionary[[StoreBrokerTelemetryProperty]::DayOfWeek] = (Get-Date).DayOfWeek
-        $Properties.Keys | ForEach-Object { $propertiesDictionary[$_] = $Properties[$_] }
+        Add-Member -InputObject $telemetryEvent.data.baseData -Name 'name' -Value $EventName -MemberType NoteProperty -Force
 
-        $metricsDictionary = New-Object 'System.Collections.Generic.Dictionary[string, double]'
-        $Metrics.Keys | ForEach-Object { $metricsDictionary[$_] = $Metrics[$_] }
+        # Properties
+        foreach ($property in $Properties.GetEnumerator())
+        {
+            Add-Member -InputObject $telemetryEvent.data.baseData.properties -Name $property.Key -Value $property.Value -MemberType NoteProperty -Force
+        }
 
-        $telemetryClient.TrackEvent($EventName, $propertiesDictionary, $metricsDictionary);
+        # Measurements
+        if ($Metrics.Count -gt 0)
+        {
+            $measurements = @{}
+            foreach ($metric in $Metrics.GetEnumerator())
+            {
+                $measurements[$metric.Key] = $metric.Value
+            }
 
-        # Flushing should increase the chance of success in uploading telemetry logs
-        Flush-TelemetryClient -NoStatus:$NoStatus
+            Add-Member -InputObject $telemetryEvent.data.baseData -Name 'measurements' -Value ([PSCustomObject] $measurements) -MemberType NoteProperty -Force
+        }
+
+        $null = Invoke-SendTelemetryEvent -TelemetryEvent $telemetryEvent
     }
     catch
     {
-        # Telemetry should be best-effort.  Failures while trying to handle telemetry should not
-        # cause exceptions in the app itself.
-        Write-Log -Message "Set-TelemetryEvent failed:" -Exception $_ -Level Error
+        Write-Log -Level Warning -Message @(
+            "Encountered a problem while trying to record telemetry events.",
+            "This is non-fatal, but it would be helpful if you could report this problem",
+            "to the StoreBroker team for further investigation:"
+            "",
+            $_.Exception)
     }
 }
 
@@ -610,52 +539,26 @@ function Set-TelemetryException
     .PARAMETER Properties
         Additional properties that the caller may wish to be associated with this exception.
 
-    .PARAMETER NoFlush
-        It's not recommended to use this unless the exception is coming from Flush-TelemetryClient.
-        By default, every time a new exception is logged, the telemetry client will be flushed
-        to ensure that the event is published to the Application Insights.  Use of this switch
-        prevents that automatic flushing (helpful in the scenario where the exception occurred
-        when trying to do the actual Flush).
-
-    .PARAMETER NoStatus
-        If this switch is specified, long-running commands will run on the main thread
-        with no commandline status update.  When not specified, those commands run in
-        the background, enabling the command prompt to provide status information.
-
     .EXAMPLE
         Set-TelemetryException $_
 
         Used within the context of a catch statement, this will post the exception that just
-        occurred, along with a default set of properties.  If the telemetry client needs to be
-        created to accomplish this, and the required assemblies are not available on the local
-        machine, the download status will be presented at the command prompt.
-
-    .EXAMPLE
-        Set-TelemetryException $_ -NoStatus
-
-        Used within the context of a catch statement, this will post the exception that just
-        occurred, along with a default set of properties.  If the telemetry client needs to be
-        created to accomplish this, and the required assemblies are not available on the local
-        machine, the command prompt will appear to hang while they are downloaded.
+        occurred, along with a default set of properties.
 
     .NOTES
         Because of the short-running nature of this module, we always "flush" the events as soon
         as they have been posted to ensure that they make it to Application Insights.
 #>
-    [CmdletBinding(SupportsShouldProcess)]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars", "", Justification="We use global variables sparingly and intentionally for module configuration, and employ a consistent naming convention.")]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
+    [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '',
+        Justification='Function is not state changing.')]
     param(
         [Parameter(Mandatory)]
         [System.Exception] $Exception,
 
         [string] $ErrorBucket,
 
-        [hashtable] $Properties = @{},
-
-        [switch] $NoFlush,
-
-        [switch] $NoStatus
+        [hashtable] $Properties = @{}
     )
 
     if ($global:SBDisableTelemetry)
@@ -664,104 +567,77 @@ function Set-TelemetryException
         return
     }
 
-    Write-InvocationLog -ExcludeParameter @('Exception', 'Properties', 'NoFlush')
+    Write-InvocationLog -ExcludeParameter @('Exception', 'Properties')
 
     try
     {
-        $telemetryClient = Get-TelemetryClient -NoStatus:$NoStatus
+        $telemetryEvent = Get-BaseTelemetryEvent
 
-        $propertiesDictionary = New-Object 'System.Collections.Generic.Dictionary[string,string]'
-        $propertiesDictionary[[StoreBrokerTelemetryProperty]::Message] = $Exception.Message
-        $propertiesDictionary[[StoreBrokerTelemetryProperty]::HResult] = "0x{0}" -f [Convert]::ToString($Exception.HResult, 16)
-        $Properties.Keys | ForEach-Object { $propertiesDictionary[$_] = $Properties[$_] }
+        $telemetryEvent.data.baseType = 'ExceptionData'
+        Add-Member -InputObject $telemetryEvent.data.baseData -Name 'handledAt' -Value 'UserCode' -MemberType NoteProperty -Force
 
+        # Properties
         if (-not [String]::IsNullOrWhiteSpace($ErrorBucket))
         {
-            $propertiesDictionary[[StoreBrokerTelemetryProperty]::ErrorBucket] = $ErrorBucket
+            Add-Member -InputObject $telemetryEvent.data.baseData.properties -Name 'ErrorBucket' -Value $ErrorBucket -MemberType NoteProperty -Force
         }
 
-        $telemetryClient.TrackException($Exception, $propertiesDictionary);
-
-        # Flushing should increase the chance of success in uploading telemetry logs
-        if (-not $NoFlush)
+        Add-Member -InputObject $telemetryEvent.data.baseData.properties -Name 'Message' -Value $Exception.Message -MemberType NoteProperty -Force
+        Add-Member -InputObject $telemetryEvent.data.baseData.properties -Name 'HResult' -Value ("0x{0}" -f [Convert]::ToString($Exception.HResult, 16)) -MemberType NoteProperty -Force
+        foreach ($property in $Properties.GetEnumerator())
         {
-            Flush-TelemetryClient -NoStatus:$NoStatus
+            Add-Member -InputObject $telemetryEvent.data.baseData.properties -Name $property.Key -Value $property.Value -MemberType NoteProperty -Force
         }
+
+        # Re-create the stack.  We'll start with what's in Invocation Info since it's already
+        # been broken down for us (although it doesn't supply the method name).
+        $parsedStack = @(
+            [PSCustomObject] @{
+                'assembly' = $MyInvocation.MyCommand.Module.Name
+                'method' = '<unknown>'
+                'fileName' = $Exception.ErrorRecord.InvocationInfo.ScriptName
+                'level' = 0
+                'line' = $Exception.ErrorRecord.InvocationInfo.ScriptLineNumber
+            }
+        )
+
+        # And then we'll try to parse ErrorRecord's ScriptStackTrace and make this as useful
+        # as possible.
+        $stackFrames = $Exception.ErrorRecord.ScriptStackTrace -split [Environment]::NewLine
+        for ($i = 0; $i -lt $stackFrames.Count; $i++)
+        {
+            $frame = $stackFrames[$i]
+            if ($frame -match '^at (.+), (.+): line (\d+)$')
+            {
+                $parsedStack +=  [PSCustomObject] @{
+                    'assembly' = $MyInvocation.MyCommand.Module.Name
+                    'method' = $Matches[1]
+                    'fileName' = $Matches[2]
+                    'level' = $i + 1
+                    'line' = $Matches[3]
+                }
+            }
+        }
+
+        # Finally, we'll build up the Exception data object.
+        $exceptionData = [PSCustomObject] @{
+            'id' = (Get-Date).ToFileTime()
+            'typeName' = $Exception.GetType().FullName
+            'message' = $Exception.Message
+            'hasFullStack' = $true
+            'parsedStack' = $parsedStack
+        }
+
+        Add-Member -InputObject $telemetryEvent.data.baseData -Name 'exceptions' -Value @($exceptionData) -MemberType NoteProperty -Force
+        $null = Invoke-SendTelemetryEvent -TelemetryEvent $telemetryEvent
     }
     catch
     {
-        # Telemetry should be best-effort.  Failures while trying to handle telemetry should not
-        # cause exceptions in the app itself.
-        Write-Log -Message "Set-TelemetryException failed:" -Exception $_ -Level Error
-    }
-}
-
-function Flush-TelemetryClient
-{
-<#
-    .SYNOPSIS
-        Flushes the buffer of stored telemetry events to the configured Applications Insights instance.
-
-    .DESCRIPTION
-        Flushes the buffer of stored telemetry events to the configured Applications Insights instance.
-
-        The Git repo for this module can be found here: http://aka.ms/StoreBroker
-
-    .PARAMETER NoStatus
-        If this switch is specified, long-running commands will run on the main thread
-        with no commandline status update.  When not specified, those commands run in
-        the background, enabling the command prompt to provide status information.
-
-    .EXAMPLE
-        Flush-TelemetryClient
-
-        Attempts to push all buffered telemetry events for this telemetry client immediately to
-        Application Insights.  If the telemetry client needs to be created to accomplish this,
-        and the required assemblies are not available on the local machine, the download status
-        will be presented at the command prompt.
-
-    .EXAMPLE
-        Flush-TelemetryClient -NoStatus
-
-        Attempts to push all buffered telemetry events for this telemetry client immediately to
-        Application Insights.  If the telemetry client needs to be created to accomplish this,
-        and the required assemblies are not available on the local machine, the command prompt
-        will appear to hang while they are downloaded.
-#>
-    [CmdletBinding(SupportsShouldProcess)]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars", "", Justification="We use global variables sparingly and intentionally for module configuration, and employ a consistent naming convention.")]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseApprovedVerbs", "", Justification="Internal-only helper method.  Matches the internal method that is called.")]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
-    param(
-        [switch] $NoStatus
-    )
-
-    if ($global:SBDisableTelemetry)
-    {
-        Write-Log -Message "Telemetry has been disabled via `$global:SBDisableTelemetry. Skipping flushing of the telemetry client." -Level Verbose
-        return
-    }
-
-    Write-InvocationLog
-
-    $telemetryClient = Get-TelemetryClient -NoStatus:$NoStatus
-
-    try
-    {
-        $telemetryClient.Flush()
-    }
-    catch [System.Net.WebException]
-    {
-        Write-Log -Message "Encountered exception while trying to flush telemetry events:" -Exception $_ -Level Warning
-
-        Set-TelemetryException -Exception ($_.Exception) -ErrorBucket "TelemetryFlush" -NoFlush -NoStatus:$NoStatus
-    }
-    catch
-    {
-        # Any other scenario is one that we want to identify and fix so that we don't miss telemetry
-        Write-Log -Level Warning -Exception $_ -Message @(
+        Write-Log -Level Warning -Message @(
             "Encountered a problem while trying to record telemetry events.",
             "This is non-fatal, but it would be helpful if you could report this problem",
-            "to the StoreBroker team for further investigation:")
+            "to the StoreBroker team for further investigation:",
+            "",
+            $_.Exception)
     }
 }

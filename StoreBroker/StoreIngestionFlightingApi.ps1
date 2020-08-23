@@ -88,7 +88,7 @@ function Get-ApplicationFlights
         [switch] $NoStatus
     )
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::AppId = $AppId }
 
@@ -235,7 +235,7 @@ function Get-ApplicationFlight
         [switch] $NoStatus
     )
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     $telemetryProperties = @{
         [StoreBrokerTelemetryProperty]::AppId = $AppId
@@ -428,7 +428,7 @@ function New-ApplicationFlight
         [switch] $NoStatus
     )
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     # Convert the input into a Json body.
     $hashBody = @{}
@@ -526,7 +526,7 @@ function Remove-ApplicationFlight
         [switch] $NoStatus
     )
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     $telemetryProperties = @{
         [StoreBrokerTelemetryProperty]::AppId = $AppId
@@ -619,7 +619,7 @@ function Get-ApplicationFlightSubmission
         [switch] $NoStatus
     )
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     $telemetryProperties = @{
         [StoreBrokerTelemetryProperty]::AppId = $AppId
@@ -804,7 +804,7 @@ function Get-ApplicationFlightSubmissionStatus
         [switch] $NoStatus
     )
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     $telemetryProperties = @{
         [StoreBrokerTelemetryProperty]::AppId = $AppId
@@ -887,7 +887,7 @@ function Remove-ApplicationFlightSubmission
         [switch] $NoStatus
     )
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     $telemetryProperties = @{
         [StoreBrokerTelemetryProperty]::AppId = $AppId
@@ -991,7 +991,7 @@ function New-ApplicationFlightSubmission
         [switch] $NoStatus
     )
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     if ([System.String]::IsNullOrEmpty($AccessToken))
     {
@@ -1279,7 +1279,7 @@ function Update-ApplicationFlightSubmission
 
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     Write-Log -Message "Reading in the submission content from: $SubmissionDataPath" -Level Verbose
     if ($PSCmdlet.ShouldProcess($SubmissionDataPath, "Get-Content"))
@@ -1774,7 +1774,7 @@ function Set-ApplicationFlightSubmission
         [switch] $NoStatus
     )
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     $submissionId = $UpdatedSubmission.id
     $flightId = $UpdatedSubmission.flightId
@@ -1868,7 +1868,7 @@ function Complete-ApplicationFlightSubmission
         [switch] $NoStatus
     )
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     try
     {
@@ -2058,7 +2058,7 @@ function Get-ApplicationFlightSubmissionPackageRollout
         [switch] $NoStatus
     )
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     try
     {
@@ -2157,7 +2157,7 @@ function Update-ApplicationFlightSubmissionPackageRollout
         [switch] $NoStatus
     )
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     try
     {
@@ -2264,7 +2264,7 @@ function Stop-ApplicationFlightSubmissionPackageRollout
         [switch] $NoStatus
     )
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     try
     {
@@ -2368,7 +2368,7 @@ function Complete-ApplicationFlightSubmissionPackageRollout
         [switch] $NoStatus
     )
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     try
     {

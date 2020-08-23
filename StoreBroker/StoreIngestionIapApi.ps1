@@ -82,7 +82,7 @@ function Get-InAppProducts
         [switch] $NoStatus
     )
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     $params = @{
         "UriFragment" = "inappproducts/"
@@ -218,7 +218,7 @@ function Get-InAppProduct
         [switch] $NoStatus
     )
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::IapId = $IapId }
 
@@ -388,7 +388,7 @@ function Get-ApplicationInAppProducts
         [switch] $NoStatus
     )
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::AppId = $AppId }
 
@@ -529,7 +529,7 @@ function New-InAppProduct
         [switch] $NoStatus
     )
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     # Convert the input into a Json body.
     $hashBody = @{}
@@ -605,7 +605,7 @@ function Remove-InAppProduct
         [switch] $NoStatus
     )
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     $telemetryProperties = @{ [StoreBrokerTelemetryProperty]::IapId = $IapId }
 
@@ -689,7 +689,7 @@ function Get-InAppProductSubmission
         [switch] $NoStatus
     )
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     $telemetryProperties = @{
         [StoreBrokerTelemetryProperty]::IapId = $IapId
@@ -918,7 +918,7 @@ function Get-InAppProductSubmissionStatus
         [switch] $NoStatus
     )
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     $telemetryProperties = @{
         [StoreBrokerTelemetryProperty]::IapId = $IapId
@@ -995,7 +995,7 @@ function Remove-InAppProductSubmission
         [switch] $NoStatus
     )
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     $telemetryProperties = @{
         [StoreBrokerTelemetryProperty]::IapId = $IapId
@@ -1083,7 +1083,7 @@ function New-InAppProductSubmission
         [switch] $NoStatus
     )
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     if ([System.String]::IsNullOrEmpty($AccessToken))
     {
@@ -1299,7 +1299,7 @@ function Update-InAppProductSubmission
 
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     Write-Log -Message "Reading in the submission content from: $SubmissionDataPath" -Level Verbose
     if ($PSCmdlet.ShouldProcess($SubmissionDataPath, "Get-Content"))
@@ -1765,7 +1765,7 @@ function Set-InAppProductSubmission
         [switch] $NoStatus
     )
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     $submissionId = $UpdatedSubmission.id
     $body = [string]($UpdatedSubmission | ConvertTo-Json -Depth $script:jsonConversionDepth)
@@ -1851,7 +1851,7 @@ function Complete-InAppProductSubmission
         [switch] $NoStatus
     )
 
-    Write-Log -Message "Executing: $($MyInvocation.Line)" -Level Verbose
+    Write-InvocationLog
 
     try
     {

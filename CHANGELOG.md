@@ -1,6 +1,28 @@
 # StoreBroker PowerShell Module
 ## Changelog
 
+## [1.20.0](https://github.com/Microsoft/StoreBroker/tree/1.20.0) - (2020/08/23)
+### Features:
+
++ Ported `Write-InvocationLog` from the `v2` branch so that logged output includes the module
+  version number as well as the full input provided to the functions.  This will enable easier
+  post-mortem debugging/support.
+  [[pr]](https://github.com/Microsoft/StoreBroker/pull/200) | [[cl]](https://github.com/microsoft/StoreBroker/commit/851cb7a236483e08074aaf842f7c356423466269)
+
++ Ported `PowerShellForGitHub`'s work on directly sending telemetry to Application Insights directly,
+  removing the need for three .NET assembly dependencies that we previously had.
+  [[pr]](https://github.com/Microsoft/StoreBroker/pull/201) | [[cl]](https://github.com/microsoft/StoreBroker/commit/be3c43850739a379f23f963c559e5f21152d8b33)
+
+### Fixes
+- Changed how the assemblies for uploading/downloading content to Azure Blob Storage are loaded into
+  the session context.  The previous method worked on PS4 and PS5, but not on PS Core.  The new
+  method should work across all PowerShell versions.
+  [[pr]](https://github.com/Microsoft/StoreBroker/pull/178) | [[cl]](https://github.com/microsoft/StoreBroker/commit/bb0b4a0c68ee6df61603f79b6f555e890802b4fb)
+
+Authors:
+ * [**@HowardWolosky**](https://github.com/HowardWolosky)
+ * [**@riverar**](https://github.com/riverar)
+
 ## [1.19.4](https://github.com/Microsoft/StoreBroker/tree/1.19.4) - (2020/08/14)
 ### Fixes:
 
@@ -8,7 +30,7 @@
   had an encoded character or a URL value.  The encoded character wasn't getting re-encoded properly
   in the generated config, and everything after the `//` in the URL was being treated as a comment.
 
-More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/https://github.com/Microsoft/StoreBroker/pull/198) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/...)
+More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/198) | [[cl]](https://github.com/microsoft/StoreBroker/commit/f18939e94da2651572ee392bd2a83979516b2b39)
 
 Author: [**@HowardWolosky**](https://github.com/HowardWolosky)
 
@@ -17,7 +39,7 @@ Author: [**@HowardWolosky**](https://github.com/HowardWolosky)
 
 - Updated all of the Partner Center URL's to follow the new location format.
 
-More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/https://github.com/Microsoft/StoreBroker/pull/185) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/0fbb6b9a702cf0edf52e8f5ef6d920fb859fc954)
+More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/185) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/0fbb6b9a702cf0edf52e8f5ef6d920fb859fc954)
 
 Author: [**@cartwrightluke**](https://github.com/cartwrightluke)
 
@@ -38,7 +60,7 @@ Author: [**@HowardWolosky**](https://github.com/HowardWolosky)
   a location.  All we care about is knowing if we can access the file or not...the error is just
   noise.
 
-More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/https://github.com/Microsoft/StoreBroker/pull/141) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/e9841e73e3a03d2b36dd762b2219ca9699c761dd)
+More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/141) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/e9841e73e3a03d2b36dd762b2219ca9699c761dd)
 
 Author: [**@HowardWolosky**](https://github.com/HowardWolosky)
 

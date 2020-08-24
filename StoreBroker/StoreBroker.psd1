@@ -6,7 +6,7 @@
     CompanyName = 'Microsoft Corporation'
     Copyright = 'Copyright (C) Microsoft Corporation.  All rights reserved.'
 
-    ModuleVersion = '1.19.4'
+    ModuleVersion = '1.20.0'
     Description = 'Provides command-line access to the Windows Store Submission REST API.'
 
     RootModule = 'StoreIngestionApi'

@@ -1027,11 +1027,10 @@ employed during execution of commands within this module (via Application Insigh
 information, refer to the [Privacy Policy](../README.md#privacy-policy) and
 [Terms of Use](../README.md#terms-of-use).
 
-> You may notice some needed assemblies for communicating with Application Insights being
-> downloaded on first run of a StoreBroker command within each PowerShell session.  The
-> [automatic dependency downloads](SETUP.md#automatic-dependency-downloads) section of the setup
-> documentation describes how you can avoid having to always re-download the telemetry assemblies
-> in the future.
+With every new PowerShell session, StoreBroker will show you a reminder that telemetry is being
+used.  You can suppress this reminder in the future by setting the following:
+
+    $global:SBSuppressTelemetryReminder = $true
 
 We recommend that you always leave the telemetry feature enabled, but a situation may arise where
 it must be disabled for some reason.  In this scenario, you can disable telemetry by setting

@@ -245,10 +245,7 @@ function Get-BaseTelemetryEvent
 
     if ($null -eq $script:SBBaseTelemetryEvent)
     {
-        if (-not (Get-GitHubConfiguration -Name SuppressTelemetryReminder))
-        {
-            Write-Log -Message "Telemetry is currently enabled.  It can be disabled by setting ""`$global:SBDisableTelemetry = `$true"". Refer to USAGE.md#telemetry for more information."
-        }
+        Write-Log -Message "Telemetry is currently enabled.  It can be disabled by setting ""`$global:SBDisableTelemetry = `$true"". Refer to USAGE.md#telemetry for more information."
 
         $username = Get-PiiSafeString -PlainText $env:USERNAME
 

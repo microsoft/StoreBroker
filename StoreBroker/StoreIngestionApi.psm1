@@ -829,11 +829,8 @@ function Set-SubmissionPackage
             [System.Net.ServicePointManager]::DefaultConnectionLimit = [Environment]::ProcessorCount * 8
             [System.Net.ServicePointManager]::Expect100Continue = $false
 
-            $bytes = [System.IO.File]::ReadAllBytes($azureStorageDll)
-            [System.Reflection.Assembly]::Load($bytes) | Out-Null
-
-            $bytes = [System.IO.File]::ReadAllBytes($azureStorageDataMovementDll)
-            [System.Reflection.Assembly]::Load($bytes) | Out-Null
+            [System.Reflection.Assembly]::LoadFrom($azureStorageDll) | Out-Null
+            [System.Reflection.Assembly]::LoadFrom($azureStorageDataMovementDll) | Out-Null
 
             $uri = New-Object -TypeName System.Uri -ArgumentList $UploadUrl
             $cloudBlockBlob = New-Object -TypeName Microsoft.WindowsAzure.Storage.Blob.CloudBlockBlob -ArgumentList $uri
@@ -858,11 +855,8 @@ function Set-SubmissionPackage
                     [System.Net.ServicePointManager]::DefaultConnectionLimit = [Environment]::ProcessorCount * 8
                     [System.Net.ServicePointManager]::Expect100Continue = $false
 
-                    $bytes = [System.IO.File]::ReadAllBytes($AzureStorageDll)
-                    [System.Reflection.Assembly]::Load($bytes) | Out-Null
-
-                    $bytes = [System.IO.File]::ReadAllBytes($AzureStorageDataMovementDll)
-                    [System.Reflection.Assembly]::Load($bytes) | Out-Null
+                    [System.Reflection.Assembly]::LoadFrom($AzureStorageDll) | Out-Null
+                    [System.Reflection.Assembly]::LoadFrom($AzureStorageDataMovementDll) | Out-Null
 
                     $uri = New-Object -TypeName System.Uri -ArgumentList $UploadUrl
                     $cloudBlockBlob = New-Object -TypeName Microsoft.WindowsAzure.Storage.Blob.CloudBlockBlob -ArgumentList $uri
@@ -1025,11 +1019,8 @@ function Get-SubmissionPackage
             [System.Net.ServicePointManager]::DefaultConnectionLimit = [Environment]::ProcessorCount * 8
             [System.Net.ServicePointManager]::Expect100Continue = $false
 
-            $bytes = [System.IO.File]::ReadAllBytes($azureStorageDll)
-            [System.Reflection.Assembly]::Load($bytes) | Out-Null
-
-            $bytes = [System.IO.File]::ReadAllBytes($azureStorageDataMovementDll)
-            [System.Reflection.Assembly]::Load($bytes) | Out-Null
+            [System.Reflection.Assembly]::LoadFrom($azureStorageDll) | Out-Null
+            [System.Reflection.Assembly]::LoadFrom($azureStorageDataMovementDll) | Out-Null
 
             $uri = New-Object -TypeName System.Uri -ArgumentList $UploadUrl
             $cloudBlockBlob = New-Object -TypeName Microsoft.WindowsAzure.Storage.Blob.CloudBlockBlob -ArgumentList $uri
@@ -1054,11 +1045,8 @@ function Get-SubmissionPackage
                     [System.Net.ServicePointManager]::DefaultConnectionLimit = [Environment]::ProcessorCount * 8
                     [System.Net.ServicePointManager]::Expect100Continue = $false
 
-                    $bytes = [System.IO.File]::ReadAllBytes($AzureStorageDll)
-                    [System.Reflection.Assembly]::Load($bytes) | Out-Null
-
-                    $bytes = [System.IO.File]::ReadAllBytes($AzureStorageDataMovementDll)
-                    [System.Reflection.Assembly]::Load($bytes) | Out-Null
+                    [System.Reflection.Assembly]::LoadFrom($AzureStorageDll) | Out-Null
+                    [System.Reflection.Assembly]::LoadFrom($AzureStorageDataMovementDll) | Out-Null
 
                     $uri = New-Object -TypeName System.Uri -ArgumentList $UploadUrl
                     $cloudBlockBlob = New-Object -TypeName Microsoft.WindowsAzure.Storage.Blob.CloudBlockBlob -ArgumentList $uri

@@ -97,6 +97,11 @@ function Initialize-TelemetryGlobalVariables
         $global:SBDisableTelemetry = $false
     }
 
+    if (!(Get-Variable -Name SBSuppressTelemetryReminder -Scope Global -ValueOnly -ErrorAction Ignore))
+    {
+        $global:SBSuppressTelemetryReminder = $false
+    }
+
     if (!(Get-Variable -Name SBDisablePiiProtection -Scope Global -ValueOnly -ErrorAction Ignore))
     {
         $global:SBDisablePiiProtection = $false
@@ -184,7 +189,10 @@ function Get-BaseTelemetryEvent
 
     if ($null -eq $script:SBBaseTelemetryEvent)
     {
-        Write-Log -Message "Telemetry is currently enabled.  It can be disabled by setting ""`$global:SBDisableTelemetry = `$true"". Refer to USAGE.md#telemetry for more information."
+        if (-not $global:SBSuppressTelemetryReminder)
+        {
+            Write-Log -Message "Telemetry is currently enabled.  It can be disabled by setting ""`$global:SBDisableTelemetry = `$true"". Refer to USAGE.md#telemetry for more information.  Stop seeing this message in the future by setting `"`$global:SBSuppressTelemetryReminder=`$true`""
+        }
 
         $username = Get-PiiSafeString -PlainText $env:USERNAME
 

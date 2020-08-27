@@ -1285,7 +1285,7 @@ function Update-ApplicationSubmission
         Write-Log -Message @(
             "Successfully cloned the existing submission and modified its content.",
             "You can view it on the Dev Portal here:",
-            "    https://partner.microsoft.com/en-us/dashboard/apps/$AppId/submissions/$submissionId/",
+            "    https://partner.microsoft.com/en-us/dashboard/products/$AppId/submissions/$submissionId/",
             "or by running this command:",
             "    Get-ApplicationSubmission -AppId $AppId -SubmissionId $submissionId | Format-ApplicationSubmission",
             "",
@@ -1971,7 +1971,7 @@ function Complete-ApplicationSubmission
             "This is just the beginning though.",
             "It still has multiple phases of validation to get through, and there's no telling how long that might take.",
             "You can view the progress of the submission validation on the Dev Portal here:",
-            "    https://partner.microsoft.com/en-us/dashboard/apps/$AppId/submissions/$submissionId/",
+            "    https://partner.microsoft.com/en-us/dashboard/products/$AppId/submissions/$submissionId/",
             "or by running this command:",
             "    Get-ApplicationSubmission -AppId $AppId -SubmissionId $submissionId | Format-ApplicationSubmission",
             "You can automatically monitor this submission with this command:",

@@ -7,12 +7,14 @@
 
 *   [Overview](#overview)
 *   [Installation](#installation)
-    *   [ExecutionPolicy](#executionpolicy)
-    *   [Choosing a Folder](#choosing-a-folder)
-    *   [Get the Module](#get-the-module)
-        *   [Using Git](#using-git)
-        *   [Using NuGet](#using-nuget)
-        *   [Downloading a Zip](#downloading-a-zip)
+    *   [PowerShellGallery](#powershellgallery)
+    *   [NuGet](#nuget)
+    *   [Installing From GitHub](#installing-from-github)
+        *   [ExecutionPolicy](#executionpolicy)
+        *   [Choosing a Folder](#choosing-a-folder)
+        *   [Get the Module](#get-the-module)
+            *   [Using Git](#using-git)
+            *   [Downloading a Zip](#downloading-a-zip)
 *   [Automatic Dependency Downloads](#automatic-dependency-downloads)
 *   [Setup](#setup)
     *   [Prerequisites](#prerequisites)
@@ -57,24 +59,97 @@ potential confusion. At a high level, all you're doing is:
 The following section describes how to configure your system for use with StoreBroker,
 and lists the available options for installing the module contents.
 
-### ExecutionPolicy
+### PowerShellGallery
 
-Update the `PowerShell ExecutionPolicy` to be `RemoteSigned` (which means
-that PowerShell scripts that are local to your machine don't need to be signed in order to execute).
+[![powershellgallery](https://img.shields.io/powershellgallery/v/StoreBroker)](https://www.powershellgallery.com/packages/StoreBroker)
+
+The easiest way to install StoreBroker is with
+[PowerShellGallery](https://www.powershellgallery.com/packages/StoreBroker).
+
+```powershell
+Install-Module -Name StoreBroker
+```
+
+If you already have it installed and want to get the latest version, you can use:
+
+```powershell
+Update-Module -Name StoreBroker
+```
+
+> If you'll be installing this on a machine that frequently gets reimaged, you may wish to first
+> call `Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted` to trust PowerShellGallery
+> modules and thus avoid any prompting during installation.
+
+### NuGet
+
+[![nuget](https://img.shields.io/nuget/v/Microsoft.Windows.StoreBroker)](https://www.nuget.org/packages/Microsoft.Windows.StoreBroker/)
+
+An alternate way to download a versioned copy of StoreBroker is to get it through
+[NuGet](https://www.nuget.org/packages/Microsoft.Windows.StoreBroker/).  This might make sense
+if you're incorporating it as part of a build step.
+
+We continue to make the NuGet available since we've provided a NuGet for StoreBroker ever since
+StoreBroker was released back in 2016, however now that it is available for installation via
+[PowerShellGallery](#powershellgallery), there really isn't a compelling reason to use the NuGet
+installation method anymore.
+
+Assuming you have the NuGet command-line utility
+[installed](https://dist.nuget.org/index.html) on your machine:
+
+```powershell
+$desiredPath = c:\StoreBroker # Set this to whatever location you want StoreBroker to be installed to
+Push-Location -Path $desiredPath
+nuget install Microsoft.Windows.StoreBroker
+Push-Location -Path ".\Microsoft.Windows.StoreBroker.*\StoreBroker"
+Import-Module .\StoreBroker.psd1
+```
+
+This will install the lastest available version of the StoreBroker module as a directory named
+`Microsoft.Windows.StoreBroker.<version>`, and then import the module for use.
+
+> The StoreBroker NuGet package contains *only* the scripts needed to use StoreBroker. For
+> any documentation, get started with [the README.md](../README.md).
+
+> Note that the NuGet package installation option is a *snapshot* of the StoreBroker module,
+> and is more difficult to keep up-to-date. To sync your local module with the newest package,
+> you will need to delete the folder created above and follow the installation instructions
+> again.
+
+### Installing From GitHub
+
+The previous two approaches allow you to download versioned snapshots of StoreBroker where the
+files have been digitally signed by Microsoft.  An alternative approach is to simply get the
+module directly from GitHub (either by cloning the repo or by downloading a zip of the sources).
+
+#### ExecutionPolicy
+
+Since the files from GitHub are _not_ digitially signed (we only sign them when we release to
+[PowerShellGallery](#powershellgallery) and [NuGet.org](#nuget)), you may need to update the
+`PowerShell ExecutionPolicy` on your machine to be `RemoteSigned` (which means that PowerShell
+scripts that are local to your machine don't need to be signed in order to execute).
+
 From an **Administrator** PowerShell console, run the following command:
 
-    Set-ExecutionPolicy RemoteSigned -Force
+```powershell
+Set-ExecutionPolicy RemoteSigned -Force
+```
 
-### Choosing a Folder
+#### Choosing a Folder
 
 You need to choose a folder that you're going to store the module in.  We recommend choosing to
 use a **new sub-folder** within one of the folders in your `$env:PSModulePath`.  By default,
-even if the folder doesn't exist yet,
-`Join-Path -Path ([System.Environment]::GetFolderPath('MyDocuments')) -ChildPath 'WindowsPowerShell\Modules'`
-is one of those folders -- this is the one that we'd recommend that you use.  If it doesn't exist yet, just
-go ahead and create it:
+even if the folder doesn't exist yet, the following path is one of those folders and is the one that
+we'd recommend that you use:
 
-    New-Item -Type Directory -Force -Path (Join-Path -Path ([System.Environment]::GetFolderPath('MyDocuments')) -ChildPath 'WindowsPowerShell\Modules\StoreBroker')
+```powershell
+Join-Path -Path ([System.Environment]::GetFolderPath('MyDocuments')) -ChildPath 'WindowsPowerShell\Modules'
+```
+
+If it doesn't exist yet, just go ahead and create it:
+
+```powershell
+New-Item -Type Directory -Force -Path (Join-Path -Path ([System.Environment]::GetFolderPath('MyDocuments')) -ChildPath 'WindowsPowerShell\Modules\StoreBroker')
+```
 
 If you follow that advice, then the module will automatically be available in any PowerShell
 console session implicitly.  If you choose to store the module somewhere else, then you will need
@@ -86,16 +161,19 @@ StoreBroker command will work.
 > `Import-Module` command.  When storing the module within a `$env:PSModulePath` folder, PowerShell
 > just figures that out for you.
 
-### Get The Module
+#### Get The Module
 
-There are currently three options for installing the StoreBroker module.
-We recommend the Git option, as it is the simplest for staying up-to-date with StoreBroker changes.
+There are two options for getting the code from GitHub: cloning with get and a zip download.
+We recommend the cloning with git option, as it is the simplest for staying up-to-date with
+StoreBroker changes.
 
-#### Using Git
+##### Using Git
 
 Assuming you already have `git` on your machine, just run:
 
-    git clone https://github.com/Microsoft/StoreBroker.git <folderFromStep2>
+```powershell
+git clone https://github.com/microsoft/StoreBroker.git <StoreBrokerCloneFolder>
+```
 
 You'll then want to update your PowerShell profile to just run a `git pull` on that folder
 every time you open your console window in order to keep it up to date.
@@ -103,47 +181,33 @@ every time you open your console window in order to keep it up to date.
 > Your PowerShell Profile is a ps1 script that PowerShell automatically runs every time a
 > new PowerShell console window is opened.
 
-    notepad $profile
+```powershell
+notepad $profile
+```
 
 That will open your profile.  If it doesn't exist, accept Notepad's prompts to create the file.
 From there, just add the following:
 
-    Push-Location -Path "<folderFromStep2>"
-    git pull
-    Pop-Location
+```powershell
+Push-Location -Path "<StoreBrokerCloneFolder>"
+git pull
+Pop-Location
+```
 
-#### Using NuGet
-
-Assuming you have the NuGet command-line utility
-[installed](https://dist.nuget.org/index.html) on your machine:
-
-    Push-Location -Path "<folderFromStep2>"
-    nuget install Microsoft.Windows.StoreBroker
-    Move-Item -Path ".\Microsoft.Windows.StoreBroker.*" -Destination ".\StoreBroker"
-
-This will install the lastest available version of the StoreBroker module as a directory named
-`Microsoft.Windows.StoreBroker.<version>`, then rename that directory to `StoreBroker`.
-
-> The StoreBroker NuGet package contains *only* the scripts needed to use StoreBroker. For
-> any documentation, get started with [the README.md](../README.md).
-
-> Note that the NuGet package installation option is a *snapshot* of the StoreBroker module,
-> and is more difficult to keep up-to-date. To sync your local module with the newest package,
-> you will need to delete the folder created above and follow the installation instructions
-> again.
-
-#### Downloading A Zip
+##### Downloading A Zip
 
 Download the following file to get a snapshot of the current state of the module:
 
-  https://github.com/Microsoft/StoreBroker/archive/master.zip
+  https://github.com/microsoft/StoreBroker/archive/master.zip
 
-Unzip that to the `<folderFromStep2>`.
+Unzip that to the `<StoreBrokerFolder>`.
 
 Because you downloaded the file the zip, you may have to "unblock" the contents and tell your
 operating system that you trust the zip's contents:
 
-    Get-ChildItem -Recurse -File -Path "<folderFromStep2>" | ForEach-Object { Unblock-File -Path $_.FullName }
+```powershell
+Get-ChildItem -Recurse -File -Path "<StoreBrokerFolder>" | ForEach-Object { Unblock-File -Path $_.FullName }
+```
 
 > For more information on `Unblock-File`, review [its documentation](https://technet.microsoft.com/en-us/library/hh849924.aspx)
 
@@ -263,18 +327,24 @@ they are needed.
 
 In order to cache the tenantId, call:
 
-    Set-StoreBrokerAuthentication -TenantId <tenantId>
+```powershell
+Set-StoreBrokerAuthentication -TenantId <tenantId>
+```
 
 That will cache the `TenantId` for that session, and it will also prompt you for the
 `ClientId` and `ClientSecret` so it can cache those in the same session as well.
 If you would rather be prompted every time for those two values, you can call:
 
-    Set-StoreBrokerAuthentication -TenantId <tenantId> -OnlyCacheTenantId
+```powershell
+Set-StoreBrokerAuthentication -TenantId <tenantId> -OnlyCacheTenantId
+```
 
 When using `Set-StoreBrokerAuthentication`, it is only caching those values for the current
 PowerShell session.  They can be cleared by simply closing your PowerShell window, or by calling:
 
-    Clear-StoreBrokerAuthentication
+```powershell
+Clear-StoreBrokerAuthentication
+```
 
 If you want to be use this module without requiring any user-interaction at the console,
 it is necessary to leverage `Set-StoreBrokerAuthentication -Credential` and provide
@@ -287,14 +357,18 @@ One way to do this would be the following:
      password into a plain-text file, and only the same user logged-in to the exact same computer
      will be able to decrypt it.
 
-         $cred.Password | ConvertFrom-SecureString | Set-Content -Path (Join-Path -Path ([System.Environment]::GetFolderPath('MyDocuments')) -ChildPath 'clientSecret.txt')
+```powershell
+$cred.Password | ConvertFrom-SecureString | Set-Content -Path (Join-Path -Path ([System.Environment]::GetFolderPath('MyDocuments')) -ChildPath 'clientSecret.txt')
+```
 
   4. When you want to create the credentials yourself later on and authenticate (being sure to
      replace `<tenantId>` and `<clientId>` with the proper values):
 
-         $clientSecret = Get-Content -Path (Join-Path -Path ([System.Environment]::GetFolderPath('MyDocuments')) -ChildPath 'clientSecret.txt') | ConvertTo-SecureString
-         $cred = New-Object System.Management.Automation.PSCredential "<clientId>", $clientSecret
-         Set-StoreBrokerAuthentication -TenantId <tenantId> -Credential $cred
+```powershell
+$clientSecret = Get-Content -Path (Join-Path -Path ([System.Environment]::GetFolderPath('MyDocuments')) -ChildPath 'clientSecret.txt') | ConvertTo-SecureString
+$cred = New-Object System.Management.Automation.PSCredential "<clientId>", $clientSecret
+Set-StoreBrokerAuthentication -TenantId <tenantId> -Credential $cred
+```
 
 > **PowerShell Tip**
 >
@@ -327,7 +401,9 @@ For more information on how to deploy your own Proxy, refer to its [documentatio
 
 If you have a Proxy up and running, then to use it, simply call:
 
-    Set-StoreBrokerAuthentication -UseProxy -ProxyEndpoint <proxyUri>
+```powershell
+Set-StoreBrokerAuthentication -UseProxy -ProxyEndpoint <proxyUri>
+```
 
 where `<proxyUri>` is the base part of your Uri (like `https://mystorebrokerproxy`).
 
@@ -344,7 +420,9 @@ That setting (being configured to use the proxy) will be stored for the duration
 To stop authenticating with the proxy, at any time simply close your PowerShell console window, or
 call:
 
-    Clear-StoreBrokerAuthentication
+```powershell
+Clear-StoreBrokerAuthentication
+```
 
 ### Getting Your AppId
 
@@ -361,12 +439,16 @@ Alternatively, you can find this value directly with StoreBroker by running the 
 getting the `id` that is shown there (it looks like this: `0ABCDEF12345`).
 That's your `AppId` (replace `<appName>` with all or part your app's name to limit the results):
 
-    Get-Applications -GetAll | Where-Object primaryName -like "*<appName>*" | Format-Application
+```powershell
+Get-Applications -GetAll | Where-Object primaryName -like "*<appName>*" | Format-Application
+```
 
 If you run into issues with this command, it's possible that you're having trouble with your search
 with `Where-Object`.  Instead, just try running this:
 
-    Get-Applications -GetAll | Format-Applications
+```powershell
+Get-Applications -GetAll | Format-Applications
+```
 
 > The Windows Store Submission API does not allow for the *creation* of new apps.
 > To use StoreBroker, you must have already created **and published** an app submission via the
@@ -393,7 +475,9 @@ listing for.
 You can read [PDP.md](PDP.md) for greater detail on PDP files.  Right now, we just need to get you
 started by generating your app's PDP files based on your current published submission.
 
-    .\Extensions\ConvertFrom-ExistingSubmission.ps1 -AppId <appId> -Release <release> -PdpFileName <pdpFileName> -OutPath <outPath>
+```powershell
+.\Extensions\ConvertFrom-ExistingSubmission.ps1 -AppId <appId> -Release <release> -PdpFileName <pdpFileName> -OutPath <outPath>
+```
 
 Where:
   * `<appId>` is your app's ID.
@@ -537,7 +621,9 @@ To run the next command, you'll need your [AppId](#getting-your-appid) from abov
 Run the following and get the `ID` that is shown there (it looks like this: `0ABCDEF12345`).
 That's your `IapId`.
 
-    Get-ApplicationInAppProducts -AppId <appId> -GetAll | Format-ApplicationInAppProducts
+```powershell
+Get-ApplicationInAppProducts -AppId <appId> -GetAll | Format-ApplicationInAppProducts
+```
 
 > The Windows Store Submission API does not currently support IAP's that are "Store Managed Consumables."
 > You will not be able to use StoreBroker to manage that type of IAP until the API has been updated.
@@ -565,7 +651,9 @@ Store listing for.
 You can read [PDP.md](PDP.md) for greater detail on PDP files.  Right now, we just need to get you
 started by generating your IAP's PDP files based on your current published (or pending) submission.
 
-    .\Extensions\ConvertFrom-ExistingIapSubmission.ps1 -IapId <iapId> -Release <release> -PdpFileName <pdpFileName> -OutPath <outPath>
+```powershell
+.\Extensions\ConvertFrom-ExistingIapSubmission.ps1 -IapId <iapId> -Release <release> -PdpFileName <pdpFileName> -OutPath <outPath>
+```
 
 Where:
   * `<iapId>` is your IAP's ID.
@@ -633,7 +721,9 @@ While not required, there are other things that you can do to make your usage ev
   global variable for it in your `$profile` so that you can just refer to it by name with
   tab-completion?  Just run `notepad $profile` to open up your profile, and add the following:
 
-        $global:appName = '<appId>'
+```powershell
+$global:appName = '<appId>'
+```
 
   set `appName` to whatever you want, and replace `<appId>` with your actual
   [appId](#getting-your-appid).  Then, in any new PowerShell console window, you can just start

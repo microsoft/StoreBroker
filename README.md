@@ -1,5 +1,8 @@
 # StoreBroker PowerShell Module
 
+[![powershellgallery](https://img.shields.io/powershellgallery/v/StoreBroker)](https://www.powershellgallery.com/packages/StoreBroker)
+[![nuget](https://img.shields.io/nuget/v/Microsoft.Windows.StoreBroker)](https://www.nuget.org/packages/Microsoft.Windows.StoreBroker/)
+
 #### Table of Contents
 
 * [Overview](#overview)
@@ -7,6 +10,7 @@
     *   [Goals](#goals)
     *   [Current Functionality](#current-functionality)
     *   [Prerequisites](#prerequisites)
+*   [What's New](#whats-new)
 *   [Installation and Setup](#installation-and-setup)
 *   [Usage](#usage)
 *   [Developing and Contributing](#developing-and-contributing)
@@ -80,6 +84,13 @@ or higher.
 
 [More prerequisites](Documentation/SETUP.md#prerequisites) are covered in
 [SETUP.md](Documentation/SETUP.md#prerequisites).
+
+----------
+
+## What's New
+
+Check out [CHANGELOG.md](./CHANGELOG.md) to review the details of the current release as well as
+all past releases.
 
 ----------
 

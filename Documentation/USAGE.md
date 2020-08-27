@@ -39,16 +39,22 @@ Once loaded, usage is straight-forward for PowerShell users.
 
 To see all of the available Commands, simply run:
 
-    (Get-Module StoreBroker).ExportedCommands
+```powershell
+(Get-Module StoreBroker).ExportedCommands
+```
 
 All Commands are fully documented, so to understand one better, simply run **Get-Help** on it.
 For instance:
 
-    Get-Help Get-Applications -ShowWindow
+```powershell
+Get-Help Get-Applications -ShowWindow
+```
 
 or
 
-    Get-Help Get-Applications -Full
+```powershell
+Get-Help Get-Applications -Full
+```
 
 ### Formatting Results
 
@@ -82,7 +88,9 @@ when the module is loaded.
  log file for each StoreBroker process. An easy way to view the filtered
  entries for a session is (replacing `PID` with the PID that you are interested in):
 
-    Get-Content -Path $global:SBLogPath -Encoding UTF8 | Where { $_ -like '*[[]PID[]]*' }
+```powershell
+Get-Content -Path $global:SBLogPath -Encoding UTF8 | Where { $_ -like '*[[]PID[]]*' }
+```
 
 
 > **PowerShell Tip**
@@ -129,7 +137,9 @@ All commands also support the `-WhatIf` switch (along with the corresponding `-C
 Sometimes, you just want to look at the webpage instead of the commandline.  For quick access
 to the appropriate page on the dev portal for what you're looking for, make use of
 
-    Open-DevPortal -AppId <appId> [-SubmissionId <submissionId> [-ShowFlight]]
+```powershell
+Open-DevPortal -AppId <appId> [-SubmissionId <submissionId> [-ShowFlight]]
+```
 
  * If you just specify `AppId`, you'll be taken directly to that app page within the dev portal.
  * If you also specify `SubmissionId`, you can view that specific submission in the dev portal
@@ -158,15 +168,19 @@ following the instructions in [SETUP.md](SETUP.md):
 
 Generating the submission request JSON/zip package is done with
 
-    New-SubmissionPackage -ConfigPath <config-path> -PDPRootPath <path> [[-Release] <string>] -PDPInclude <filename> [-PDPExclude <filename>] -ImagesRootPath <path> -AppxPath <full-path>[, <additional-path>]+ -OutPath <output-dir> -OutName <output-name>
+```powershell
+New-SubmissionPackage -ConfigPath <config-path> -PDPRootPath <path> [[-Release] <string>] -PDPInclude <filename> [-PDPExclude <filename>] -ImagesRootPath <path> -AppxPath <full-path>[, <additional-path>]+ -OutPath <output-dir> -OutName <output-name>
+```
 
 > Items in brackets ('[]') are optional.
 
 The `-Release` parameter is technically optional, depending on how you choose to store your PDP
 files. For more info, run:
 
-    Get-Help New-SubmissionPackage -Parameter PdpRootPath
-    Get-Help New-SubmissionPackage -Parameter Release
+```powershell
+Get-Help New-SubmissionPackage -Parameter PdpRootPath
+Get-Help New-SubmissionPackage -Parameter Release
+```
 
 > If one of your parameters does not change often, you can specify a value in the config file and
 > leave out this parameter at runtime. In this case, you should specify the remaining parameters
@@ -204,7 +218,9 @@ order for anything to be changed.**
 
 The basic syntax looks of the command looks like this:
 
-    Update-ApplicationSubmission -AppId <appId> -SubmissionDataPath ".\submission.json" -PackagePath ".\package.zip" -AutoCommit -Force
+```powershell
+Update-ApplicationSubmission -AppId <appId> -SubmissionDataPath ".\submission.json" -PackagePath ".\package.zip" -AutoCommit -Force
+```
 
 While most of those parameters are straight-forward, the last two deserve explanation:
 
@@ -352,41 +368,55 @@ manually.
 
  * Clone the existing published submission so that you can generate an update.
 
-          $sub = New-ApplicationSubmission -AppId <appId> [-Force]
+   ```powershell
+   $sub = New-ApplicationSubmission -AppId <appId> [-Force]
+   ```
 
-    * By using the `-Force` switch, it will call `Remove-ApplicationSubmission` behind the
-      scenes if it finds that there's an existing pending submission for your app.
+   * By using the `-Force` switch, it will call `Remove-ApplicationSubmission` behind the
+     scenes if it finds that there's an existing pending submission for your app.
 
  * Read in the content of the json file from your `New-SubmissionPackage` payload:
 
-          $json = (Get-Content .\submission.json -Encoding UTF8) | ConvertFrom-Json
+   ```powershell
+   $json = (Get-Content .\submission.json -Encoding UTF8) | ConvertFrom-Json
+   ```
 
  * If you need to update any content for the cloned submission, here is where you'd "patch in"
    applicable values from `$json` into `$sub`.
 
     * For example, here's how you can change a simple content that has a single value:
 
-             $sub.hardwarePreferences = $json.hardwarePreferences
+      ```powershell
+      $sub.hardwarePreferences = $json.hardwarePreferences
+      ```
 
     * For nested content, you will need to ensure that all nested values are applied. The easiest way to do this
       is to inspect the json and then manually assign the nested values. For a more generic way, you can implement
       a function similar to `DeepCopy-Object` in Helpers.ps1.
 
-             $sub.allowTargetFutureDeviceFamilies.Xbox = $json.allowTargetFutureDeviceFamilies.Xbox
-             $sub.allowTargetFutureDeviceFamilies.Team = $json.allowTargetFutureDeviceFamilies.Team
-             ... repeat for all nested values ...
+      ```powershell
+      $sub.allowTargetFutureDeviceFamilies.Xbox = $json.allowTargetFutureDeviceFamilies.Xbox
+      $sub.allowTargetFutureDeviceFamilies.Team = $json.allowTargetFutureDeviceFamilies.Team
+      #... repeat for all nested values ...
+      ```
 
  * Send the updated submission content so that the API knows what should be updated:
 
-          Set-ApplicationSubmission -AppId $appId -UpdatedSubmission $sub
+   ```powershell
+   Set-ApplicationSubmission -AppId $appId -UpdatedSubmission $sub
+   ```
 
  * If you're updating screenshots or packages, you'll need to upload the supporting .zip file:
 
-          Set-SubmissionPackage -PackagePath <pathToYourZip> -UploadUrl ($sub.fileUploadUrl)
+   ```powershell
+   Set-SubmissionPackage -PackagePath <pathToYourZip> -UploadUrl ($sub.fileUploadUrl)
+   ```
 
  * Tell the API that you're done with the submission and to start validation / certification:
 
-          Complete-ApplicationSubmission -AppId $appId -SubmissionId ($sub.id)
+   ```powershell
+   Complete-ApplicationSubmission -AppId $appId -SubmissionId ($sub.id)
+   ```
 
 The `-AutoCommit` switch should not be confused with publishing of the submission.  A submission
 won't enter into certification until it has been "committed", and a submission can only be committed
@@ -408,19 +438,27 @@ in the [Store documentation](https://docs.microsoft.com/en-us/windows/uwp/publis
 
 To view the current package rollout status:
 
-    Get-ApplicationSubmissionPackageRollout -AppId <appId> -SubmissionId <submissionId>
+```powershell
+Get-ApplicationSubmissionPackageRollout -AppId <appId> -SubmissionId <submissionId>
+```
 
 To update the current package rollout percentage:
 
-    Update-ApplicationSubmissionPackageRollout -AppId <appId> -SubmissionId <submissionId> -Percentage <percentage>
+```powershell
+Update-ApplicationSubmissionPackageRollout -AppId <appId> -SubmissionId <submissionId> -Percentage <percentage>
+```
 
 To halt the current package rollout:
 
-    Stop-ApplicationSubmissionPackageRollout -AppId <appId> -SubmissionId <submissionId>
+```powershell
+Stop-ApplicationSubmissionPackageRollout -AppId <appId> -SubmissionId <submissionId>
+```
 
 To finalize the current package rollout:
 
-    Complete-ApplicationSubmissionPackageRollout -AppId <appId> -SubmissionId <submissionId>
+```powershell
+Complete-ApplicationSubmissionPackageRollout -AppId <appId> -SubmissionId <submissionId>
+```
 
 ## Monitoring A Submission
 
@@ -435,7 +473,9 @@ just in case you're away from the computer when the status changes.
 
 The basic syntax looks like this:
 
-    Start-SubmissionMonitor -AppId <appId> -SubmissionId <submissionId>
+```powershell
+Start-SubmissionMonitor -AppId <appId> -SubmissionId <submissionId>
+```
 
 This will just start a loop that checks every 60 seconds to see if the status has changed for
 this submission.  All changes will be printed to the console window.  The monitoring will
@@ -466,11 +506,15 @@ If you want to have it also email you, you must first configure StoreBroker for 
 
 Then you can add a list of one or more email addresses for it to notify
 
-    Start-SubmissionMonitor -AppId <appId> -SubmissionId <submissionId> -EmailNotifyTo <emailAddress>
+```powershell
+Start-SubmissionMonitor -AppId <appId> -SubmissionId <submissionId> -EmailNotifyTo <emailAddress>
+```
 
 Multiple email addresses are separated by a comma
 
-    Start-SubmissionMonitor -AppId <appId> -SubmissionId <submissionId> -EmailNotifyTo <emailAddress1>,<emailAddress2>
+```powershell
+Start-SubmissionMonitor -AppId <appId> -SubmissionId <submissionId> -EmailNotifyTo <emailAddress1>,<emailAddress2>
+```
 
 > By default, `Start-SubmissionMonitor` does not return any result.
 > You can provide the `-PassThru` switch if you'd like it to return back the final submission object
@@ -523,7 +567,9 @@ update.
 
 The basic syntax looks of the command looks like this:
 
-    Update-ApplicationFlightSubmission -AppId <appId> -FlightId <flightId> -SubmissionDataPath ".\submission.json" -PackagePath ".\package.zip" -AutoCommit -Force
+```powershell
+Update-ApplicationFlightSubmission -AppId <appId> -FlightId <flightId> -SubmissionDataPath ".\submission.json" -PackagePath ".\package.zip" -AutoCommit -Force
+```
 
 While most of those parameters are straight-forward, the last two deserve explanation:
 
@@ -647,11 +693,15 @@ or want to upload it again.
 
 View all the flights assigned to a given app:
 
-    Get-ApplicationFlights -AppId <appId> | Format-ApplicationFlights
+```powershell
+Get-ApplicationFlights -AppId <appId> | Format-ApplicationFlights
+```
 
 View the details of a specific flight
 
-    Get-ApplicationFlight -AppId <appId> -FlightId <flightId> | Format-ApplicationFlight
+```powershell
+Get-ApplicationFlight -AppId <appId> -FlightId <flightId> | Format-ApplicationFlight
+```
 
 
 ##### Creating and/or Removing Flights
@@ -663,7 +713,9 @@ View the details of a specific flight
 
 To create a new flight:
 
-    New-ApplicationFlight -AppId <appId> -FriendlyName <name> [-RankHigherThan <name>] [-Groupids <id>]
+```powershell
+New-ApplicationFlight -AppId <appId> -FriendlyName <name> [-RankHigherThan <name>] [-Groupids <id>]
+```
 
 If you don't specify the friendly name of an existing flight to rank this higher than, it will be
 ranked highest of all current flights.
@@ -673,18 +725,24 @@ ranked highest of all current flights.
 
 To delete a flight:
 
-    Remove-ApplicationFlight -AppId <appId> -FlightId <flightId>
+```powershell
+Remove-ApplicationFlight -AppId <appId> -FlightId <flightId>
+```
 
 
 ##### Flight Submissions
 
 To view an existing flight submission:
 
-    Get-ApplicationFlightSubmission -AppId <appId> -FlightId <flightId> -SubmissionId <submissionId> | Format-ApplicationFlightSubmission
+```powershell
+Get-ApplicationFlightSubmission -AppId <appId> -FlightId <flightId> -SubmissionId <submissionId> | Format-ApplicationFlightSubmission
+```
 
 To delete a flight submission:
 
-    Remove-ApplicationFlightSubmission -AppId <appId> -FlightId <flightId> -SubmissionId <submissionId>
+```powershell
+Remove-ApplicationFlightSubmission -AppId <appId> -FlightId <flightId> -SubmissionId <submissionId>
+```
 
 To monitor a flight submission:
 Follow the same steps for [monitoring an application submission](#monitoring-a-submission), but
@@ -697,19 +755,27 @@ in the [Store documentatin](https://docs.microsoft.com/en-us/windows/uwp/publish
 
 To view the current package rollout status:
 
-    Get-ApplicationFlightSubmissionPackageRollout -AppId <appId> -FlightId <flightId> -SubmissionId <submissionId>
+```powershell
+Get-ApplicationFlightSubmissionPackageRollout -AppId <appId> -FlightId <flightId> -SubmissionId <submissionId>
+```
 
 To update the current package rollout percentage:
 
-    Update-ApplicationFlightSubmissionPackageRollout -AppId <appId> -FlightId <flightId> -SubmissionId <submissionId> -Percentage <percentage>
+```powershell
+Update-ApplicationFlightSubmissionPackageRollout -AppId <appId> -FlightId <flightId> -SubmissionId <submissionId> -Percentage <percentage>
+```
 
 To halt the current package rollout:
 
-    Stop-ApplicationFlightSubmissionPackageRollout -AppId <appId> -FlightId <flightId> -SubmissionId <submissionId>
+```powershell
+Stop-ApplicationFlightSubmissionPackageRollout -AppId <appId> -FlightId <flightId> -SubmissionId <submissionId>
+```
 
 To finalize the current package rollout:
 
-    Complete-ApplicationFlightSubmissionPackageRollout -AppId <appId> -FlightId <flightId> -SubmissionId <submissionId>
+```powershell
+Complete-ApplicationFlightSubmissionPackageRollout -AppId <appId> -FlightId <flightId> -SubmissionId <submissionId>
+```
 
 ## In App Products
 
@@ -742,15 +808,19 @@ following the instructions in [SETUP.md](SETUP.md):
 
 Generating the submission request JSON/zip package is done with
 
-    New-InAppProductSubmissionPackage -ConfigPath <config-path> -PDPRootPath <path> [[-Release] <string>] -PDPInclude <filename> [-PDPExclude <filename>] -ImagesRootPath <path> -OutPath <output-dir> -OutName <output-name>
+```powershell
+New-InAppProductSubmissionPackage -ConfigPath <config-path> -PDPRootPath <path> [[-Release] <string>] -PDPInclude <filename> [-PDPExclude <filename>] -ImagesRootPath <path> -OutPath <output-dir> -OutName <output-name>
+```
 
 > Items in brackets ('[]') are optional.
 
 The `-Release` parameter is technically optional, depending on how you choose to store your PDP
 files. For more info, run:
 
-    Get-Help New-InAppProductSubmissionPackage -Parameter PdpRootPath
-    Get-Help New-InAppProductSubmissionPackage -Parameter Release
+```powershell
+Get-Help New-InAppProductSubmissionPackage -Parameter PdpRootPath
+Get-Help New-InAppProductSubmissionPackage -Parameter Release
+```
 
 > If one of your parameters does not change often, you can specify a value in the config file and
 > leave out this parameter at runtime. In this case, you should specify the remaining parameters
@@ -774,7 +844,9 @@ For every Get-* command there is a corresponding Format-* command that you can l
 
 The basic syntax looks of the update command looks like this:
 
-    Update-InAppProductSubmission -IapId <iapId> -SubmissionDataPath ".\submission.json" -PackagePath ".\package.zip" -AutoCommit -Force
+```powershell
+Update-InAppProductSubmission -IapId <iapId> -SubmissionDataPath ".\submission.json" -PackagePath ".\package.zip" -AutoCommit -Force
+```
 
 > An important thing to note though, is that if you run that exact command above, the resulting
 > submission will be **identical** to the currently published submission, because you didn't tell
@@ -857,18 +929,24 @@ or want to upload it again.
 
 View all the IAP's available in the dev account:
 
-    Get-InAppProducts | Format-InAppProducts
+```powershell
+Get-InAppProducts | Format-InAppProducts
+```
 
 View all the IAP's that a specific app offers:
 
-    Get-ApplicationInAppProducts -AppId <appId> | Format-ApplicationInAppProducts
+```powershell
+Get-ApplicationInAppProducts -AppId <appId> | Format-ApplicationInAppProducts
+```
 
 
 ##### Creating and/or Removing IAP's
 
 To create a new IAP:
 
-    New-InAppProduct -ProductId <productId> -ProductType <productType> -ApplicationIds <applicationIds>
+```powershell
+New-InAppProduct -ProductId <productId> -ProductType <productType> -ApplicationIds <applicationIds>
+```
 
 where
  * **`<productId>`** is a unique name that you provide to refer to this IAP in this API and in your
@@ -883,18 +961,24 @@ where
 
 To delete an IAP:
 
-    Remove-InAppProduct -IapId <iapId>
+```powershell
+Remove-InAppProduct -IapId <iapId>
+```
 
 
 ##### IAP Submissions
 
 To view an existing IAP submission:
 
-    Get-InAppProductSubmission -IapId <iapId> -SubmissionId <submissionId> | Format-InAppProductSubmission
+```powershell
+Get-InAppProductSubmission -IapId <iapId> -SubmissionId <submissionId> | Format-InAppProductSubmission
+```
 
 To delete an IAP submission:
 
-    Remove-InAppProductSubmission -IapId <iapId> -SubmissionId <submissionId>
+```powershell
+Remove-InAppProductSubmission -IapId <iapId> -SubmissionId <submissionId>
+```
 
 To monitor an IAP submission:
 Follow the steps in [monitoring a submission](#monitoring-a-submission), and be sure to include
@@ -1010,7 +1094,9 @@ If you want to try using this module in the INT (internal / testing) environment
 the changes you make will never be seen by the outside world), then simply set this global session
 variable before performing any operation:
 
-    $global:SBUseInt = $true
+```powershell
+$global:SBUseInt = $true
+```
 
 The effect of that value will last for the duration of your session (until you close your
 console window) or until you change its value to `$false`.
@@ -1030,13 +1116,17 @@ information, refer to the [Privacy Policy](../README.md#privacy-policy) and
 With every new PowerShell session, StoreBroker will show you a reminder that telemetry is being
 used.  You can suppress this reminder in the future by setting the following:
 
-    $global:SBSuppressTelemetryReminder = $true
+```powershell
+$global:SBSuppressTelemetryReminder = $true
+```
 
 We recommend that you always leave the telemetry feature enabled, but a situation may arise where
 it must be disabled for some reason.  In this scenario, you can disable telemetry by setting
 the following global variable:
 
-    $global:SBDisableTelemetry = $true
+```powershell
+$global:SBDisableTelemetry = $true
+```
 
 The effect of that value will last for the duration of your session (until you close your
 console window), or until you change its value back to its default of `$false`.
@@ -1057,7 +1147,9 @@ in the form of an SHA512 Hash (to protect PII (personal identifiable information
 The hashing of the above items can be disabled (meaning that the plaint-text data will be reported
 instead of the _hash_ of the data) by setting
 
-    $global:SBDisablePiiProtection = $true
+```powershell
+$global:SBDisablePiiProtection = $true
+```
 
 Similar to `SBDisableTelemetry`, the effect of this value will only last for the duration of
 your session (until you close your console window), or until you change its value back to its
@@ -1065,7 +1157,9 @@ default of `$false`.
 
 Finally, the Application Insights Key that the telemetry is reported to is exposed as
 
-    $global:SBApplicationInsightsKey
+```powershell
+$global:SBApplicationInsightsKey
+```
 
 It is requested that you do not change this value, otherwise the telemetry will not be reported to
 us for analysis.  We expose it here for complete transparency.
@@ -1090,19 +1184,25 @@ us for analysis.  We expose it here for complete transparency.
    (hence, the name of the switch: `-AddPackages`). If you want to clean these up from the
    commandline, jsut do the following:
 
-        $appId = <yourAppId>
-        $sub = New-ApplicationSubmission -AppId $appId  -Force
-        for ($i = 0; $i -lt $sub.applicationPackages.Count; $i++) { Write-Host "`$sub.applicationPackages[$i] :" -ForegroundColor Yellow; $sub.applicationPackages[$i] }
+   ```powershell
+   $appId = <yourAppId>
+   $sub = New-ApplicationSubmission -AppId $appId  -Force
+   for ($i = 0; $i -lt $sub.applicationPackages.Count; $i++) { Write-Host "`$sub.applicationPackages[$i] :" -ForegroundColor Yellow; $sub.applicationPackages[$i] }
+   ```
 
-    > At that point, you'll see all the packages in your current submisssion,
-    > and the index that they're at. For any package that you want to delete, just do the following:
+   > At that point, you'll see all the packages in your current submisssion,
+   > and the index that they're at. For any package that you want to delete, just do the following:
 
-        $sub.applicationPackages[<index>].FileStatus = 'PendingDelete'
+   ```powershell
+   $sub.applicationPackages[<index>].FileStatus = 'PendingDelete'
+   ```
 
-    > After you've updated all the packages that you want, just run the following commands:
+   > After you've updated all the packages that you want, just run the following commands:
 
-        Set-ApplicationSubmission -AppId $appId -UpdatedSubmission $sub
-        Commit-ApplicationSubmission -AppId $appId -SubmissionId ($sub.id)
+   ```powershell
+   Set-ApplicationSubmission -AppId $appId -UpdatedSubmission $sub
+   Commit-ApplicationSubmission -AppId $appId -SubmissionId ($sub.id)
+   ```
 
 * **Does StoreBroker support adding region-specific listings for languages that the app itself
   doesn't directly support? (e.g. Can I specify a listing in French, even if my app is English-only)?**
@@ -1139,14 +1239,16 @@ us for analysis.  We expose it here for complete transparency.
      We offer an additional command that can be used to combine two payload into a single payload
      (and if you have more than two, just daisy chain the output from one as the input to the next).
 
-            Join-SubmissionPackage -MasterJsonPath <path> -AdditionalJsonPath <path> -OutJsonPath <path> -AddPackages
-
-     As you'll recall, a payload is a json/zip pair.  The <path> specified in each of these
+     As you'll recall, a payload is a json/zip pair.  The `<path>` specified in each of these
      parameters is the path to the json file, and the .zip file is determined from that same base
      name.  The resulting output will be identitical to the json/zip pair provided for
      MasterJsonPath, except that it will also include the packages that were defined in
      AdditionalJsonPath and its zip.  This payload can then be provided to StoreBroker
      for submission to the Store as a single submission.
+
+     ```powershell
+     Join-SubmissionPackage -MasterJsonPath <path> -AdditionalJsonPath <path> -OutJsonPath <path> -AddPackages
+     ```
 
 * **Can I have different screenshots for different platforms?**
 

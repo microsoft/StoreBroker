@@ -1,6 +1,31 @@
 # StoreBroker PowerShell Module
 ## Changelog
 
+## [1.20.1](https://github.com/Microsoft/StoreBroker/tree/1.20.1) - (2020/08/27)
+### Features:
+
++ Added the ability to suppress the telemetry warning shown at the start of each new StoreBroker
+  session by setting `$global:SBSuppressTelemetryWarning=$true`.
+  [[pr]](https://github.com/Microsoft/StoreBroker/pull/206) | [[cl]](https://github.com/microsoft/StoreBroker/commit/49e289e1c10e581fe5638b1be592a7b131acb96a)
+
+### Fixes
+- Removed erroneous call to `Get-GitHubConfiguration` which was causing an ignorable exception
+  initializing the telemetry stack.
+  [[pr]](https://github.com/Microsoft/StoreBroker/pull/204) | [[cl]](https://github.com/microsoft/StoreBroker/commit/20d94bb463bbf300dcf25a7248dfb6a0a138cdcc)
+
+- Fixed how `targetPublishDate` was being populated in new configuration files (as it was being
+  converted into the JSON file incorrectly.
+  [[pr]](https://github.com/Microsoft/StoreBroker/pull/180) | [[cl]](https://github.com/microsoft/StoreBroker/commit/658cba691b9bace2cf87d4d99e555f14fbb3d566)
+
+- Partner Center changed its URL scheme, and so some of the generated URL's that StoreBroker uses
+  needed to be updated.  This also deprecates the ShowFlight switch for Open-DevPortal as
+  there no longer appears to be an equivalent destination in the updated Partner Center.
+  [[pr]](https://github.com/Microsoft/StoreBroker/pull/209) | [[cl]](https://github.com/microsoft/StoreBroker/commit/e8c052842c4ab94f4ae34797a5a8ceb4826039f8)
+
+Authors:
+ * [**@HowardWolosky**](https://github.com/HowardWolosky)
+ * [**@riverar**](https://github.com/riverar)
+
 ## [1.20.0](https://github.com/Microsoft/StoreBroker/tree/1.20.0) - (2020/08/23)
 ### Features:
 

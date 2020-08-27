@@ -1371,7 +1371,7 @@ function Submit-Submission
             "This is just the beginning though.",
             "It still has multiple phases of validation to get through, and there's no telling how long that might take.",
             "You can view the progress of the submission validation on the Dev Portal here:",
-            "    https://partner.microsoft.com/en-us/dashboard/apps/$appId/submissions/$submissionId/",
+            "    https://partner.microsoft.com/en-us/dashboard/products/$appId/submissions/$submissionId/",
             "or by running this command:",
             "    Get-Submission -ProductId $ProductId -SubmissionId $submissionId",
             "You can automatically monitor this submission with this command:",
@@ -1912,7 +1912,7 @@ function Update-Submission
         Write-Log -Message @(
             "Successfully cloned the existing submission and modified its content.",
             "You can view it on the Dev Portal here:",
-            "    https://partner.microsoft.com/en-us/dashboard/apps/$appId/submissions/$SubmissionId/")
+            "    https://partner.microsoft.com/en-us/dashboard/products/$appId/submissions/$SubmissionId/")
 
         if ($AutoSubmit)
         {

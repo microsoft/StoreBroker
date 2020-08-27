@@ -1348,7 +1348,7 @@ function Start-SubmissionMonitor
                 else
                 {
                     $body += "Dev Portal URL"
-                    $body += "    https://partner.microsoft.com/en-us/dashboard/apps/$AppId/submissions/$SubmissionId/"
+                    $body += "    https://partner.microsoft.com/en-us/dashboard/products/$AppId/submissions/$SubmissionId/"
                     $body += "StoreBroker command"
                     if ($isFlightingSubmission)
                     {
@@ -1447,6 +1447,9 @@ function Open-DevPortal
     .PARAMETER ShowFlight
         If provided, will show the flight UI as opposed to the flight submission UI.
 
+        NOTE: This feature appears to have been deprecated from Partner Center and thus
+        this switch no longer does anything.
+
     .EXAMPLE
         Open-DevPortal 0ABCDEF12345
 
@@ -1498,9 +1501,9 @@ function Open-DevPortal
 
     Write-Log -Message "Opening Dev Portal in default web browser."
 
-    $appUrl        = "https://partner.microsoft.com/en-us/dashboard/apps/$AppId"
-    $submissionUrl = "https://partner.microsoft.com/en-us/dashboard/apps/$AppId/submissions/$SubmissionId/"
-    $flightUrl     = "https://partner.microsoft.com/en-us/dashboard/Application/GetFlight?appId=$AppId&submissionId=$SubmissionId"
+    $appUrl        = "https://partner.microsoft.com/en-us/dashboard/products/$AppId"
+    $submissionUrl = "https://partner.microsoft.com/en-us/dashboard/products/$AppId/submissions/$SubmissionId/"
+    $flightUrl     = $submissionUrl # this feature appears to have been deprecated from Partner Center
 
     if ($ShowFlight)
     {

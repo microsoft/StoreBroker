@@ -112,7 +112,7 @@ function Get-StoreBrokerConfigFileContentForIapId
 
         # PUBLISH MODE AND VISIBILITY
         $updated = $updated -replace '"targetPublishMode": ".*",', "`"targetPublishMode`": `"$($sub.targetPublishMode)`","
-        $updated = $updated -replace '"targetPublishDate": .*,', "`"targetPublishDate`": `"$($sub.targetPublishDate)`","
+        $updated = $updated -replace '"targetPublishDate": .*,', "`"targetPublishDate`": `"$(Get-Date -Date $sub.targetPublishDate -Format o | ConvertTo-Json)`","
         $updated = $updated -replace '"visibility": ".*",', "`"visibility`": `"$($sub.visibility)`","
 
         # PRICING AND AVAILABILITY
@@ -284,7 +284,7 @@ function Get-StoreBrokerConfigFileContentForAppId
 
         # PUBLISH MODE AND VISIBILITY
         $updated = $updated -replace '"targetPublishMode": ".*",', "`"targetPublishMode`": $($sub.targetPublishMode | ConvertTo-Json),"
-        $updated = $updated -replace '"targetPublishDate": .*,', "`"targetPublishDate`": $(Get-Date $sub.targetPublishDate -Format o | ConvertTo-Json),"
+        $updated = $updated -replace '"targetPublishDate": .*,', "`"targetPublishDate`": $(Get-Date -Date $sub.targetPublishDate -Format o | ConvertTo-Json),"
         $updated = $updated -replace '"visibility": ".*",', "`"visibility`": $($sub.visibility | ConvertTo-Json),"
 
         # PRICING AND AVAILABILITY

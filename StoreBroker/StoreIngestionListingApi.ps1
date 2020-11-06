@@ -362,7 +362,7 @@ function Remove-Listing
         }
 
         $params = @{
-            "UriFragment" = "products/$ProductId/listings/$LanguageCode" + ($getParams -join '&')
+            "UriFragment" = "products/$ProductId/listings/$LanguageCode`?" + ($getParams -join '&')
             "Method" = "Delete"
             "Description" = "Deleting the $LanguageCode listing for $ProductId (SubmissionId: $SubmissionId)"
             "ClientRequestId" = $ClientRequestId

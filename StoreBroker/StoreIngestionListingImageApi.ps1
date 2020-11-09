@@ -462,8 +462,6 @@ function Update-ListingImage
     {
         $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
-        $MediaRootPath = Resolve-UnverifiedPath -Path $MediaRootPath
-
         $params = @{
             'ProductId' = $ProductId
             'SubmissionId' = $SubmissionId
@@ -484,6 +482,8 @@ function Update-ListingImage
 
         if (-not $RemoveOnly)
         {
+            $MediaRootPath = Resolve-UnverifiedPath -Path $MediaRootPath
+
             # Then we proceed with adding/uploading all of the current images
             Write-Log -Message "Creating [$LanguageCode] listing images." -Level Verbose
             foreach ($image in $SubmissionData.listings.$LanguageCode.baseListing.images)

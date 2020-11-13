@@ -836,9 +836,9 @@ function Update-Listing
             Write-Log -Message 'Now removing listings for languages that were cloned by the submission but don''t have current user data.' -Level Verbose
             foreach ($langCode in $listingsToDelete)
             {
-                $null = Remove-Listing @commonParams -LanguageCode $langCode
                 $null = Update-ListingImage @commonParams -LanguageCode $langCode -RemoveOnly
                 $null = Update-ListingVideo @commonParams -LanguageCode $langCode -RemoveOnly
+                $null = Remove-Listing @commonParams -LanguageCode $langCode
             }
         }
 

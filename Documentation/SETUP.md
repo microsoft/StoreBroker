@@ -165,12 +165,6 @@ StoreBroker has a dependency on dll's from the following NuGet packages:
     WindowsAzure.Storage v8.1.1: Microsoft.WindowsAzure.Storage.dll
     Microsoft.Azure.Storage.DataMovement v0.5.1: Microsoft.WindowsAzure.Storage.DataMovement.dll
 
-**For [Telemetry](USAGE.md#telemetry)**
-
-    Microsoft.ApplicationInsights v2.0.1: Microsoft.ApplicationInsights.dll"
-    Microsoft.Diagnostics.Tracing.EventSource.Redist v1.1.24: Microsoft.Diagnostics.Tracing.EventSource.dll
-    Microsoft.Bcl.Async v1.0.168.0: Microsoft.Threading.Tasks.dll
-
 During execution of a command, when StoreBroker has need for an object from one of these dll's,
 if it cannot find the dll, it will automatically download nuget.exe, then download the nuget
 package that the assembly is in, and finally cache it for the duration of your PowerShell session.

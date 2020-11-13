@@ -319,16 +319,16 @@ function Get-StoreBrokerConfigFileContentForIapId
         $updated = $updated -replace '"lifetime": ".*",', "`"lifetime`": `"$($sub.lifetime)`","
         $updated = $updated -replace '"contentType": ".*",', "`"contentType`": `"$($sub.contentType)`","
 
-        $tag = Get-EscapedJsonValue -Value $sub.tag
-        $updated = $updated -replace '"tag": ""', "`"tag`": `"$tag`""
+        $tag = ConvertTo-Json -InputObject ($sub.tag -replace '//', '\\') # Ensure // doesn't get stripped out as a comment later on.
+        $updated = $updated -replace '"tag": ""', "`"tag`": $tag"
 
         $keywords = $sub.keywords | ConvertTo-Json -Depth $script:jsonConversionDepth
         if ($null -eq $keywords) { $keywords = "[ ]" }
         $updated = $updated -replace '(\s+)"keywords": \[.*(\r|\n)+\s*\]', "`$1`"keywords`": $keywords"
 
         # NOTES FOR CERTIFICATION
-        $notesForCertification = Get-EscapedJsonValue -Value $sub.notesForCertification
-        $updated = $updated -replace '"notesForCertification": ""', "`"notesForCertification`": `"$notesForCertification`""
+        $notesForCertification = ConvertTo-Json -InputObject ($sub.notesForCertification -replace '//', '\\') # Ensure // doesn't get stripped out as a comment later on.
+        $updated = $updated -replace '"notesForCertification": ""', "`"notesForCertification`": $notesForCertification"
 
         return $updated
     }

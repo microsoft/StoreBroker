@@ -482,8 +482,6 @@ function Update-ListingVideo
     {
         $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
-        $MediaRootPath = Resolve-UnverifiedPath -Path $MediaRootPath
-
         $params = @{
             'ProductId' = $ProductId
             'SubmissionId' = $SubmissionId
@@ -504,6 +502,8 @@ function Update-ListingVideo
 
         if (-not $RemoveOnly)
         {
+            $MediaRootPath = Resolve-UnverifiedPath -Path $MediaRootPath
+
             # Then we proceed with adding/uploading all of the current videos
             Write-Log -Message "Creating [$LanguageCode] listing videos." -Level Verbose
             foreach ($trailer in $SubmissionData.trailers)

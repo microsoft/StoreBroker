@@ -2765,7 +2765,7 @@ function Get-SubmissionRequestBody
 
     if ($AppxPath.Count -gt 0)
     {
-        $submissionRequestBody | Add-AppPackagesMetadata -PackagePath $PackagePath -AppPackageInfo $AppPackageInfo -EnableAutoPackageNameFormatting:(-not $DisableAutoPackageNameFormatting)
+        $submissionRequestBody | Add-AppPackagesMetadata -PackagePath $AppxPath -AppPackageInfo $AppPackageInfo -EnableAutoPackageNameFormatting:(-not $DisableAutoPackageNameFormatting)
     }
 
     if (-not [String]::IsNullOrWhiteSpace($PDPRootPath))

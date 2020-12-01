@@ -1,6 +1,24 @@
 # StoreBroker PowerShell Module
 ## Changelog
 
+## [1.21.0](https://github.com/Microsoft/StoreBroker/tree/1.21.0) - (2020/12/01)
+
+Brings backward some improvements that had been made in the v2 branch. [[pr]](https://github.com/Microsoft/StoreBroker/pull/217) | [[cl]](https://github.com/microsoft/StoreBroker/commit/tbd)
+
+### Features:
+
++ Added support for `msix`, `msixbundle` and `msixupload` file extensions to `New-SubmissionPackage`.
++ Added support for the `xvc` file extension to `New-SubmissionPackage`, (although submission via
+  the v1 API remains untested).
+
+### Fixes
+- `New-SubmissionPackage` now properly handles packages which contain stubs.
+
+- Silences unnecessary file access errors when testing paths with `Test-Path`.
+
+Author:
+ * [**@HowardWolosky**](https://github.com/HowardWolosky)
+
 ## [1.20.1](https://github.com/Microsoft/StoreBroker/tree/1.20.1) - (2020/08/27)
 ### Features:
 

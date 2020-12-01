@@ -2657,7 +2657,7 @@ function Remove-DeprecatedProperties
     )
 
     # No side-effects.  We'll work off of a copy of the passed-in object
-    $requestBody = DeepCopy-Object $SubmissionRequestBody
+    $requestBody = DeepCopy-Object -Object $SubmissionRequestBody
 
     # hardwareRequirements was deprecated on 5/13/2016
     # Deprecated due to business reasons.  This field is not exposed from the UI.

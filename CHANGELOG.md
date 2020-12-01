@@ -10,6 +10,7 @@ Brings backward some improvements that had been made in the v2 branch. [[pr]](ht
 + Added support for `msix`, `msixbundle` and `msixupload` file extensions to `New-SubmissionPackage`.
 + Added support for the `xvc` file extension to `New-SubmissionPackage`, (although submission via
   the v1 API remains untested).
+
 ### Fixes
 - `New-SubmissionPackage` now properly handles packages which contain stubs.
 

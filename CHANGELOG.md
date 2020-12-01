@@ -16,7 +16,7 @@ Brings backward some improvements that had been made in the v2 branch. [[pr]](ht
 
 - Silences unnecessary file access errors when testing paths with `Test-Path`.
 
-Authors:
+Author:
  * [**@HowardWolosky**](https://github.com/HowardWolosky)
 
 ## [1.20.1](https://github.com/Microsoft/StoreBroker/tree/1.20.1) - (2020/08/27)

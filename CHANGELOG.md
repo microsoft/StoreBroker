@@ -3,7 +3,7 @@
 
 ## [1.21.0](https://github.com/Microsoft/StoreBroker/tree/1.21.0) - (2020/12/01)
 
-Brings backward some improvements that had been made in the v2 branch. [[pr]](https://github.com/Microsoft/StoreBroker/pull/217) | [[cl]](https://github.com/microsoft/StoreBroker/commit/tbd)
+Brings backward some improvements that had been made in the v2 branch. [[pr]](https://github.com/Microsoft/StoreBroker/pull/217) | [[cl]](https://github.com/microsoft/StoreBroker/commit/14453c5ac7c92374679130f006bd908c75aa68ec)
 
 ### Features:
 

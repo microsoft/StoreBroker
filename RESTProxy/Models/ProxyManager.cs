@@ -117,8 +117,6 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
             {
                 ProxyManager.defaultTenantId = defaultTenantId.ToLowerInvariant();
             }
-
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
         }
 
         /// <summary>

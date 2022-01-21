@@ -268,6 +268,8 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
                 this.BaseUri,
                 pathAndQuery);
 
+            ServicePointManager.CheckCertificateRevocationList = true;
+
             WebRequest request = HttpWebRequest.Create(finalUri);
             request.Method = method.ToString();
             request.ContentLength = 0;  // will be updated if there is a body.
@@ -445,6 +447,8 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
                 System.Web.HttpUtility.UrlEncode(this.ClientId),
                 System.Web.HttpUtility.UrlEncode(this.ClientSecret),
                 this.BaseUri);
+
+            ServicePointManager.CheckCertificateRevocationList = true;
 
             WebRequest request = HttpWebRequest.Create(uri);
             request.Method = "POST";

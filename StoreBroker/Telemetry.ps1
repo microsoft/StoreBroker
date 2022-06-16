@@ -3,6 +3,9 @@
 # Maintain a consistent ID for this PowerShell session that we'll use as our telemetry's session ID.
 $script:TelemetrySessionId = [System.GUID]::NewGuid().ToString()
 
+# Tracks if we've seen the telemetry reminder this session.
+$script:SeenTelemetryReminder = $false
+
 Add-Type -TypeDefinition @"
    public enum StoreBrokerTelemetryProperty
    {
@@ -185,9 +188,11 @@ function Get-BaseTelemetryEvent
     [CmdletBinding()]
     param()
 
-    if (-not $global:SBSuppressTelemetryReminder)
+    if ((-not $script:SeenTelemetryReminder) -and
+        (-not $global:SBSuppressTelemetryReminder))
     {
         Write-Log -Message "Telemetry is currently enabled.  It can be disabled by setting ""`$global:SBDisableTelemetry = `$true"". Refer to USAGE.md#telemetry for more information.  Stop seeing this message in the future by setting `"`$global:SBSuppressTelemetryReminder=`$true`""
+        $script:SeenTelemetryReminder = $true
     }
 
     $username = Get-PiiSafeString -PlainText $env:USERNAME

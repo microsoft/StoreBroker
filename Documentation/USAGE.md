@@ -161,7 +161,7 @@ following the instructions in [SETUP.md](SETUP.md):
  * [StoreBroker config file](SETUP.md#getting-your-config)
  * [PDP files](SETUP.md#getting-your-pdps)
  * Screenshots
- * Packages (.appx / .appxbundle / .appxupload)
+ * Packages (.appx / .appxbundle / .appxupload / .msix / .msixbundle)
 
 > In order to use New-SubmissionPackage, it is highly recommended that you read the documentation
 > (`Get-Help New-SubmissionPackage -Full`) and read the documentation in the configuration file.

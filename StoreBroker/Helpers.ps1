@@ -275,14 +275,8 @@ function DeepCopy-Object
         [PSCustomObject] $Object
     )
 
-    $memoryStream = New-Object System.IO.MemoryStream
-    $binaryFormatter = New-Object System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
-    $binaryFormatter.Serialize($memoryStream, $Object)
-    $memoryStream.Position = 0
-    $DeepCopiedObject = $binaryFormatter.Deserialize($memoryStream)
-    $memoryStream.Close()
-
-    return $DeepCopiedObject
+    $serialData = [System.Management.Automation.PSSerializer]::Serialize($InputObject, 64)
+    return [System.Management.Automation.PSSerializer]::Deserialize($serialData)
 }
 
 function Get-SHA512Hash

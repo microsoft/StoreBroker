@@ -1,6 +1,15 @@
 # StoreBroker PowerShell Module
 ## Changelog
 
+## [1.21.1](https://github.com/Microsoft/StoreBroker/tree/1.21.1) - (2024/01/31)
+
+### Fixes
+
+- Fixes exceptions being seen in PowerShell 7.4+ due to the deprecation of BinaryFormatter. [[pr]](https://github.com/Microsoft/StoreBroker/pull/241) | [[cl]](https://github.com/microsoft/StoreBroker/commit/2a220bd1d3509abe17e9290a6443f8431bd873ca)
+
+Author:
+ * [**@HowardWolosky**](https://github.com/HowardWolosky)
+
 ## [1.21.0](https://github.com/Microsoft/StoreBroker/tree/1.21.0) - (2020/12/01)
 
 Brings backward some improvements that had been made in the v2 branch. [[pr]](https://github.com/Microsoft/StoreBroker/pull/217) | [[cl]](https://github.com/microsoft/StoreBroker/commit/14453c5ac7c92374679130f006bd908c75aa68ec)

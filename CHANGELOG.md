@@ -1,6 +1,16 @@
 # StoreBroker PowerShell Module
 ## Changelog
 
+## [2.1.17](https://github.com/Microsoft/StoreBroker/tree/2.1.14) - (2024/01/31)
+
+### Fixes
+
+- Fixes exceptions being seen in PowerShell 7.4+ due to the deprecation of BinaryFormatter. [[pr]](https://github.com/Microsoft/StoreBroker/pull/242) | [[cl]](https://github.com/microsoft/StoreBroker/commit/acd0a0465e40167ca5ffca065a5fd87810dcbb2c)
+
+Author:
+
+- [**@HowardWolosky**](https://github.com/HowardWolosky)
+
 ## [2.1.13](https://github.com/Microsoft/StoreBroker/tree/2.1.13) - (2020/08/14)
 ### Fixes:
 
@@ -8,7 +18,7 @@
   had an encoded character or a URL value.  The encoded character wasn't getting re-encoded properly
   in the generated config, and everything after the `//` in the URL was being treated as a comment.
 
-More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/https://github.com/Microsoft/StoreBroker/pull/199) | [[cl]](https://github.com/Microsoft/StoreBroker/commit/...)
+More Info: [[pr]](https://github.com/Microsoft/StoreBroker/pull/https://github.com/Microsoft/StoreBroker/pull/199) | [[cl]](https://github.com/microsoft/StoreBroker/commit/6ebb0bd7ce34f5d4e57b8dfa79452be5387fbd1f)
 
 Author: [**@HowardWolosky**](https://github.com/HowardWolosky)
 

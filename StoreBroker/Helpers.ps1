@@ -275,7 +275,7 @@ function DeepCopy-Object
         [PSCustomObject] $Object
     )
 
-    $serialData = [System.Management.Automation.PSSerializer]::Serialize($InputObject, 64)
+    $serialData = [System.Management.Automation.PSSerializer]::Serialize($Object, 64)
     return [System.Management.Automation.PSSerializer]::Deserialize($serialData)
 }
 

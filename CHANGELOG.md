@@ -1,6 +1,15 @@
 # StoreBroker PowerShell Module
 ## Changelog
 
+## [1.21.2](https://github.com/Microsoft/StoreBroker/tree/1.21.2) - (2024/02/04)
+
+### Fixes
+
+- Follow-up fix for the same issue from `1.21.1`. [[pr]](https://github.com/Microsoft/StoreBroker/pull/245) | [[cl]](https://github.com/microsoft/StoreBroker/commit/388f8c857a4284599d7e2d14695cbf5871d0d326)
+
+Author:
+ * [**@HowardWolosky**](https://github.com/HowardWolosky)
+
 ## [1.21.1](https://github.com/Microsoft/StoreBroker/tree/1.21.1) - (2024/01/31)
 
 ### Fixes

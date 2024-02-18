@@ -1,10 +1,11 @@
 ﻿# Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-# Singleton. Don't directly access this though....always get it
-# by calling Get-BaseTelemetryEvent to ensure that it has been initialized and that you're always
-# getting a fresh copy.
-$script:SBBaseTelemetryEvent = $null
+# Maintain a consistent ID for this PowerShell session that we'll use as our telemetry's session ID.
+$script:TelemetrySessionId = [System.GUID]::NewGuid().ToString()
+
+# Tracks if we've seen the telemetry reminder this session.
+$script:SeenTelemetryReminder = $false
 
 Add-Type -TypeDefinition @"
    public enum StoreBrokerTelemetryProperty
@@ -248,40 +249,37 @@ function Get-BaseTelemetryEvent
     [CmdletBinding()]
     param()
 
-    if ($null -eq $script:SBBaseTelemetryEvent)
+    if ((-not $script:SeenTelemetryReminder) -and
+        (-not $global:SBSuppressTelemetryReminder))
     {
-        if (-not $global:SBSuppressTelemetryReminder)
-        {
-            Write-Log -Message "Telemetry is currently enabled.  It can be disabled by setting ""`$global:SBDisableTelemetry = `$true"". Refer to USAGE.md#telemetry for more information.  Stop seeing this message in the future by setting `"`$global:SBSuppressTelemetryReminder=`$true`""
+        Write-Log -Message "Telemetry is currently enabled.  It can be disabled by setting ""`$global:SBDisableTelemetry = `$true"". Refer to USAGE.md#telemetry for more information.  Stop seeing this message in the future by setting `"`$global:SBSuppressTelemetryReminder=`$true`""
+        $script:SeenTelemetryReminder = $true
+    }
+
+    $username = Get-PiiSafeString -PlainText $env:USERNAME
+
+    return [PSCustomObject] @{
+        'name' = 'Microsoft.ApplicationInsights.66d83c523070489b886b09860e05e78a.Event'
+        'time' = (Get-Date).ToUniversalTime().ToString("O")
+        'iKey' = $global:SBApplicationInsightsKey
+        'tags' = [PSCustomObject] @{
+            'ai.user.id' = $username
+            'ai.session.id' = $script:TelemetrySessionId
+            'ai.application.ver' = $MyInvocation.MyCommand.Module.Version.ToString()
+            'ai.internal.sdkVersion' = '2.0.1.33027' # The version this schema was based off of.
         }
 
-        $username = Get-PiiSafeString -PlainText $env:USERNAME
-
-        $script:SBBaseTelemetryEvent = [PSCustomObject] @{
-            'name' = 'Microsoft.ApplicationInsights.66d83c523070489b886b09860e05e78a.Event'
-            'time' = (Get-Date).ToUniversalTime().ToString("O")
-            'iKey' = $global:SBApplicationInsightsKey
-            'tags' = [PSCustomObject] @{
-                'ai.user.id' = $username
-                'ai.session.id' = [System.GUID]::NewGuid().ToString()
-                'ai.application.ver' = $MyInvocation.MyCommand.Module.Version.ToString()
-                'ai.internal.sdkVersion' = '2.0.1.33027' # The version this schema was based off of.
-            }
-
-            'data' = [PSCustomObject] @{
-                'baseType' = 'EventData'
-                'baseData' = [PSCustomObject] @{
-                    'ver' = 2
-                    'properties' = [PSCustomObject] @{
-                        'DayOfWeek' = (Get-Date).DayOfWeek.ToString()
-                        'Username' = $username
-                    }
+        'data' = [PSCustomObject] @{
+            'baseType' = 'EventData'
+            'baseData' = [PSCustomObject] @{
+                'ver' = 2
+                'properties' = [PSCustomObject] @{
+                    'DayOfWeek' = (Get-Date).DayOfWeek.ToString()
+                    'Username' = $username
                 }
             }
         }
     }
-
-    return $script:SBBaseTelemetryEvent.PSObject.Copy() # Get a new instance, not a reference
 }
 
 function Invoke-SendTelemetryEvent

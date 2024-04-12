@@ -12,6 +12,8 @@ $script:proxyEndpoint = $null
 [string]$script:authTenantId = $null
 [PSCredential]$script:authCredential = $null
 [string]$script:authTenantName = $null
+[string]$script:clientId = $null
+[System.Security.Cryptography.X509Certificates.X509Certificate2]$script:certificate = $null
 
 # By default, ConvertTo-Json won't expand nested objects further than a depth of 2
 # We always want to expand as deep as possible, so set this to a much higher depth
@@ -251,6 +253,10 @@ function Set-StoreBrokerAuthentication
         [Parameter(
             ParameterSetName="Proxy",
             Position=2)]
+        [Parameter(
+            Mandatory,
+            ParameterSetName="WithCert",
+            Position=0)]
         [string] $TenantId,
 
         [Parameter(
@@ -276,6 +282,18 @@ function Set-StoreBrokerAuthentication
             ParameterSetName="Proxy",
             Position=2)]
         [string] $TenantName = $null
+
+        [Parameter(
+            Mandatory,
+            ParameterSetName="WithCert",
+            Position=1)]
+        [string] $ClientId,
+
+        [Parameter(
+            Mandatory,
+            ParameterSetName="WithCert",
+            Position=2)]
+        [System.Security.Cryptography.X509Certificates.X509Certificate2] $Certificate = $null
     )
 
     Write-InvocationLog
@@ -328,26 +346,42 @@ function Set-StoreBrokerAuthentication
     # should no longer be used, so we must clear out any existing value.
     $script:proxyEndpoint = $null
 
-    if (($null -eq $Credential) -and (-not $OnlyCacheTenantId))
+    ## Using certificate for auth instead of client id/secret
+    if ($null -ne $Certificate)
     {
-        if ($PSCmdlet.ShouldProcess("", "Get-Credential"))
+        if ($PSCmdlet.ShouldProcess($Certificate, "Cache certificate"))
         {
-            $Credential = Get-Credential -Message "Enter your client id as your username, and your client secret as your password. ***These values are being cached.  Use Clear-StoreBrokerAuthentication or close this PowerShell window when you are done.***"
+            $script:certificate = $Certificate
         }
-    }
 
-    if ($null -eq $Credential)
-    {
-        if (-not $OnlyCacheTenantId)
+        if ($PSCmdlet.ShouldProcess($Certificate, "Cache clientId"))
         {
-            Write-Log -Message "No credential provided.  Not changing current cached credential." -Level Error
+            $script:clientId = $ClientId
         }
     }
     else
     {
-        if ($PSCmdlet.ShouldProcess($Credential, "Cache credential"))
+        if (($null -eq $Credential) -and (-not $OnlyCacheTenantId))
         {
-            $script:authCredential = $Credential
+            if ($PSCmdlet.ShouldProcess("", "Get-Credential"))
+            {
+                $Credential = Get-Credential -Message "Enter your client id as your username, and your client secret as your password. ***These values are being cached.  Use Clear-StoreBrokerAuthentication or close this PowerShell window when you are done.***"
+            }
+        }
+
+        if ($null -eq $Credential)
+        {
+            if (-not $OnlyCacheTenantId)
+            {
+                Write-Log -Message "No credential provided.  Not changing current cached credential." -Level Error
+            }
+        }
+        else
+        {
+            if ($PSCmdlet.ShouldProcess($Credential, "Cache credential"))
+            {
+                $script:authCredential = $Credential
+            }
         }
     }
 
@@ -355,6 +389,80 @@ function Set-StoreBrokerAuthentication
     {
         $script:lastAccessToken = $null
     }
+}
+
+function Install-Msal
+{
+	[CmdletBinding()] param()
+
+	$uri = 'https://www.nuget.org/api/v2/package/Microsoft.Identity.Client/4.8.2'
+
+	$MsalRootFolder = Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::LocalApplicationData)) "MSAL"
+	$TargetFolder = Join-Path $MsalRootFolder (Split-Path $uri -Leaf)
+
+##	if (Test-PowerShellCore)
+##	{
+##		$DllPath = "lib\netcoreapp2.1\Microsoft.Identity.Client.dll"
+##	}`
+##	else
+##	{
+		$DllPath = "lib\net45\Microsoft.Identity.Client.dll"
+##	}
+
+	$TargetDll = Join-Path $TargetFolder $DllPath
+
+	if (-not (Test-Path $TargetDll))
+	{
+		Write-ErrorLog -Fore White "Could not find Microsoft Identity Client Library (MSAL). Downloading and installing now..."
+		$response = Invoke-WebRequest -UseBasicParsing -Uri $uri -ErrorAction Stop
+		$memStream = New-Object IO.MemoryStream ($response.Content, $false)
+
+		Add-Type -AssemblyName System.IO.Compression
+		Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+		$zipArchive = New-Object System.IO.Compression.ZipArchive ($memStream)
+
+		# debugging
+		if ($false)
+		{
+			$zipArchive.Entries | select Name,FullName,Length | ft -AutoSize
+		}
+
+		$InstallTheBareMinimum = $false
+		if ($InstallTheBareMinimum)
+		{
+			$entries = @($zipArchive.Entries | ? { $_.FullName.StartsWith( 'lib/net45' ) -or $_.FullName.StartsWith( 'lib/netstandard' ) -or $_.FullName.StartsWith( 'lib/netcoreapp' ) })
+		}`
+		else
+		{
+			$entries = $zipArchive.Entries
+		}
+
+		$overwrite = $false
+		foreach ($entry in $entries)
+		{
+			$destPath = Join-Path $TargetFolder $entry.FullName
+			$null = md -Path (Split-Path $destPath) -ErrorAction Ignore
+
+			if ($overwrite -and (Test-Path -LiteralPath $destPath))
+			{
+				(Get-Item -Force -LiteralPath $destPath).IsReadOnly = $false
+				Remove-Item -Force -LiteralPath $destPath -ErrorAction Ignore
+			}
+
+			if (Test-Path -LiteralPath $destPath)
+			{
+				Write-VerboseLog -Fore DarkGray $destPath
+			}
+			else
+			{
+				Write-VerboseLog -Fore Yellow $destPath
+				[IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $destPath)
+			}
+		}
+	}
+
+	return $TargetDll
 }
 
 function Clear-StoreBrokerAuthentication
@@ -394,6 +502,11 @@ function Clear-StoreBrokerAuthentication
     if ($PSCmdlet.ShouldProcess("", "Clear credential"))
     {
         $script:authCredential = $null
+    }
+
+    if ($PSCmdlet.ShouldProcess("", "Clear certificate"))
+    {
+        $script:certificate = $null
     }
 
     if ($PSCmdlet.ShouldProcess("", "Clear proxy"))
@@ -472,21 +585,26 @@ function Get-AccessToken
     }
 
     # Get our client id and secret, either from the cached credential or by prompting for them.
+    $certificate = $script:certificate
     $credential = $script:authCredential
-    if ($null -eq $credential)
-    {
-        Write-Log -Message @(
-            "Prompting for credentials.",
-            "To avoid doing this every time, consider using Set-StoreBrokerAuthentication to cache the values for this session.")
 
-        $credential = Get-Credential -Message "Enter your client id as your username, and your client secret as your password. ***To avoid getting this prompt every time, consider using Set-StoreBrokerAuthentication.***"
-    }
-
-    if ($null -eq $credential)
+    if ($null -eq $certificate)
     {
-        $output = "You must supply valid credentials (client id and secret) to use this module."
-        Write-Log -Message  $output -Level Error
-        throw $output
+        if ($null -eq $credential)
+        {
+            Write-Log -Message @(
+                "Prompting for credentials.",
+                "To avoid doing this every time, consider using Set-StoreBrokerAuthentication to cache the values for this session.")
+
+            $credential = Get-Credential -Message "Enter your client id as your username, and your client secret as your password. ***To avoid getting this prompt every time, consider using Set-StoreBrokerAuthentication.***"
+        }
+
+        if ($null -eq $credential)
+        {
+            $output = "You must supply valid credentials (client id and secret) to use this module."
+            Write-Log -Message  $output -Level Error
+            throw $output
+        }
     }
 
     # If the cached access token hasn't expired, we can just use it.
@@ -497,24 +615,67 @@ function Get-AccessToken
         return $script:lastAccessToken
     }
 
-    $clientId = $credential.UserName
-    $clientSecret = $credential.GetNetworkCredential().Password
-
-    # Constants
     $tokenUrlFormat = "https://login.windows.net/{0}/oauth2/token"
-    $authBodyFormat = "grant_type=client_credentials&client_id={0}&client_secret={1}&resource={2}"
-    $serviceEndpoint = Get-ServiceEndpoint
+    $tenantId = $script:authTenantId
+    $url = $tokenUrlFormat -f $tenantId
+    ##TODO: Use certificate and clientID here instead with MSAL
 
-    # Need to make sure that the type is loaded before we attempt to access the HttpUtility methods.
-    # If we don't do this, we'll fail the first time we try to access the methods, but then it will
-    # work fine for consecutive attempts within the same console session.
-    Add-Type -AssemblyName System.Web
+    if ($null -ne $certificate)
+    {
+        $clientId = $script:clientId
 
-    $url = $tokenUrlFormat -f $script:authTenantId
-    $body = $authBodyFormat -f
-                $([System.Web.HttpUtility]::UrlEncode($clientId)),
-                $([System.Web.HttpUtility]::UrlEncode($clientSecret)),
-                $serviceEndpoint
+        $scopes = [string[]]@("https://api.store.microsoft.com/.default")
+        
+        Install-Msal
+
+		try
+		{
+            $appBuilder = [Microsoft.Identity.Client.ConfidentialClientApplicationBuilder]::Create($clientId)
+            $appBuilder.WithCertificate($Certificate)
+
+            $null = $appBuilder.WithAuthority($url, $tenantId)
+            $null = $appBuilder.WithClientId($clientId)
+            $null = $appBuilder.WithTenantId($tenantId)
+            $null = $appBuilder.WithClientName("PowerShell $($PSVersionTable.PSEdition)")
+            $null = $appBuilder.WithClientVersion($PSVersionTable.PSVersion)
+            $null = $appBuilder.WithDefaultRedirectUri()
+
+            $app = $appBuilder.Build()
+
+            $authResultBuilder = $app.AcquireTokenForClient($scopes)
+            $authResultTask = $authResultBuilder.ExecuteAsync()
+            $null = $authResultTask.GetAwaiter().GetResult()
+            $authResult = $authResultTask.Result
+
+            return $authResult.AccessToken;
+        }
+        catch
+		{
+            # TODO: HANDLE ERRORS
+			Write-VerboseLog -Fore White -Back Red "...Failed!"
+			$exception = $_
+			throw $exception
+		}
+    }
+    else
+    {
+        $clientId = $credential.UserName
+        $clientSecret = $credential.GetNetworkCredential().Password
+
+        # Constants
+        $authBodyFormat = "grant_type=client_credentials&client_id={0}&client_secret={1}&resource={2}"
+        $serviceEndpoint = Get-ServiceEndpoint
+
+        # Need to make sure that the type is loaded before we attempt to access the HttpUtility methods.
+        # If we don't do this, we'll fail the first time we try to access the methods, but then it will
+        # work fine for consecutive attempts within the same console session.
+        Add-Type -AssemblyName System.Web
+
+        $body = $authBodyFormat -f
+                    $([System.Web.HttpUtility]::UrlEncode($clientId)),
+                    $([System.Web.HttpUtility]::UrlEncode($clientSecret)),
+                    $serviceEndpoint
+        }
 
     try
     {

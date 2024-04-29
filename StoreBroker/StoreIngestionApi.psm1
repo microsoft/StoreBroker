@@ -253,10 +253,6 @@ function Set-StoreBrokerAuthentication
         [Parameter(
             ParameterSetName="Proxy",
             Position=2)]
-        [Parameter(
-            Mandatory,
-            ParameterSetName="WithCert",
-            Position=0)]
         [string] $TenantId,
 
         [Parameter(
@@ -282,18 +278,6 @@ function Set-StoreBrokerAuthentication
             ParameterSetName="Proxy",
             Position=2)]
         [string] $TenantName = $null
-
-        [Parameter(
-            Mandatory,
-            ParameterSetName="WithCert",
-            Position=1)]
-        [string] $ClientId,
-
-        [Parameter(
-            Mandatory,
-            ParameterSetName="WithCert",
-            Position=2)]
-        [System.Security.Cryptography.X509Certificates.X509Certificate2] $Certificate = $null
     )
 
     Write-InvocationLog
@@ -346,42 +330,26 @@ function Set-StoreBrokerAuthentication
     # should no longer be used, so we must clear out any existing value.
     $script:proxyEndpoint = $null
 
-    ## Using certificate for auth instead of client id/secret
-    if ($null -ne $Certificate)
+    if (($null -eq $Credential) -and (-not $OnlyCacheTenantId))
     {
-        if ($PSCmdlet.ShouldProcess($Certificate, "Cache certificate"))
+        if ($PSCmdlet.ShouldProcess("", "Get-Credential"))
         {
-            $script:certificate = $Certificate
+            $Credential = Get-Credential -Message "Enter your client id as your username, and your client secret as your password. ***These values are being cached.  Use Clear-StoreBrokerAuthentication or close this PowerShell window when you are done.***"
         }
+    }
 
-        if ($PSCmdlet.ShouldProcess($Certificate, "Cache clientId"))
+    if ($null -eq $Credential)
+    {
+        if (-not $OnlyCacheTenantId)
         {
-            $script:clientId = $ClientId
+            Write-Log -Message "No credential provided.  Not changing current cached credential." -Level Error
         }
     }
     else
     {
-        if (($null -eq $Credential) -and (-not $OnlyCacheTenantId))
+        if ($PSCmdlet.ShouldProcess($Credential, "Cache credential"))
         {
-            if ($PSCmdlet.ShouldProcess("", "Get-Credential"))
-            {
-                $Credential = Get-Credential -Message "Enter your client id as your username, and your client secret as your password. ***These values are being cached.  Use Clear-StoreBrokerAuthentication or close this PowerShell window when you are done.***"
-            }
-        }
-
-        if ($null -eq $Credential)
-        {
-            if (-not $OnlyCacheTenantId)
-            {
-                Write-Log -Message "No credential provided.  Not changing current cached credential." -Level Error
-            }
-        }
-        else
-        {
-            if ($PSCmdlet.ShouldProcess($Credential, "Cache credential"))
-            {
-                $script:authCredential = $Credential
-            }
+            $script:authCredential = $Credential
         }
     }
 
@@ -391,78 +359,67 @@ function Set-StoreBrokerAuthentication
     }
 }
 
-function Install-Msal
+function Set-StoreBrokerCertificateAuthentication
 {
-	[CmdletBinding()] param()
+<#
+    .SYNOPSIS
+        Sets the certificate that will be used to authenticate with Store APIs.
 
-	$uri = 'https://www.nuget.org/api/v2/package/Microsoft.Identity.Client/4.8.2'
+    .DESCRIPTION
+        Sets the certificate that will be used to authenticate with Store APIs.
+        The cached credential can always be cleared by calling Clear-StoreBrokerAuthentication.
 
-	$MsalRootFolder = Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::LocalApplicationData)) "MSAL"
-	$TargetFolder = Join-Path $MsalRootFolder (Split-Path $uri -Leaf)
+        The Git repo for this module can be found here: http://aka.ms/StoreBroker
 
-##	if (Test-PowerShellCore)
-##	{
-##		$DllPath = "lib\netcoreapp2.1\Microsoft.Identity.Client.dll"
-##	}`
-##	else
-##	{
-		$DllPath = "lib\net45\Microsoft.Identity.Client.dll"
-##	}
+    .PARAMETER TenantId
+        The Azure Active Directory Tenant ID that authentication must go through.
 
-	$TargetDll = Join-Path $TargetFolder $DllPath
+    .PARAMETER ClientId
+        The Azure Active Directory Client ID that authentication must go through.
 
-	if (-not (Test-Path $TargetDll))
-	{
-		Write-ErrorLog -Fore White "Could not find Microsoft Identity Client Library (MSAL). Downloading and installing now..."
-		$response = Invoke-WebRequest -UseBasicParsing -Uri $uri -ErrorAction Stop
-		$memStream = New-Object IO.MemoryStream ($response.Content, $false)
+    .PARAMETER Certificate
+        The X509Certificate2 object that has the certificate to be used for authentication.
 
-		Add-Type -AssemblyName System.IO.Compression
-		Add-Type -AssemblyName System.IO.Compression.FileSystem
+    .EXAMPLE
+        Set-StoreBrokerAuthentication -TenantId "abcdef01-2345-6789-0abc-def123456789" -ClientId "abcdef01-2345-6789-0abc-def123456789" -Certificate $certificate
 
-		$zipArchive = New-Object System.IO.Compression.ZipArchive ($memStream)
+        Caches the tenantId and clientId for the duration of the
+        PowerShell session.  Caches the certificate to be used for authentication.
+        These values will be cached for the duration of this PowerShell session.
+        They can be cleared by calling Clear-StoreBrokerAuthentication.
+#>
+    [CmdletBinding(SupportsShouldProcess)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars", "", Justification="We use global variables sparingly and intentionally for module configuration, and employ a consistent naming convention.")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUsePSCredentialType", "", Justification="The System.Management.Automation.Credential() attribute does not appear to work in PowerShell v4 which we need to support.")]
+    param(
+        [string] $TenantId,
 
-		# debugging
-		if ($false)
-		{
-			$zipArchive.Entries | select Name,FullName,Length | ft -AutoSize
-		}
+        [string] $ClientId,
 
-		$InstallTheBareMinimum = $false
-		if ($InstallTheBareMinimum)
-		{
-			$entries = @($zipArchive.Entries | ? { $_.FullName.StartsWith( 'lib/net45' ) -or $_.FullName.StartsWith( 'lib/netstandard' ) -or $_.FullName.StartsWith( 'lib/netcoreapp' ) })
-		}`
-		else
-		{
-			$entries = $zipArchive.Entries
-		}
+        [System.Security.Cryptography.X509Certificates.X509Certificate2] $Certificate = $null
+    )
 
-		$overwrite = $false
-		foreach ($entry in $entries)
-		{
-			$destPath = Join-Path $TargetFolder $entry.FullName
-			$null = md -Path (Split-Path $destPath) -ErrorAction Ignore
+    Write-InvocationLog
 
-			if ($overwrite -and (Test-Path -LiteralPath $destPath))
-			{
-				(Get-Item -Force -LiteralPath $destPath).IsReadOnly = $false
-				Remove-Item -Force -LiteralPath $destPath -ErrorAction Ignore
-			}
+    if ($PSCmdlet.ShouldProcess($TenantId, "Cache tenantId"))
+    {
+        $script:authTenantId = $TenantId
+    }
 
-			if (Test-Path -LiteralPath $destPath)
-			{
-				Write-VerboseLog -Fore DarkGray $destPath
-			}
-			else
-			{
-				Write-VerboseLog -Fore Yellow $destPath
-				[IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $destPath)
-			}
-		}
-	}
+    if ($PSCmdlet.ShouldProcess("", "Cache certificate"))
+    {
+        $script:certificate = $Certificate
+    }
 
-	return $TargetDll
+    if ($PSCmdlet.ShouldProcess("", "Cache clientId"))
+    {
+        $script:clientId = $ClientId
+    }
+
+    if ($PSCmdlet.ShouldProcess("", "Clear cached access token"))
+    {
+        $script:lastAccessToken = $null
+    }
 }
 
 function Clear-StoreBrokerAuthentication
@@ -615,50 +572,97 @@ function Get-AccessToken
         return $script:lastAccessToken
     }
 
-    $tokenUrlFormat = "https://login.windows.net/{0}/oauth2/token"
-    $tenantId = $script:authTenantId
-    $url = $tokenUrlFormat -f $tenantId
-    ##TODO: Use certificate and clientID here instead with MSAL
-
     if ($null -ne $certificate)
     {
+        Write-Log -Message "Getting access token using Certificate..." -Level Verbose
+
         $clientId = $script:clientId
 
-        $scopes = [string[]]@("https://api.store.microsoft.com/.default")
+        $scopes = [string[]]@("https://api.partner.microsoft.com/.default")
         
-        Install-Msal
+        $DllPath = Get-MsalDllPath
+        Add-Type -Path $DllPath
 
 		try
 		{
             $appBuilder = [Microsoft.Identity.Client.ConfidentialClientApplicationBuilder]::Create($clientId)
-            $appBuilder.WithCertificate($Certificate)
+            $null = $appBuilder.WithCertificate($Certificate)
 
-            $null = $appBuilder.WithAuthority($url, $tenantId)
-            $null = $appBuilder.WithClientId($clientId)
-            $null = $appBuilder.WithTenantId($tenantId)
-            $null = $appBuilder.WithClientName("PowerShell $($PSVersionTable.PSEdition)")
+            $authorityUrlTemplate = "https://login.windows.net/{0}"
+            $tenantId = $script:authTenantId
+            $authorityUrl = $authorityUrlTemplate -f $tenantId
+
+            $null = $appBuilder.WithAuthority($authorityUrl, $tenantId)
+            $null = $appBuilder.WithClientName("StoreBroker v$($MyInvocation.MyCommand.Module.Version)")
             $null = $appBuilder.WithClientVersion($PSVersionTable.PSVersion)
-            $null = $appBuilder.WithDefaultRedirectUri()
+            $null = $appBuilder.WithRedirectUri('http://localhost')
 
             $app = $appBuilder.Build()
 
             $authResultBuilder = $app.AcquireTokenForClient($scopes)
+            $null = $authResultBuilder.WithSendX5C($true)
             $authResultTask = $authResultBuilder.ExecuteAsync()
             $null = $authResultTask.GetAwaiter().GetResult()
             $authResult = $authResultTask.Result
 
+            if ($null -ne $authResult)
+            {
+                # Keep track of how long this token will be valid for, to enable logic that re-uses
+                # the same token across multiple commands to know when a new one is necessary.
+                $script:lastAccessTokenExpirationDate = $authResult.ExpiresOn
+                $script:lastAccessToken = $authResult.AccessToken
+                Write-Log -Message "Access Token has been cached for future use. Will expire on $($authResult.ExpiresOn)." -Level Verbose
+            }
+
             return $authResult.AccessToken;
         }
-        catch
-		{
-            # TODO: HANDLE ERRORS
-			Write-VerboseLog -Fore White -Back Red "...Failed!"
-			$exception = $_
-			throw $exception
-		}
+        catch [System.InvalidOperationException]
+        {
+            # This type of exception occurs when using -NoStatus
+
+            # Dig into the exception to get the Response details.
+            # Note that value__ is not a typo.
+            $output = @()
+            $output += "Be sure to check that your client id/certificate is valid."
+            $output += "StatusCode: $($_.Exception.Response.StatusCode.value__)"
+            $output += "StatusDescription: $($_.Exception.Response.StatusDescription)"
+            $output += "Message: $($_.Exception.Message)"
+            if (-not [String]::IsNullOrWhiteSpace($_.ErrorDetails))
+            {
+                $output += ($_.ErrorDetails | ConvertFrom-Json | Out-String)
+            }
+
+            $newLineOutput = ($output -join [Environment]::NewLine)
+            Write-Log -Message $newLineOutput -Level Error
+            throw $newLineOutput
+        }
+        catch [System.Management.Automation.RuntimeException]
+        {
+            # This type of exception occurs when NOT using -NoStatus
+            $output = @()
+            $output += "Be sure to check that your client id/certificate is valid."
+            $output += $_.Exception.Message
+            if (-not [String]::IsNullOrWhiteSpace($_.ErrorDetails.Message))
+            {
+                $message = ($_.ErrorDetails.Message | ConvertFrom-Json)
+                $output += "$($message.code) : $($message.message)"
+                if ($message.details)
+                {
+                    $output += "$($message.details | Format-Table | Out-String)"
+                }
+            }
+
+            $newLineOutput = ($output -join [Environment]::NewLine)
+            Write-Log -Message $newLineOutput -Level Error
+            throw $newLineOutput
+        }
     }
     else
     {
+        $tokenUrlFormat = "https://login.windows.net/{0}/oauth2/token"
+        $tenantId = $script:authTenantId
+        $url = $tokenUrlFormat -f $tenantId
+        
         $clientId = $credential.UserName
         $clientSecret = $credential.GetNetworkCredential().Password
 
@@ -675,104 +679,104 @@ function Get-AccessToken
                     $([System.Web.HttpUtility]::UrlEncode($clientId)),
                     $([System.Web.HttpUtility]::UrlEncode($clientSecret)),
                     $serviceEndpoint
-        }
 
-    try
-    {
-        Write-Log -Message "Getting access token..." -Level Verbose
-        Write-Log -Message "Accessing [POST] $url" -Level Verbose
-        $response = $null
-
-        if ($NoStatus)
+        try
         {
-            if ($PSCmdlet.ShouldProcess($url, "Invoke-RestMethod"))
-            {
-                [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-                $response = Invoke-RestMethod $url -Method Post -Body $body
-            }
-        }
-        else
-        {
-            $jobName = "Get-AccessToken-" + (Get-Date).ToFileTime().ToString()
-            if ($PSCmdlet.ShouldProcess($jobName, "Start-Job"))
-            {
-                [scriptblock]$scriptBlock = {
-                    param($url, $body)
+            Write-Log -Message "Getting access token..." -Level Verbose
+            Write-Log -Message "Accessing [POST] $url" -Level Verbose
+            $response = $null
 
+            if ($NoStatus)
+            {
+                if ($PSCmdlet.ShouldProcess($url, "Invoke-RestMethod"))
+                {
                     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-                    Invoke-RestMethod $url -Method Post -Body $body
-                }
-
-                $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($url, $body)
-
-                if ($PSCmdlet.ShouldProcess($jobName, "Wait-JobWithAnimation"))
-                {
-                    Wait-JobWithAnimation -Name $jobName -Description "Getting access token"
-                }
-
-                if ($PSCmdlet.ShouldProcess($jobName, "Receive-Job"))
-                {
-                    $response = Receive-Job $jobName -AutoRemoveJob -Wait -ErrorAction SilentlyContinue -ErrorVariable remoteErrors
+                    $response = Invoke-RestMethod $url -Method Post -Body $body
                 }
             }
-
-            if ($remoteErrors.Count -gt 0)
+            else
             {
-               throw $remoteErrors[0].Exception
+                $jobName = "Get-AccessToken-" + (Get-Date).ToFileTime().ToString()
+                if ($PSCmdlet.ShouldProcess($jobName, "Start-Job"))
+                {
+                    [scriptblock]$scriptBlock = {
+                        param($url, $body)
+
+                        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+                        Invoke-RestMethod $url -Method Post -Body $body
+                    }
+
+                    $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($url, $body)
+
+                    if ($PSCmdlet.ShouldProcess($jobName, "Wait-JobWithAnimation"))
+                    {
+                        Wait-JobWithAnimation -Name $jobName -Description "Getting access token"
+                    }
+
+                    if ($PSCmdlet.ShouldProcess($jobName, "Receive-Job"))
+                    {
+                        $response = Receive-Job $jobName -AutoRemoveJob -Wait -ErrorAction SilentlyContinue -ErrorVariable remoteErrors
+                    }
+                }
+
+                if ($remoteErrors.Count -gt 0)
+                {
+                throw $remoteErrors[0].Exception
+                }
             }
-        }
 
-        if ($null -ne $response)
-        {
-            # Keep track of how long this token will be valid for, to enable logic that re-uses
-            # the same token across multiple commands to know when a new one is necessary.
-            $script:accessTokenTimeoutSeconds = $response.expires_in - $script:accessTokenRefreshBufferSeconds
-            $script:lastAccessTokenExpirationDate = (Get-Date).AddSeconds($script:accessTokenTimeoutSeconds)
-            $script:lastAccessToken = $response.access_token
-            Write-Log -Message "Access Token has been cached for future use. Will expire in $($script:accessTokenTimeoutSeconds) seconds." -Level Verbose
-        }
-
-        return $response.access_token
-    }
-    catch [System.InvalidOperationException]
-    {
-        # This type of exception occurs when using -NoStatus
-
-        # Dig into the exception to get the Response details.
-        # Note that value__ is not a typo.
-        $output = @()
-        $output += "Be sure to check that your client id/secret are valid."
-        $output += "StatusCode: $($_.Exception.Response.StatusCode.value__)"
-        $output += "StatusDescription: $($_.Exception.Response.StatusDescription)"
-        $output += "Message: $($_.Exception.Message)"
-        if (-not [String]::IsNullOrWhiteSpace($_.ErrorDetails))
-        {
-            $output += ($_.ErrorDetails | ConvertFrom-Json | Out-String)
-        }
-
-        $newLineOutput = ($output -join [Environment]::NewLine)
-        Write-Log -Message $newLineOutput -Level Error
-        throw $newLineOutput
-    }
-    catch [System.Management.Automation.RuntimeException]
-    {
-        # This type of exception occurs when NOT using -NoStatus
-        $output = @()
-        $output += "Be sure to check that your client id/secret are valid."
-        $output += $_.Exception.Message
-        if (-not [String]::IsNullOrWhiteSpace($_.ErrorDetails.Message))
-        {
-            $message = ($_.ErrorDetails.Message | ConvertFrom-Json)
-            $output += "$($message.code) : $($message.message)"
-            if ($message.details)
+            if ($null -ne $response)
             {
-                $output += "$($message.details | Format-Table | Out-String)"
+                # Keep track of how long this token will be valid for, to enable logic that re-uses
+                # the same token across multiple commands to know when a new one is necessary.
+                $script:accessTokenTimeoutSeconds = $response.expires_in - $script:accessTokenRefreshBufferSeconds
+                $script:lastAccessTokenExpirationDate = (Get-Date).AddSeconds($script:accessTokenTimeoutSeconds)
+                $script:lastAccessToken = $response.access_token
+                Write-Log -Message "Access Token has been cached for future use. Will expire in $($script:accessTokenTimeoutSeconds) seconds." -Level Verbose
             }
-        }
 
-        $newLineOutput = ($output -join [Environment]::NewLine)
-        Write-Log -Message $newLineOutput -Level Error
-        throw $newLineOutput
+            return $response.access_token
+        }
+        catch [System.InvalidOperationException]
+        {
+            # This type of exception occurs when using -NoStatus
+
+            # Dig into the exception to get the Response details.
+            # Note that value__ is not a typo.
+            $output = @()
+            $output += "Be sure to check that your client id/secret are valid."
+            $output += "StatusCode: $($_.Exception.Response.StatusCode.value__)"
+            $output += "StatusDescription: $($_.Exception.Response.StatusDescription)"
+            $output += "Message: $($_.Exception.Message)"
+            if (-not [String]::IsNullOrWhiteSpace($_.ErrorDetails))
+            {
+                $output += ($_.ErrorDetails | ConvertFrom-Json | Out-String)
+            }
+
+            $newLineOutput = ($output -join [Environment]::NewLine)
+            Write-Log -Message $newLineOutput -Level Error
+            throw $newLineOutput
+        }
+        catch [System.Management.Automation.RuntimeException]
+        {
+            # This type of exception occurs when NOT using -NoStatus
+            $output = @()
+            $output += "Be sure to check that your client id/secret are valid."
+            $output += $_.Exception.Message
+            if (-not [String]::IsNullOrWhiteSpace($_.ErrorDetails.Message))
+            {
+                $message = ($_.ErrorDetails.Message | ConvertFrom-Json)
+                $output += "$($message.code) : $($message.message)"
+                if ($message.details)
+                {
+                    $output += "$($message.details | Format-Table | Out-String)"
+                }
+            }
+
+            $newLineOutput = ($output -join [Environment]::NewLine)
+            Write-Log -Message $newLineOutput -Level Error
+            throw $newLineOutput
+        }
     }
 }
 
@@ -836,6 +840,67 @@ function Get-ServiceEndpoint
         Write-Log -Message "Using PROD service endpoint" -Level Verbose
         return $serviceEndpointProd
     }
+}
+
+function Get-MsalDllPath
+{
+    <#
+    .SYNOPSIS
+        Makes sure that the Microsoft Authentication Library is available
+        on the machine, and returns the path to it.
+
+    .DESCRIPTION
+       Makes sure that the Microsoft Authentication Library is available
+        on the machine, and returns the path to it.
+
+        This will first look for the assembly in the module's script directory.
+
+        Next it will look for the assembly in the location defined by
+        $SBAlternateAssemblyDir.  This value would have to be defined by the user
+        prior to execution of this cmdlet.
+
+        If not found there, it will look in a temp folder established during this
+        PowerShell session.
+
+        If still not found, it will download the nuget package
+        for it to a temp folder accessible during this PowerShell session.
+
+        The Git repo for this module can be found here: http://aka.ms/StoreBroker
+
+    .PARAMETER NoStatus
+        If this switch is specified, long-running commands will run on the main thread
+        with no commandline status update.  When not specified, those commands run in
+        the background, enabling the command prompt to provide status information.
+
+    .EXAMPLE
+        Get-MsalDllPath
+
+        Returns back the path to the assembly as found.  If the package has to
+        be downloaded via nuget, the command prompt will show a time duration
+        status counter while the package is being downloaded.
+
+    .EXAMPLE
+        Get-MsalDllPath -NoStatus
+
+        Returns back the path to the assembly as found.  If the package has to
+        be downloaded via nuget, the command prompt will appear to hang during
+        this time.
+
+    .OUTPUTS
+        System.String - The path to the Microsoft Authentication Library.
+#>
+    [CmdletBinding(SupportsShouldProcess)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
+    param(
+    [switch] $NoStatus
+)
+
+    $nugetPackageName = "Microsoft.Identity.Client"
+    $nugetPackageVersion = "4.8.2"
+    $assemblyPackageTailDir = "Microsoft.Identity.Client.4.8.2\lib\net45\"
+    $assemblyName = "Microsoft.Identity.Client.dll"
+
+    return Get-NugetPackageDllPath -NugetPackageName $nugetPackageName -NugetPackageVersion $nugetPackageVersion -AssemblyPackageTailDirectory $assemblyPackageTailDir -AssemblyName $assemblyName -NoStatus:$NoStatus
 }
 
 function Get-AzureStorageDllPath

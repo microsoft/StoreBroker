@@ -141,6 +141,7 @@
         'Open-DevPortal',
         'Open-Store',
         'Set-StoreBrokerAuthentication',
+        'Set-StoreBrokerCertificateAuthentication',
         'Set-StoreFile',
         'Start-ApplicationFlightSubmissionMonitor',
         'Start-InAppProductSubmissionMonitor',

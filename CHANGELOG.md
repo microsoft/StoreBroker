@@ -1,6 +1,16 @@
 # StoreBroker PowerShell Module
 ## Changelog
 
+## [2.1.18](https://github.com/Microsoft/StoreBroker/tree/2.1.15) - (2024/05/06)
+
+### Fixes
+
+- Allow authorization using a certificate with Set-StoreBrokerCertificateAuthentication. [[pr]](https://github.com/microsoft/StoreBroker/pull/250) | [[cl]](https://github.com/microsoft/StoreBroker/commit/e0036b23b3d75eb112f2ca65f97b721d9bbb56bc)
+
+Author:
+
+- [**@joseartrivera**](https://github.com/joseartrivera)
+
 ## [2.1.17](https://github.com/Microsoft/StoreBroker/tree/2.1.14) - (2024/01/31)
 
 ### Fixes

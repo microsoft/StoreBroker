@@ -579,12 +579,11 @@ function Get-AccessToken
         $clientId = $script:clientId
 
         $scopes = [string[]]@("https://api.partner.microsoft.com/.default")
-        
         $DllPath = Get-MsalDllPath
         Add-Type -Path $DllPath
 
-		try
-		{
+        try
+        {
             $appBuilder = [Microsoft.Identity.Client.ConfidentialClientApplicationBuilder]::Create($clientId)
             $null = $appBuilder.WithCertificate($Certificate)
 
@@ -721,7 +720,7 @@ function Get-AccessToken
 
                 if ($remoteErrors.Count -gt 0)
                 {
-                throw $remoteErrors[0].Exception
+                    throw $remoteErrors[0].Exception
                 }
             }
 

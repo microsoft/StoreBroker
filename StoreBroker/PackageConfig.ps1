@@ -404,7 +404,7 @@ function Get-Config
     $configSchemaVersion = if ($null -eq $configObj.$VersionProperty) { 1 }
                            else { $configObj.$VersionProperty }
 
-    if ($configSchemaVersion -isnot [int])
+    if ($configSchemaVersion -isnot [int32] -and $configSchemaVersion -isnot [int64])
     {
         $out = @()
         $out += "For the config: [$ConfigPath]."

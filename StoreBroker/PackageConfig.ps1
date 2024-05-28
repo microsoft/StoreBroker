@@ -402,11 +402,6 @@ function Get-Config
         Out-String |
         ConvertFrom-Json
 
-    if ($null -ne $AccessToken)
-    {
-        $configObj["AccessToken"] = $AccessToken
-    }
-
     # Validate we support this version of the config
     $configSchemaVersion = if ($null -eq $configObj.$VersionProperty) { 1 }
                            else { $configObj.$VersionProperty }
@@ -459,7 +454,7 @@ function Get-Config
     # Migrate the config to the latest config schema version
     # and return the result.
     $configObj |
-        ConvertTo-LatestConfig |
+        ConvertTo-LatestConfig -AccessToken $AccessToken |
         Write-Output
 }
 

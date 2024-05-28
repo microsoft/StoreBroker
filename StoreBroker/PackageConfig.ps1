@@ -376,6 +376,8 @@ function Get-Config
 
         [string] $VersionProperty = $script:configSchemaVersionProperty,
 
+        [string] $AccessToken,
+
         [Parameter(Mandatory)]
         [int] $MinSupportedVersion,
 
@@ -399,6 +401,11 @@ function Get-Config
         Remove-Comments |
         Out-String |
         ConvertFrom-Json
+
+    if ($null -ne $AccessToken)
+    {
+        $configObj["AccessToken"] = $AccessToken
+    }
 
     # Validate we support this version of the config
     $configSchemaVersion = if ($null -eq $configObj.$VersionProperty) { 1 }
@@ -536,6 +543,8 @@ function ConvertTo-LatestConfig
 
         [string] $IapId,
 
+        [string] $AccessToken,
+
         [Parameter(
             Mandatory,
             ValueFromPipeline)]
@@ -545,7 +554,7 @@ function ConvertTo-LatestConfig
     )
 
     # Resolve a ProductId based on our inputs.
-    $ProductId = Resolve-ProductId -ProductId $ProductId -AppId $AppId -IapId $IapId -Config $Config
+    $ProductId = Resolve-ProductId -ProductId $ProductId -AppId $AppId -IapId $IapId -AccessToken $AccessToken -Config $Config
 
     # Identify the schema version of the config (if present).
     $schemaVersion = if ($null -eq $Config.schemaVersion) { 1 }
@@ -765,6 +774,7 @@ function Resolve-ProductId
         [string] $ProductId,
         [string] $AppId,
         [string] $IapId,
+        [string] $AccessToken,
         [PSCustomObject] $Config
     )
 
@@ -818,7 +828,7 @@ function Resolve-ProductId
         }
 
         Write-Log -Message "Validating $($externalIdType): [$externalId]" -Level Verbose
-        $product = Get-Product -ExternalId $externalId
+        $product = Get-Product -ExternalId $externalId -AccessToken $AccessToken
         if ($null -eq $product)
         {
             $out = $errorFormat -f $externalIdType, $externalId
@@ -837,7 +847,7 @@ function Resolve-ProductId
         }
 
         Write-Log -Message "Validating ProductId: [$ProductId]" -Level Verbose
-        $product = Get-Product -ProductId $ProductId
+        $product = Get-Product -ProductId $ProductId -AccessToken $AccessToken
         if ($null -eq $product)
         {
             $out = $errorFormat -f "ProductId", $ProductId

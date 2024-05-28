@@ -3169,7 +3169,9 @@ function New-SubmissionPackage
 
         [switch] $DisableAutoPackageNameFormatting,
 
-        [string] $MediaFallbackLanguage
+        [string] $MediaFallbackLanguage,
+
+        [string] $AccessToken
     )
 
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
@@ -3210,7 +3212,8 @@ function New-SubmissionPackage
         # Convert the Config.json
         $config = Get-Config -ConfigPath $ConfigPath `
                              -MinSupportedVersion $script:minAppConfigSchemaVersion `
-                             -MaxSupportedVersion $script:maxAppConfigSchemaVersion
+                             -MaxSupportedVersion $script:maxAppConfigSchemaVersion `
+                             -AccessToken $AccessToken
 
         # Check that all parameters are provided or specified in the config
         $validatedParams = Resolve-PackageParameters -ConfigObject $config -ParamMap $packageParams
@@ -3427,7 +3430,9 @@ function New-InAppProductSubmissionPackage
 
         [string] $OutName,
 
-        [string] $MediaFallbackLanguage
+        [string] $MediaFallbackLanguage,
+
+        [string] $AccessToken
     )
 
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
@@ -3468,7 +3473,8 @@ function New-InAppProductSubmissionPackage
         # Convert the Config.json
         $config = Get-Config -ConfigPath $ConfigPath `
                              -MinSupportedVersion $script:minIapConfigSchemaVersion `
-                             -MaxSupportedVersion $script:maxIapConfigSchemaVersion
+                             -MaxSupportedVersion $script:maxIapConfigSchemaVersion `
+                             -AccessToken $AccessToken
 
         # Check that all parameters are provided or specified in the config
         $validatedParams = Resolve-PackageParameters -ConfigObject $config -ParamMap $packageParams -SkipValidation @($script:s_DisableAutoPackageNameFormatting, $script:s_PackagePath)

@@ -352,6 +352,9 @@ function Get-Config
     .PARAMETER VersionProperty
         The name of the property containing the config's schema version.
 
+    .PARAMETER AccessToken
+        The access token to use for the submission API. Pass in the accessToken if the user did not run Set-StoreBrokerAccessToken previously.
+
     .PARAMETER MinSupportedVersion
         The minimum config schema version supported by this version of PackageTool.
 
@@ -375,6 +378,8 @@ function Get-Config
         [string] $ConfigPath,
 
         [string] $VersionProperty = $script:configSchemaVersionProperty,
+
+        [string] $AccessToken,
 
         [Parameter(Mandatory)]
         [int] $MinSupportedVersion,
@@ -452,7 +457,7 @@ function Get-Config
     # Migrate the config to the latest config schema version
     # and return the result.
     $configObj |
-        ConvertTo-LatestConfig |
+        ConvertTo-LatestConfig -AccessToken $AccessToken |
         Write-Output
 }
 
@@ -521,6 +526,9 @@ function ConvertTo-LatestConfig
     .PARAMETER IapId
         The IapId representing this iap config's product, as given by v1 of the Submission API.
 
+    .PARAMETER AccessToken
+        The access token to use for the submission API. Pass in the accessToken if the user did not run Set-StoreBrokerAccessToken previously.
+
     .PARAMETER Config
         The config object to be migrated. Can be sent as pipeline input.
 
@@ -536,6 +544,8 @@ function ConvertTo-LatestConfig
 
         [string] $IapId,
 
+        [string] $AccessToken,
+
         [Parameter(
             Mandatory,
             ValueFromPipeline)]
@@ -545,7 +555,7 @@ function ConvertTo-LatestConfig
     )
 
     # Resolve a ProductId based on our inputs.
-    $ProductId = Resolve-ProductId -ProductId $ProductId -AppId $AppId -IapId $IapId -Config $Config
+    $ProductId = Resolve-ProductId -ProductId $ProductId -AppId $AppId -IapId $IapId -AccessToken $AccessToken -Config $Config
 
     # Identify the schema version of the config (if present).
     $schemaVersion = if ($null -eq $Config.schemaVersion) { 1 }
@@ -756,6 +766,9 @@ function Resolve-ProductId
         The IapId that identifies the product. If this is valid, the ProductId is found by
         a reverse-lookup.
 
+    .PARAMETER AccessToken
+        The access token to use for the submission API. Pass in the accessToken if the user did not run Set-StoreBrokerAccessToken previously.
+
     .PARAMETER Config
         A PSCustomObject representing the config. If there is no AppId or IapId, the function
         checks for a valid value in the config.
@@ -765,6 +778,7 @@ function Resolve-ProductId
         [string] $ProductId,
         [string] $AppId,
         [string] $IapId,
+        [string] $AccessToken,
         [PSCustomObject] $Config
     )
 
@@ -818,7 +832,7 @@ function Resolve-ProductId
         }
 
         Write-Log -Message "Validating $($externalIdType): [$externalId]" -Level Verbose
-        $product = Get-Product -ExternalId $externalId
+        $product = Get-Product -ExternalId $externalId -AccessToken $AccessToken
         if ($null -eq $product)
         {
             $out = $errorFormat -f $externalIdType, $externalId
@@ -837,7 +851,7 @@ function Resolve-ProductId
         }
 
         Write-Log -Message "Validating ProductId: [$ProductId]" -Level Verbose
-        $product = Get-Product -ProductId $ProductId
+        $product = Get-Product -ProductId $ProductId -AccessToken $AccessToken
         if ($null -eq $product)
         {
             $out = $errorFormat -f "ProductId", $ProductId

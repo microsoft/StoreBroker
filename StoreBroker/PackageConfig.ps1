@@ -352,6 +352,9 @@ function Get-Config
     .PARAMETER VersionProperty
         The name of the property containing the config's schema version.
 
+    .PARAMETER AccessToken
+        The access token to use for the submission API. Pass in the accessToken if the user did not run Set-StoreBrokerAccessToken previously.
+
     .PARAMETER MinSupportedVersion
         The minimum config schema version supported by this version of PackageTool.
 
@@ -522,6 +525,9 @@ function ConvertTo-LatestConfig
 
     .PARAMETER IapId
         The IapId representing this iap config's product, as given by v1 of the Submission API.
+
+    .PARAMETER AccessToken
+        The access token to use for the submission API. Pass in the accessToken if the user did not run Set-StoreBrokerAccessToken previously.
 
     .PARAMETER Config
         The config object to be migrated. Can be sent as pipeline input.
@@ -759,6 +765,9 @@ function Resolve-ProductId
     .PARAMETER IapId
         The IapId that identifies the product. If this is valid, the ProductId is found by
         a reverse-lookup.
+
+    .PARAMETER AccessToken
+        The access token to use for the submission API. Pass in the accessToken if the user did not run Set-StoreBrokerAccessToken previously.
 
     .PARAMETER Config
         A PSCustomObject representing the config. If there is no AppId or IapId, the function

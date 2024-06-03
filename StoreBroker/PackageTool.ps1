@@ -3104,6 +3104,11 @@ function New-SubmissionPackage
         subfolder, StoreBroker will then look into the fallback language's media subfolder for
         the exactly same-named image, and only fail then if it still cannot be found.
 
+    .PARAMETER AccessToken
+        Azure Active Directory Token that could be directly used for authentication when calling Partner Center Api.
+        If the user does noe call Set-StoreBrokerAuthentication to save the client credential, then the user can pass
+        in the token directly to this function.
+
     .EXAMPLE
         New-SubmissionPackage -ConfigPath 'C:\Config\StoreBrokerConfig.json' -OutPath 'C:\Out\Path\' -OutName 'Upload' -Release MarchRelease -PackagePath 'C:\bin\App.appxbundle'
 
@@ -3384,6 +3389,11 @@ function New-InAppProductSubmissionPackage
         (e.g. 'en-us'), then if the requested file isn't found in the PDP language's media
         subfolder, StoreBroker will then look into the fallback language's media subfolder for
         the exactly same-named image, and only fail then if it still cannot be found.
+
+    .PARAMETER AccessToken
+        Azure Active Directory Token that could be directly used for authentication when calling Partner Center Api.
+        If the user does noe call Set-StoreBrokerAuthentication to save the client credential, then the user can pass
+        in the token directly to this function.
 
     .EXAMPLE
         New-InAppProductSubmissionPackage -ConfigPath 'C:\Config\StoreBrokerIAPConfig.json' -OutPath 'C:\Out\Path\' -OutName 'Upload' -Release MarchRelease

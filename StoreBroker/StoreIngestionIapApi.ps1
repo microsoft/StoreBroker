@@ -774,9 +774,7 @@ function Format-InAppProductSubmission
             $output += "Publish Date                        : $(Get-Date -Date $IapSubmissionData.targetPublishDate -Format R)"
         }
 
-        $output += "File Upload Url                     : {0}" -f $(if ($IapSubmissionData.fileUploadUrl) { $IapSubmissionData.fileUploadUrl } else { "<None>" })
         $output += ""
-
         $output += "Pricing                             : $($IapSubmissionData.pricing.priceId)"
 
         $marketSpecificPricings = $IapSubmissionData.pricing.marketSpecificPricings

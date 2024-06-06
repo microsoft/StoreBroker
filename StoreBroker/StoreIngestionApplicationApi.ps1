@@ -1297,7 +1297,7 @@ function Update-ApplicationSubmission
         {
             Write-Log -Message @(
                 "Your next step is to upload the package using:",
-                "  Upload-SubmissionPackage -PackagePath <package> -UploadUrl <uploadUrl>")
+                "  Upload-SubmissionPackage -PackagePath <package> -UploadUrl `"$uploadUrl`"")
         }
 
         if ($AutoCommit)

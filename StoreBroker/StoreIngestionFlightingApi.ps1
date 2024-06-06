@@ -698,9 +698,6 @@ function Format-ApplicationFlightSubmission
         $output += "Notes For Certification             : $($ApplicationFlightSubmissionData.notesForCertification)"
         $output += ""
 
-        $output += "File Upload Url                     : {0}" -f $(if ($ApplicationFlightSubmissionData.fileUploadUrl) { $ApplicationFlightSubmissionData.fileUploadUrl } else { "<None>" })
-        $output += ""
-
         $output += "Flight Packages                     : {0}" -f $(if ($ApplicationFlightSubmissionData.flightPackages.count -eq 0) { "<None>" } else { "" })
         $output += $ApplicationFlightSubmissionData.flightPackages | Format-SimpleTableString -IndentationLevel $indentLength
         $output += ""

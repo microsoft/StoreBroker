@@ -811,7 +811,7 @@ function Set-SubmissionPackage
 
     Write-InvocationLog
 
-    Write-Log -Message "Attempting to upload the package ($PackagePath) for the submission to $UploadUrl..." -Level Verbose
+    Write-Log -Message "Attempting to upload the package ($PackagePath) for the submission..." -Level Verbose
 
     $azureStorageDll = Get-AzureStorageDllPath -NoStatus:$NoStatus
     $azureStorageDataMovementDll = Get-AzureStorageDataMovementDllPath -NoStatus:$NoStatus
@@ -1001,7 +1001,7 @@ function Get-SubmissionPackage
 
     Write-InvocationLog
 
-    Write-Log -Message "Attempting to download the contents of $UploadUrl to $PackagePath..." -Level Verbose
+    Write-Log -Message "Attempting to download the contents to $PackagePath..." -Level Verbose
 
     $azureStorageDll = Get-AzureStorageDllPath -NoStatus:$NoStatus
     $azureStorageDataMovementDll = Get-AzureStorageDataMovementDllPath -NoStatus:$NoStatus

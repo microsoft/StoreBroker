@@ -747,7 +747,8 @@ function Send-SBMailMessage
 }
 
 $script:alwaysRedactParametersForLogging = @(
-    'AccessToken' # Would be a security issue
+    'AccessToken', # Would be a security issue
+    'UploadUrl'
 )
 
 $script:alwaysExcludeParametersForLogging = @(

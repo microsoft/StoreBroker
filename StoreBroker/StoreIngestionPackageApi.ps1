@@ -340,7 +340,7 @@ function New-ProductPackage
     }
 
     $body = Get-JsonBody -InputObject $hashBody
-    Write-Log -Message "Body: $body" -Level Verbose
+    Write-Body -InputObject $hashBody
 
     $params = @{
         "UriFragment" = "products/$ProductId/packages`?" + ($getParams -join '&')
@@ -445,7 +445,7 @@ function Set-ProductPackage
         }
 
         $body = Get-JsonBody -InputObject $hashBody
-        Write-Log -Message "Body: $body" -Level Verbose
+        Write-Body -InputObject $hashBody
 
         $params = @{
             "UriFragment" = "products/$ProductId/packages/$PackageId`?" + ($getParams -join '&')

@@ -188,7 +188,7 @@ function New-ListingVideo
         }
 
         $body = Get-JsonBody -InputObject $hashBody
-        Write-Log -Message "Body: $body" -Level Verbose
+        Write-Body -InputObject $hashBody
 
         $uriFragment = "products/$ProductId/listings/$LanguageCode/videos`?" + ($getParams -join '&')
         $description = "Creating new $LanguageCode listing videos for $ProductId (SubmissionId: $SubmissionId)"

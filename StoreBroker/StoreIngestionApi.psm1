@@ -1095,7 +1095,7 @@ function Set-StoreFile
 
     Write-InvocationLog
 
-    Write-Log -Message "Attempting to upload the file ($FilePath) to $SasUri..." -Level Verbose
+    Write-Log -Message "Attempting to upload the file ($FilePath)..." -Level Verbose
 
     $azureStorageDll = Get-AzureStorageDllPath -NoStatus:$NoStatus
     $azureStorageDataMovementDll = Get-AzureStorageDataMovementDllPath -NoStatus:$NoStatus
@@ -1292,7 +1292,7 @@ function Get-StoreFile
 
     Write-InvocationLog
 
-    Write-Log -Message "Attempting to download the contents of $SasUri to $FilePath..." -Level Verbose
+    Write-Log -Message "Attempting to download the contents to $FilePath..." -Level Verbose
 
     $azureStorageDll = Get-AzureStorageDllPath -NoStatus:$NoStatus
     $azureStorageDataMovementDll = Get-AzureStorageDataMovementDllPath -NoStatus:$NoStatus

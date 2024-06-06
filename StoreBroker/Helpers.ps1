@@ -651,12 +651,71 @@ function Write-Log
 }
 
 $script:alwaysRedactParametersForLogging = @(
-    'AccessToken' # Would be a security issue
+    'AccessToken', # Would be a security issue
+    'SasUri'
+)
+
+$script:alwaysRedactHashPropertiesForLogging = @(
+    'filesasuri'
 )
 
 $script:alwaysExcludeParametersForLogging = @(
     'NoStatus'
 )
+
+function Write-Body
+{
+    <#
+    .SYNOPSIS
+        Writes a log entry for the passed in object.
+
+    .DESCRIPTION
+        Writes a log entry for the passed in object.
+
+    .PARAMETER InputObject
+        Object to write the body for.
+
+    .EXAMPLE
+        Write-Body InputObject $MyObject
+#>
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Object] $InputObject
+    )
+
+    if ($null -eq $InputObject)
+    {
+        return
+    }
+
+    if ($InputObject -is [hashtable])
+    {
+        $InputObject = $InputObject.Clone() # Get a new instance, not a reference
+
+        foreach ($key in @($InputObject.keys))
+        {
+            if ($key.ToLower() -in $script:alwaysRedactHashPropertiesForLogging)
+            {
+                $InputObject[$key] = "<redacted>"
+            }
+        }
+    }
+    elseif ($InputObject -is [PSCustomObject])
+    {
+        $InputObject = $InputObject.PSObject.Copy() # Get a new instance, not a reference
+        
+        foreach ($key in $script:alwaysRedactHashPropertiesForLogging)
+        {
+            if ($null -ne (Get-Member -InputObject $InputObject -Name $key -MemberType Properties))
+            {
+                 $InputObject.$key = "<redacted>"
+            }
+        }
+    }
+
+    $body = Get-JsonBody -InputObject $InputObject
+    Write-Log -Message "Body: $body" -Level Verbose
+}
 
 function Write-InvocationLog
 {

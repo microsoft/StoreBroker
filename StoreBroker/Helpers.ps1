@@ -748,7 +748,7 @@ function Send-SBMailMessage
 
 $script:alwaysRedactParametersForLogging = @(
     'AccessToken', # Would be a security issue
-    'UploadUrl'
+    'UploadUrl'  # Could contain a live access token
 )
 
 $script:alwaysExcludeParametersForLogging = @(

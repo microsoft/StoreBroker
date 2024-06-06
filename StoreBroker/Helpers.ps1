@@ -656,7 +656,7 @@ $script:alwaysRedactParametersForLogging = @(
 )
 
 $script:alwaysRedactHashPropertiesForLogging = @(
-    'filesasuri'
+    'fileSasUri'
 )
 
 $script:alwaysExcludeParametersForLogging = @(
@@ -677,6 +677,9 @@ function Write-Body
 
     .EXAMPLE
         Write-Body InputObject $MyObject
+    
+    .NOTES
+        This method only supports hashtable and PSCustomObject types.
 #>
     [CmdletBinding(SupportsShouldProcess)]
     param(
@@ -685,6 +688,7 @@ function Write-Body
 
     if ($null -eq $InputObject)
     {
+        Write-Log -Message "Body: $null" -Level Verbose
         return
     }
 
@@ -711,6 +715,11 @@ function Write-Body
                  $InputObject.$key = "<redacted>"
             }
         }
+    }
+    else
+    {
+        # Unsupported object type, return and do nothing
+        return;
     }
 
     $body = Get-JsonBody -InputObject $InputObject

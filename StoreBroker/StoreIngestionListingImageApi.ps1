@@ -184,7 +184,7 @@ function New-ListingImage
         }
 
         $body = Get-JsonBody -InputObject $hashBody
-        Write-Body -InputObject $hashBody
+        Write-InputObject -InputObject $hashBody
 
         $uriFragment = "products/$ProductId/listings/$LanguageCode/images`?" + ($getParams -join '&')
         $description = "Creating new $LanguageCode listing image for $ProductId (SubmissionId: $SubmissionId)"
@@ -396,7 +396,7 @@ function Set-ListingImage
         }
 
         $body = Get-JsonBody -InputObject $hashBody
-        Write-Body -InputObject $hashBody
+        Write-InputObject -InputObject $hashBody
 
         $params = @{
             "UriFragment" = "products/$ProductId/listings/$LanguageCode/images/$ImageId`?" + ($getParams -join '&')

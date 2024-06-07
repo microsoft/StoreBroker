@@ -157,7 +157,7 @@ function New-ProductAvailability
         }
 
         $body = Get-JsonBody -InputObject $hashBody
-        Write-Body -InputObject $hashBody
+        Write-InputObject -InputObject $hashBody
 
 
         $params = @{
@@ -269,7 +269,7 @@ function Set-ProductAvailability
         }
 
         $body = Get-JsonBody -InputObject $hashBody
-        Write-Body -InputObject $hashBody
+        Write-InputObject -InputObject $hashBody
 
 
         $params = @{

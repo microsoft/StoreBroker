@@ -163,7 +163,7 @@ function New-ProductProperty
         }
 
         $body = Get-JsonBody -InputObject $hashBody
-        Write-Body -InputObject $hashBody
+        Write-InputObject -InputObject $hashBody
 
         $params = @{
             "UriFragment" = "products/$ProductId/properties`?" + ($getParams -join '&')
@@ -263,7 +263,7 @@ function Set-ProductProperty
         }
 
         $body = Get-JsonBody -InputObject $hashBody
-        Write-Body -InputObject $hashBody
+        Write-InputObject -InputObject $hashBody
 
         $params = @{
             "UriFragment" = "products/$ProductId/properties/$PropertyId`?" + ($getParams -join '&')

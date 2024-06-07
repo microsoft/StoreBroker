@@ -523,7 +523,7 @@ function New-Submission
         }
 
         $body = Get-JsonBody -InputObject $hashBody
-        Write-Body -InputObject $hashBody
+        Write-InputObject -InputObject $hashBody
 
         $params = @{
             "UriFragment" = "products/$ProductId/submissions"
@@ -978,7 +978,7 @@ function Set-SubmissionDetail
         }
 
         $body = Get-JsonBody -InputObject $hashBody
-        Write-Body -InputObject $hashBody
+        Write-InputObject -InputObject $hashBody
 
         $params = @{
             "UriFragment" = "products/$ProductId/submissions/$SubmissionId/detail"

@@ -652,18 +652,18 @@ function Write-Log
 
 $script:alwaysRedactParametersForLogging = @(
     'AccessToken', # Would be a security issue
-    'SasUri'
+    'SasUri' # Could contain a live access token
 )
 
 $script:alwaysRedactHashPropertiesForLogging = @(
-    'fileSasUri'
+    'fileSasUri' # Could contain a live access token
 )
 
 $script:alwaysExcludeParametersForLogging = @(
     'NoStatus'
 )
 
-function Write-Body
+function Write-InputObject
 {
     <#
     .SYNOPSIS
@@ -676,19 +676,21 @@ function Write-Body
         Object to write the body for.
 
     .EXAMPLE
-        Write-Body InputObject $MyObject
+        Write-InputObject InputObject $MyObject
     
     .NOTES
         This method only supports hashtable and PSCustomObject types.
 #>
     [CmdletBinding(SupportsShouldProcess)]
     param(
-        [Object] $InputObject
+        [Object] $InputObject,
+
+        [string] $Description = "Body"
     )
 
     if ($null -eq $InputObject)
     {
-        Write-Log -Message "Body: $null" -Level Verbose
+        Write-Log -Message "$($Description): $null" -Level Verbose
         return
     }
 
@@ -698,7 +700,7 @@ function Write-Body
 
         foreach ($key in @($InputObject.keys))
         {
-            if ($key.ToLower() -in $script:alwaysRedactHashPropertiesForLogging)
+            if ($key -in $script:alwaysRedactHashPropertiesForLogging)
             {
                 $InputObject[$key] = "<redacted>"
             }
@@ -722,8 +724,8 @@ function Write-Body
         return;
     }
 
-    $body = Get-JsonBody -InputObject $InputObject
-    Write-Log -Message "Body: $body" -Level Verbose
+    $objectAsString = Get-JsonBody -InputObject $InputObject
+    Write-Log -Message "$($Description): $objectAsString" -Level Verbose
 }
 
 function Write-InvocationLog

@@ -160,7 +160,7 @@ function Set-SubmissionRollout
         }
 
         $body = Get-JsonBody -InputObject $hashBody
-        Write-Body -InputObject $hashBody
+        Write-InputObject -InputObject $hashBody
 
         $params = @{
             "UriFragment" = "products/$ProductId/submissions/$SubmissionId/rollout"

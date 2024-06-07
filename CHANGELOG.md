@@ -1,6 +1,18 @@
 # StoreBroker PowerShell Module
 ## Changelog
 
+## [2.1.19](https://github.com/Microsoft/StoreBroker/tree/2.1.16) - (2024/06/07)
+
+### Fixes
+
+- Fixes SasUri from being logged. [[pr]](https://github.com/microsoft/StoreBroker/pull/254) | [[cl]](https://github.com/microsoft/StoreBroker/commit/26c2fd83abb9d63bb5eb119e8e65d05582297f25)
+- Allow AccessToken to be passed to New-SubmissionPackage, New-InAppProductSubmissionPackage, Get-Config and ConvertTo-LatestConfig. [[pr]](https://github.com/microsoft/StoreBroker/pull/253) | [[cl]](https://github.com/microsoft/StoreBroker/commit/f1a5a067f7931b07186e3caf0f366ae9573e5bcc)
+
+Author:
+
+- [**@louis-wuitton**](https://github.com/louis-wuitton)
+- [**@joseartrivera**](https://github.com/joseartrivera)
+
 ## [2.1.18](https://github.com/Microsoft/StoreBroker/tree/2.1.15) - (2024/05/06)
 
 ### Fixes

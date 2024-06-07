@@ -121,7 +121,7 @@ function New-Group
         }
 
         $body = Get-JsonBody -InputObject $hashBody
-        Write-Log -Message "Body: $body" -Level Verbose
+        Write-InputObject -InputObject $hashBody
 
         $params = @{
             "UriFragment" = "groups"
@@ -213,7 +213,7 @@ function Set-Group
         }
 
         $body = Get-JsonBody -InputObject $hashBody
-        Write-Log -Message "Body: $body" -Level Verbose
+        Write-InputObject -InputObject $hashBody
 
         $params = @{
             "UriFragment" = "groups/$GroupId"

@@ -651,12 +651,85 @@ function Write-Log
 }
 
 $script:alwaysRedactParametersForLogging = @(
-    'AccessToken' # Would be a security issue
+    'AccessToken', # Would be a security issue
+    'SasUri' # Could contain a live access token
+)
+
+$script:alwaysRedactHashPropertiesForLogging = @(
+    'fileSasUri' # Could contain a live access token
 )
 
 $script:alwaysExcludeParametersForLogging = @(
     'NoStatus'
 )
+
+function Write-InputObject
+{
+    <#
+    .SYNOPSIS
+        Writes a log entry for the passed in object.
+
+    .DESCRIPTION
+        Writes a log entry for the passed in object.
+
+    .PARAMETER InputObject
+        Object to write the body for.
+
+    .PARAMETER Description
+        The description that will precede the body output. Defaults to "Body".
+
+    .EXAMPLE
+        Write-InputObject InputObject $MyObject
+    
+    .NOTES
+        This method only supports hashtable and PSCustomObject types.
+#>
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Object] $InputObject,
+
+        [string] $Description = "Body"
+    )
+
+    if ($null -eq $InputObject)
+    {
+        Write-Log -Message "$($Description): $null" -Level Verbose
+        return
+    }
+
+    if ($InputObject -is [hashtable])
+    {
+        $InputObject = $InputObject.Clone() # Get a new instance, not a reference
+
+        foreach ($key in @($InputObject.keys))
+        {
+            if ($key -in $script:alwaysRedactHashPropertiesForLogging)
+            {
+                $InputObject[$key] = "<redacted>"
+            }
+        }
+    }
+    elseif ($InputObject -is [PSCustomObject])
+    {
+        $InputObject = $InputObject.PSObject.Copy() # Get a new instance, not a reference
+        
+        foreach ($key in $script:alwaysRedactHashPropertiesForLogging)
+        {
+            if ($null -ne (Get-Member -InputObject $InputObject -Name $key -MemberType Properties))
+            {
+                 $InputObject.$key = "<redacted>"
+            }
+        }
+    }
+    else
+    {
+        # Unsupported object type, return and do nothing
+        return;
+    }
+
+    $objectAsString = Get-JsonBody -InputObject $InputObject
+    Write-Log -Message "$($Description): $objectAsString" -Level Verbose
+}
 
 function Write-InvocationLog
 {

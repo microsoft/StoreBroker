@@ -1407,7 +1407,7 @@ function Update-ApplicationFlightSubmission
         {
             Write-Log -Message @(
                 "Your next step is to upload the package using:",
-                "  `$newSubmission = Get-ApplicationSubmission -AppId $AppId -SubmissionId $submissionId",
+                "  `$newSubmission = Get-ApplicationFlightSubmission -AppId $AppId -FlightId $FlightId -SubmissionId $submissionId",
                 "  Upload-SubmissionPackage -PackagePath <package> -UploadUrl `$(`$newSubmission.fileUploadUrl)")
         }
 

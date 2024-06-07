@@ -1422,7 +1422,7 @@ function Update-InAppProductSubmission
         {
             Write-Log -Message @(
                 "Your next step is to upload the package using:",
-                "  `$newSubmission = Get-ApplicationSubmission -AppId $AppId -SubmissionId $submissionId",
+                "  `$newSubmission = Get-InAppProductSubmission -IapId $IapId -SubmissionId $submissionId",
                 "  Upload-SubmissionPackage -PackagePath <package> -UploadUrl `$(`$newSubmission.fileUploadUrl)")
         }
 

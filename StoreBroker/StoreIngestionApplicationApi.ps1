@@ -1295,10 +1295,10 @@ function Update-ApplicationSubmission
         }
         elseif (!$AutoCommit)
         {
-            # Don't write uploadUrl to log
-            Write-Host -Message @(
+            Write-Log -Message @(
                 "Your next step is to upload the package using:",
-                "  Upload-SubmissionPackage -PackagePath <package> -UploadUrl `"$uploadUrl`"")
+                "  `$newSubmission = Get-ApplicationSubmission -AppId $AppId -SubmissionId $submissionId",
+                "  Upload-SubmissionPackage -PackagePath <package> -UploadUrl `$newSubmission.fileUploadUrl)")
         }
 
         if ($AutoCommit)

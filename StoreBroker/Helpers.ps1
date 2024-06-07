@@ -675,6 +675,9 @@ function Write-InputObject
     .PARAMETER InputObject
         Object to write the body for.
 
+    .PARAMETER Description
+        The description that will precede the body output. Defaults to "Body".
+
     .EXAMPLE
         Write-InputObject InputObject $MyObject
     

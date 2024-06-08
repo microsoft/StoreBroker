@@ -1,6 +1,15 @@
 # StoreBroker PowerShell Module
 ## Changelog
 
+## [1.21.3](https://github.com/Microsoft/StoreBroker/tree/1.21.2) - (2024/06/07)
+
+### Fixes
+
+- Fix logging UploadUrl in log file. [[pr]](https://github.com/microsoft/StoreBroker/pull/255) | [[cl]]()
+
+Author:
+ * [**@joseartrivera**](https://github.com/joseartrivera)
+
 ## [1.21.2](https://github.com/Microsoft/StoreBroker/tree/1.21.2) - (2024/02/04)
 
 ### Fixes

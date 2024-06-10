@@ -663,6 +663,66 @@ $script:alwaysExcludeParametersForLogging = @(
     'NoStatus'
 )
 
+function Copy-InputObjectForLogging
+{
+    <#
+    .SYNOPSIS
+        Creates a copy of the InputObject and redacts some of its contents for logging.
+
+    .DESCRIPTION
+        Creates a copy of the InputObject and redacts some of its contents for logging.
+
+    .PARAMETER InputObject
+        Object to replace.
+
+    .EXAMPLE
+        $redactedObject = Copy-InputObjectForLogging -InputObject $MyObject
+    
+    .NOTES
+        This method only supports redacting hashtable and PSCustomObject types.
+#>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here do not make changes to any objects and instead create a copy.")]
+    [CmdletBinding(SupportsShouldProcess)]
+    
+    param(
+        [Object] $InputObject
+    )
+
+    if ($InputObject -is [hashtable])
+    {
+        $ReplacedInputObject = $InputObject.Clone() # Get a new instance, not a reference
+
+        foreach ($key in @($ReplacedInputObject.keys))
+        {
+            if ($key -in $script:alwaysRedactHashPropertiesForLogging)
+            {
+                $ReplacedInputObject[$key] = "<redacted>"
+            }
+        }
+
+        return $ReplacedInputObject;
+    }
+    elseif ($InputObject -is [PSCustomObject])
+    {
+        $ReplacedInputObject = $InputObject.PSObject.Copy() # Get a new instance, not a reference
+        
+        foreach ($key in $script:alwaysRedactHashPropertiesForLogging)
+        {
+            if ($null -ne (Get-Member -InputObject $ReplacedInputObject -Name $key -MemberType Properties))
+            {
+                $ReplacedInputObject.$key = "<redacted>"
+            }
+        }
+
+        return $ReplacedInputObject;
+    }
+    else
+    {
+        # Unsupported object type, return null;
+        return $null;
+    }
+}
+
 function Write-InputObject
 {
     <#
@@ -697,37 +757,14 @@ function Write-InputObject
         return
     }
 
-    if ($InputObject -is [hashtable])
-    {
-        $InputObject = $InputObject.Clone() # Get a new instance, not a reference
+    $ReplacedObject = Copy-InputObjectForLogging -InputObject $InputObject
 
-        foreach ($key in @($InputObject.keys))
-        {
-            if ($key -in $script:alwaysRedactHashPropertiesForLogging)
-            {
-                $InputObject[$key] = "<redacted>"
-            }
-        }
-    }
-    elseif ($InputObject -is [PSCustomObject])
+    if ($null -eq $ReplacedObject)
     {
-        $InputObject = $InputObject.PSObject.Copy() # Get a new instance, not a reference
-        
-        foreach ($key in $script:alwaysRedactHashPropertiesForLogging)
-        {
-            if ($null -ne (Get-Member -InputObject $InputObject -Name $key -MemberType Properties))
-            {
-                 $InputObject.$key = "<redacted>"
-            }
-        }
-    }
-    else
-    {
-        # Unsupported object type, return and do nothing
         return;
     }
 
-    $objectAsString = Get-JsonBody -InputObject $InputObject
+    $objectAsString = Get-JsonBody -InputObject $ReplacedObject
     Write-Log -Message "$($Description): $objectAsString" -Level Verbose
 }
 
@@ -795,6 +832,11 @@ function Write-InvocationLog
             if ($param.Value -is [switch])
             {
                 $params += "-$($param.Key):`$$($param.Value.ToBool().ToString().ToLower())"
+            }
+            elseif (($param.Value -is [hashtable]) -or  ($param.value -is [PSCustomObject]))
+            {
+                $replacedObject = Copy-InputObjectForLogging -InputObject $param.Value
+                $params += "-$($param.Key) $($replacedObject | ConvertTo-Json -Depth $jsonConversionDepth -Compress)"
             }
             else
             {

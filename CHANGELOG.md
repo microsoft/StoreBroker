@@ -5,8 +5,7 @@
 
 ### Fixes
 
-- 
-Refactor logic to exclude logging of fileSasUri in parameter objects [[pr]](https://github.com/microsoft/StoreBroker/pull/257) | [[cl]](https://github.com/microsoft/StoreBroker/commit/a55cba8c0a18f8890d538d22bb40beebaaad4be7)
+- Refactor logic to exclude logging of fileSasUri in parameter objects [[pr]](https://github.com/microsoft/StoreBroker/pull/257) | [[cl]](https://github.com/microsoft/StoreBroker/commit/a55cba8c0a18f8890d538d22bb40beebaaad4be7)
 
 Author:
 

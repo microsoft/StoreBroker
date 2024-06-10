@@ -1,6 +1,16 @@
 # StoreBroker PowerShell Module
 ## Changelog
 
+## [2.1.20](https://github.com/Microsoft/StoreBroker/tree/2.1.16) - (2024/06/10)
+
+### Fixes
+
+- Refactor logic to exclude logging of fileSasUri in parameter objects [[pr]](https://github.com/microsoft/StoreBroker/pull/257) | [[cl]](https://github.com/microsoft/StoreBroker/commit/a55cba8c0a18f8890d538d22bb40beebaaad4be7)
+
+Author:
+
+- [**@joseartrivera**](https://github.com/joseartrivera)
+
 ## [2.1.19](https://github.com/Microsoft/StoreBroker/tree/2.1.16) - (2024/06/07)
 
 ### Fixes

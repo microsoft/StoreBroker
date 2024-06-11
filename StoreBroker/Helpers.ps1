@@ -699,6 +699,10 @@ function Copy-InputObjectForLogging
             {
                 $replacedInputObject[$key] = "<redacted>"
             }
+            elseif(($InputObject.$key -is [PSCustomObject]) -or ($InputObject.$key -is [hashtable]))
+            {
+                $replacedInputObject[$key] = Copy-InputObjectForLogging -InputObject $replacedInputObject.$key
+            }
         }
 
         return $replacedInputObject;
@@ -707,15 +711,15 @@ function Copy-InputObjectForLogging
     {
         $replacedInputObject = DeepCopy-Object -InputObject $InputObject # Get a new instance, not a reference
         
-        foreach ($key in $script:alwaysRedactHashPropertiesForLogging)
+        foreach ($key in $replacedInputObject.psobject.properties.name)
         {
-            if ($null -ne (Get-Member -InputObject $replacedInputObject -Name $key -MemberType Properties))
+            if ($key -in $script:alwaysRedactHashPropertiesForLogging)
             {
                 $replacedInputObject.$key = "<redacted>"
             }
-            elseif(($InputObject -is [PSCustomObject]) -or ($InputObject -is [hashtable]))
+            elseif(($InputObject.$key -is [PSCustomObject]) -or ($InputObject.$key -is [hashtable]))
             {
-                
+                $replacedInputObject.$key = Copy-InputObjectForLogging -InputObject $replacedInputObject.$key
             }
         }
 

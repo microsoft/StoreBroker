@@ -490,9 +490,6 @@ function Format-ApplicationSubmission
         $output += $ApplicationSubmissionData.allowTargetFutureDeviceFamilies | Format-SimpleTableString -IndentationLevel $indentLength
         $output += ""
 
-        $output += "File Upload Url                     : {0}" -f $(if ($ApplicationSubmissionData.fileUploadUrl) { $ApplicationSubmissionData.fileUploadUrl } else { "<None>" })
-        $output += ""
-
         $output += "Application Packages                : {0}" -f $(if ($ApplicationSubmissionData.applicationPackages.count -eq 0) { "<None>" } else { "" })
         $output += $ApplicationSubmissionData.applicationPackages | Format-SimpleTableString -IndentationLevel $indentLength
         $output += ""
@@ -1300,7 +1297,8 @@ function Update-ApplicationSubmission
         {
             Write-Log -Message @(
                 "Your next step is to upload the package using:",
-                "  Upload-SubmissionPackage -PackagePath <package> -UploadUrl `"$uploadUrl`"")
+                "  `$newSubmission = Get-ApplicationSubmission -AppId $AppId -SubmissionId $submissionId",
+                "  Upload-SubmissionPackage -PackagePath <package> -UploadUrl `$(`$newSubmission.fileUploadUrl)")
         }
 
         if ($AutoCommit)

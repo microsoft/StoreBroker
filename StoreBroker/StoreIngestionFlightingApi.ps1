@@ -698,9 +698,6 @@ function Format-ApplicationFlightSubmission
         $output += "Notes For Certification             : $($ApplicationFlightSubmissionData.notesForCertification)"
         $output += ""
 
-        $output += "File Upload Url                     : {0}" -f $(if ($ApplicationFlightSubmissionData.fileUploadUrl) { $ApplicationFlightSubmissionData.fileUploadUrl } else { "<None>" })
-        $output += ""
-
         $output += "Flight Packages                     : {0}" -f $(if ($ApplicationFlightSubmissionData.flightPackages.count -eq 0) { "<None>" } else { "" })
         $output += $ApplicationFlightSubmissionData.flightPackages | Format-SimpleTableString -IndentationLevel $indentLength
         $output += ""
@@ -1410,7 +1407,8 @@ function Update-ApplicationFlightSubmission
         {
             Write-Log -Message @(
                 "Your next step is to upload the package using:",
-                "  Upload-SubmissionPackage -PackagePath <package> -UploadUrl `"$uploadUrl`"")
+                "  `$newSubmission = Get-ApplicationFlightSubmission -AppId $AppId -FlightId $FlightId -SubmissionId $submissionId",
+                "  Upload-SubmissionPackage -PackagePath <package> -UploadUrl `$(`$newSubmission.fileUploadUrl)")
         }
 
         if ($AutoCommit)

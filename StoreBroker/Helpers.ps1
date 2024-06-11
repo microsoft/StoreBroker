@@ -691,31 +691,39 @@ function Copy-InputObjectForLogging
 
     if ($InputObject -is [hashtable])
     {
-        $ReplacedInputObject = $InputObject.Clone() # Get a new instance, not a reference
+        $replacedInputObject = DeepCopy-Object -InputObject $InputObject # Get a new instance, not a reference
 
-        foreach ($key in @($ReplacedInputObject.keys))
+        foreach ($key in @($replacedInputObject.Keys))
         {
             if ($key -in $script:alwaysRedactHashPropertiesForLogging)
             {
-                $ReplacedInputObject[$key] = "<redacted>"
+                $replacedInputObject[$key] = "<redacted>"
+            }
+            elseif (($replacedInputObject.$key -is [PSCustomObject]) -or ($replacedInputObject.$key -is [hashtable]))
+            {
+                $replacedInputObject[$key] = Copy-InputObjectForLogging -InputObject $replacedInputObject.$key
             }
         }
 
-        return $ReplacedInputObject;
+        return $replacedInputObject;
     }
     elseif ($InputObject -is [PSCustomObject])
     {
-        $ReplacedInputObject = $InputObject.PSObject.Copy() # Get a new instance, not a reference
+        $replacedInputObject = DeepCopy-Object -InputObject $InputObject # Get a new instance, not a reference
         
-        foreach ($key in $script:alwaysRedactHashPropertiesForLogging)
+        foreach ($key in $replacedInputObject.PSObject.Properties.Name)
         {
-            if ($null -ne (Get-Member -InputObject $ReplacedInputObject -Name $key -MemberType Properties))
+            if ($key -in $script:alwaysRedactHashPropertiesForLogging)
             {
-                $ReplacedInputObject.$key = "<redacted>"
+                $replacedInputObject.$key = "<redacted>"
+            }
+            elseif (($replacedInputObject.$key -is [PSCustomObject]) -or ($replacedInputObject.$key -is [hashtable]))
+            {
+                $replacedInputObject.$key = Copy-InputObjectForLogging -InputObject $replacedInputObject.$key
             }
         }
 
-        return $ReplacedInputObject;
+        return $replacedInputObject;
     }
     else
     {
@@ -754,18 +762,18 @@ function Write-InputObject
 
     if ($null -eq $InputObject)
     {
-        Write-Log -Message "$($Description): $null" -Level Verbose
+        Write-Log -Message "$($Description): `$null" -Level Verbose
         return
     }
 
-    $ReplacedObject = Copy-InputObjectForLogging -InputObject $InputObject
+    $replacedObject = Copy-InputObjectForLogging -InputObject $InputObject
 
-    if ($null -eq $ReplacedObject)
+    if ($null -eq $replacedObject)
     {
         return;
     }
 
-    $objectAsString = Get-JsonBody -InputObject $ReplacedObject
+    $objectAsString = Get-JsonBody -InputObject $replacedObject
     Write-Log -Message "$($Description): $objectAsString" -Level Verbose
 }
 

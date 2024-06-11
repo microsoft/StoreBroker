@@ -652,7 +652,8 @@ function Write-Log
 
 $script:alwaysRedactParametersForLogging = @(
     'AccessToken', # Would be a security issue
-    'SasUri' # Could contain a live access token
+    'SasUri', # Could contain a live access token
+    'Certificate'
 )
 
 $script:alwaysRedactHashPropertiesForLogging = @(

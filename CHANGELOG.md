@@ -5,7 +5,7 @@
 
 ### Fixes
 
-- Fix logging UploadUrl in log file. [[pr]](https://github.com/microsoft/StoreBroker/pull/255) | [[cl]]()
+- Fix logging UploadUrl in log file. [[pr]](https://github.com/microsoft/StoreBroker/pull/255) | [[cl]](https://github.com/microsoft/StoreBroker/commit/f2668ee26065f9cc9758939213ceed04674fe36c)
 
 Author:
  * [**@joseartrivera**](https://github.com/joseartrivera)

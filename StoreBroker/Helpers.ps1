@@ -652,7 +652,8 @@ function Write-Log
 
 $script:alwaysRedactParametersForLogging = @(
     'AccessToken', # Would be a security issue
-    'SasUri' # Could contain a live access token
+    'SasUri', # Could contain a live access token
+    'Certificate'
 )
 
 $script:alwaysRedactHashPropertiesForLogging = @(
@@ -690,31 +691,35 @@ function Copy-InputObjectForLogging
 
     if ($InputObject -is [hashtable])
     {
-        $ReplacedInputObject = $InputObject.Clone() # Get a new instance, not a reference
+        $replacedInputObject = DeepCopy-Object -InputObject $InputObject # Get a new instance, not a reference
 
-        foreach ($key in @($ReplacedInputObject.keys))
+        foreach ($key in @($replacedInputObject.keys))
         {
             if ($key -in $script:alwaysRedactHashPropertiesForLogging)
             {
-                $ReplacedInputObject[$key] = "<redacted>"
+                $replacedInputObject[$key] = "<redacted>"
             }
         }
 
-        return $ReplacedInputObject;
+        return $replacedInputObject;
     }
     elseif ($InputObject -is [PSCustomObject])
     {
-        $ReplacedInputObject = $InputObject.PSObject.Copy() # Get a new instance, not a reference
+        $replacedInputObject = DeepCopy-Object -InputObject $InputObject # Get a new instance, not a reference
         
         foreach ($key in $script:alwaysRedactHashPropertiesForLogging)
         {
-            if ($null -ne (Get-Member -InputObject $ReplacedInputObject -Name $key -MemberType Properties))
+            if ($null -ne (Get-Member -InputObject $replacedInputObject -Name $key -MemberType Properties))
             {
-                $ReplacedInputObject.$key = "<redacted>"
+                $replacedInputObject.$key = "<redacted>"
+            }
+            elseif(($InputObject -is [PSCustomObject]) -or ($InputObject -is [hashtable]))
+            {
+                
             }
         }
 
-        return $ReplacedInputObject;
+        return $replacedInputObject;
     }
     else
     {
@@ -753,18 +758,18 @@ function Write-InputObject
 
     if ($null -eq $InputObject)
     {
-        Write-Log -Message "$($Description): $null" -Level Verbose
+        Write-Log -Message "$($Description): `$null" -Level Verbose
         return
     }
 
-    $ReplacedObject = Copy-InputObjectForLogging -InputObject $InputObject
+    $replacedObject = Copy-InputObjectForLogging -InputObject $InputObject
 
-    if ($null -eq $ReplacedObject)
+    if ($null -eq $replacedObject)
     {
         return;
     }
 
-    $objectAsString = Get-JsonBody -InputObject $ReplacedObject
+    $objectAsString = Get-JsonBody -InputObject $replacedObject
     Write-Log -Message "$($Description): $objectAsString" -Level Verbose
 }
 

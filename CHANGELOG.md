@@ -1,6 +1,18 @@
 # StoreBroker PowerShell Module
 ## Changelog
 
+## [2.1.21](https://github.com/Microsoft/StoreBroker/tree/2.1.21) - (2024/06/11)
+
+### Fixes
+
+- Add Certificate to alwaysRedactParametersForLogging [[pr]](https://github.com/microsoft/StoreBroker/pull/259) | [[cl]](https://github.com/microsoft/StoreBroker/commit/6ee1df9588ff57036a930a770cdb90608bac056e)
+- Follow-up fixes for 257 [[pr]](https://github.com/microsoft/StoreBroker/pull/260) | [[cl]](https://github.com/microsoft/StoreBroker/commit/ae96fc2300621d0cd5b19eee2d9a55156393167c)
+
+Author:
+
+- [**@joseartrivera**](https://github.com/joseartrivera)
+
+
 ## [2.1.20](https://github.com/Microsoft/StoreBroker/tree/2.1.16) - (2024/06/10)
 
 ### Fixes

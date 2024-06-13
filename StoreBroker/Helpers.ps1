@@ -669,10 +669,13 @@ function Copy-InputObjectForLogging
     <#
     .SYNOPSIS
         Creates a copy of the InputObject and redacts some of its contents for logging.
+
     .DESCRIPTION
         Creates a copy of the InputObject and redacts some of its contents for logging.
+
     .PARAMETER InputObject
         Object to replace.
+
     .EXAMPLE
         $redactedObject = Copy-InputObjectForLogging -InputObject $MyObject
     
@@ -723,7 +726,7 @@ function Copy-InputObjectForLogging
         return $replacedInputObject;
     }
     else
-    {  
+    {
         # Unsupported object type, return null;
         return $null;
     }

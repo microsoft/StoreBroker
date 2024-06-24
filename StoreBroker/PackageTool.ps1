@@ -799,14 +799,17 @@ function Convert-ListingToObject
             {
                 try
                 {
+                    # Get the platform-specific directory separator
+                    $dirSeparator = [System.IO.Path]::DirectorySeparatorChar
+
                     # Identify lang-code of the file to process.
                     # $array[-1] == $array[$array.Count-1]
-                    if ($PDPRootPath[-1] -ne '\') { $PDPRootPath = "$PDPRootPath\" }
+                    if ($PDPRootPath[-1] -ne $dirSeparator) { $PDPRootPath = "$PDPRootPath$dirSeparator" }
 
-                    $split = $xmlFilePath -split $PDPRootPath, 0, "SimpleMatch" |
+                    $split = $xmlFilePath -split [Regex]::Escape($PDPRootPath), 0, "SimpleMatch" |
                              Where-Object { -not [String]::IsNullOrWhiteSpace($_) } |
                              Select-Object -First 1
-                    $language = $split -split "\", 0, "SimpleMatch" |
+                    $language = $split -split [Regex]::Escape($dirSeparator), 0, "SimpleMatch" |
                                 Where-Object { -not [String]::IsNullOrWhiteSpace($_) } |
                                 Select-Object -First 1
 
@@ -1062,18 +1065,21 @@ function Convert-TrailersToObject
             {
                 try
                 {
+                    # Get the platform-specific directory separator
+                    $dirSeparator = [System.IO.Path]::DirectorySeparatorChar
+
                     # Identify lang-code of the file to process.
                     # $array[-1] == $array[$array.Count-1]
-                    if ($PDPRootPath[-1] -ne '\') { $PDPRootPath = "$PDPRootPath\" }
+                    if ($PDPRootPath[-1] -ne $dirSeparator) { $PDPRootPath = "$PDPRootPath$dirSeparator" }
 
-                    $split = $xmlFilePath -split $PDPRootPath, 0, "SimpleMatch" |
-                             Where-Object { -not [String]::IsNullOrWhiteSpace($_) } |
-                             Select-Object -First 1
-                    $language = $split -split "\", 0, "SimpleMatch" |
+                    # Split the path using the platform-specific separator
+                    $split = $xmlFilePath -split [Regex]::Escape($PDPRootPath), 0, "SimpleMatch" |
+                            Where-Object { -not [String]::IsNullOrWhiteSpace($_) } |
+                            Select-Object -First 1
+                    $language = $split -split [Regex]::Escape($dirSeparator), 0, "SimpleMatch" |
                                 Where-Object { -not [String]::IsNullOrWhiteSpace($_) } |
                                 Select-Object -First 1
 
-                    Write-Log -Message "Processing [$language]: $xmlFilePath" -Level Verbose
                     # Skip processing if language is marked for exclusion
                     if ($language -in $LanguageExclude)
                     {
@@ -1597,17 +1603,21 @@ function Convert-InAppProductListingToObject
             {
                 try
                 {
+                    # Get the platform-specific directory separator
+                    $dirSeparator = [System.IO.Path]::DirectorySeparatorChar
+
                     # Identify lang-code of the file to process.
                     # $array[-1] == $array[$array.Count-1]
-                    if ($PDPRootPath[-1] -ne '\') { $PDPRootPath = "$PDPRootPath\" }
+                    if ($PDPRootPath[-1] -ne $dirSeparator) { $PDPRootPath = "$PDPRootPath$dirSeparator" }
 
-                    $split = $xmlFilePath -split $PDPRootPath, 0, "SimpleMatch" |
-                             Where-Object { -not [String]::IsNullOrWhiteSpace($_) } |
-                             Select-Object -First 1
-                    $language = $split -split "\", 0, "SimpleMatch" |
+                    # Split the path using the platform-specific separator
+                    $split = $xmlFilePath -split [Regex]::Escape($PDPRootPath), 0, "SimpleMatch" |
+                            Where-Object { -not [String]::IsNullOrWhiteSpace($_) } |
+                            Select-Object -First 1
+                    $language = $split -split [Regex]::Escape($dirSeparator), 0, "SimpleMatch" |
                                 Where-Object { -not [String]::IsNullOrWhiteSpace($_) } |
                                 Select-Object -First 1
-
+                    
                     # Skip processing if language is marked for exclusion
                     if ($language -in $LanguageExclude)
                     {

@@ -1,19 +1,38 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
+class ManagedIdentity {
+    [string]$clientId
+}
+
+class CertificateIdentity {
+    [string]$tenantId
+    [string]$clientId
+    [System.Security.Cryptography.X509Certificates.X509Certificate2]$certificate
+}
+
+class CredentialIdentity {
+    [string]$tenantId
+    [string]$clientId
+    [string]$clientSecret
+}
+
+class ProxyIdentity {
+    [string]$tenantId
+    [string]$tenantName
+    [string]$endpoint
+}
+
 # This will ensure that if an internal command throws an exception, we don't continue execution
 $script:ErrorActionPreference = 'Stop'
 
-# Configured via Set-StoreBrokerAuthentication / Clear-StoreBrokerAuthentication
-$script:proxyEndpoint = $null
 
 # We are defining these as script variables here to enable the caching of the
 # authentication credential for the current PowerShell session.
-[string]$script:authTenantId = $null
-[PSCredential]$script:authCredential = $null
-[string]$script:authTenantName = $null
-[string]$script:clientId = $null
-[System.Security.Cryptography.X509Certificates.X509Certificate2]$script:certificate = $null
+[ManagedIdentity]$script:managedIdentity = $null
+[CertificateIdentity]$script:certificateIdentity = $null
+[CredentialIdentity]$script:credentialIdentity = $null
+[ProxyIdentity]$script:proxyIdentity = $null
 
 # By default, ConvertTo-Json won't expand nested objects further than a depth of 2
 # We always want to expand as deep as possible, so set this to a much higher depth
@@ -282,6 +301,8 @@ function Set-StoreBrokerAuthentication
 
     Write-InvocationLog
 
+    Clear-StoreBrokerAuthentication
+
     if ($UseProxy)
     {
         if ((-not [String]::IsNullOrWhiteSpace($TenantId)) -and (-not [String]::IsNullOrWhiteSpace($TenantName)))
@@ -291,39 +312,46 @@ function Set-StoreBrokerAuthentication
             throw $message
         }
 
-        if ($null -ne $script:authCredential)
-        {
-            Write-Log -Message "Your cached credentials will no longer be used since you have enabled Proxy usage." -Level Warning
-        }
-
         if ($ProxyEndpoint.EndsWith('/') -or $ProxyEndpoint.EndsWith('\'))
         {
             $ProxyEndpoint = $ProxyEndpoint.Substring(0, $ProxyEndpoint.Length - 1)
         }
 
-        $script:proxyEndpoint = $ProxyEndpoint
+        if ($PSCmdlet.ShouldProcess(("", "Cache proxy identity")))
+        {
+            $script:proxyIdentity = @{}
+        }
+
+        if ($PSCmdlet.ShouldProcess($ProxyEndpoint, "Cache proxy identity endpoint"))
+        {
+            $script:proxyIdentity.endpoint = $ProxyEndpoint
+        }
 
         if ((-not [String]::IsNullOrWhiteSpace($TenantId)) -and
-            $PSCmdlet.ShouldProcess($TenantId, "Cache tenantId"))
+            $PSCmdlet.ShouldProcess($TenantId, "Cache proxy identity tenantId"))
         {
-            $script:authTenantId = $TenantId
-            $script:authTenantName = $null
+            $script:proxyIdentity.tenantId = $TenantId
+            $script:proxyIdentity.tenantName = $null
         }
 
         if ((-not [String]::IsNullOrWhiteSpace($TenantName)) -and
-            $PSCmdlet.ShouldProcess($TenantName, "Cache tenantName"))
+            $PSCmdlet.ShouldProcess($TenantName, "Cache proxy identity tenantName"))
         {
-            $script:authTenantId = $null
-            $script:authTenantName = $TenantName
+            $script:proxyIdentity.tenantId = $null
+            $script:proxyIdentity.tenantName = $TenantName
         }
 
         return
     }
 
+    if ($PSCmdlet.ShouldProcess("", "Cache credential identity"))
+    {
+        $script:credentialIdentity = @{}
+    }
+
     if ($PSCmdlet.ShouldProcess($TenantId, "Cache tenantId"))
     {
-        $script:authTenantId = $TenantId
-        $script:authTenantName = $null
+        $script:credentialIdentity.tenantId = $TenantId
     }
 
     # By calling into here with any other parameter set, the user is indicating that the proxy
@@ -347,15 +375,61 @@ function Set-StoreBrokerAuthentication
     }
     else
     {
-        if ($PSCmdlet.ShouldProcess($Credential, "Cache credential"))
+        if ($PSCmdlet.ShouldProcess($Credential, "Cache credential identity client id"))
         {
-            $script:authCredential = $Credential
+            $script:credentialIdentity.clientId = $Credential.UserName
+        }
+
+        if ($PSCmdlet.ShouldProcess($Credential, "Cache credential identity client secret"))
+        {
+            $script:credentialIdentity.clientSecret = $Credential.GetNetworkCredential().Password
         }
     }
+}
 
-    if ($PSCmdlet.ShouldProcess("", "Clear cached access token"))
+function Set-StoreBrokerManagedIdentityAuthentication
+{
+<#
+    .SYNOPSIS
+        Sets the certificate that will be used to authenticate with Store APIs.
+
+    .DESCRIPTION
+        Sets the certificate that will be used to authenticate with Store APIs.
+        The cached credential can always be cleared by calling Clear-StoreBrokerAuthentication.
+
+        The Git repo for this module can be found here: http://aka.ms/StoreBroker
+
+    .PARAMETER ClientId
+        Client ID of the user assigned managed identity assigned to the azure resource.
+
+    .EXAMPLE
+        Set-StoreBrokerAuthentication -TenantId "abcdef01-2345-6789-0abc-def123456789" -ClientId "abcdef01-2345-6789-0abc-def123456789" -Certificate $certificate
+
+        Caches the tenantId and clientId for the duration of the
+        PowerShell session.  Caches the certificate to be used for authentication.
+        These values will be cached for the duration of this PowerShell session.
+        They can be cleared by calling Clear-StoreBrokerAuthentication.
+#>
+    [CmdletBinding(SupportsShouldProcess)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars", "", Justification="We use global variables sparingly and intentionally for module configuration, and employ a consistent naming convention.")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUsePSCredentialType", "", Justification="The System.Management.Automation.Credential() attribute does not appear to work in PowerShell v4 which we need to support.")]
+    param(
+        [string] $ClientId = $null
+
+    )
+
+    Write-InvocationLog
+
+    Clear-StoreBrokerAuthentication
+
+    if ($PSCmdlet.ShouldProcess("", "Cache managed identity"))
     {
-        $script:lastAccessToken = $null
+        $script:managedIdentity = @{}
+    }
+
+    if ($PSCmdlet.ShouldProcess($ClientId, "Cache managed identity client id"))
+    {
+        $script:managedIdentity.clientId = $ClientId
     }
 }
 
@@ -401,19 +475,26 @@ function Set-StoreBrokerCertificateAuthentication
 
     Write-InvocationLog
 
-    if ($PSCmdlet.ShouldProcess($TenantId, "Cache tenantId"))
+    Clear-StoreBrokerAuthentication
+
+    if ($PSCmdlet.ShouldProcess("", "Cache confidential client identity"))
     {
-        $script:authTenantId = $TenantId
+        $script:certificateIdentity = @{}
     }
 
-    if ($PSCmdlet.ShouldProcess("", "Cache certificate"))
+    if ($PSCmdlet.ShouldProcess($TenantId, "Cache confidential client tenantId"))
     {
-        $script:certificate = $Certificate
+        $script:certificateIdentity.tenantId = $TenantId
     }
 
-    if ($PSCmdlet.ShouldProcess("", "Cache clientId"))
+    if ($PSCmdlet.ShouldProcess("", "Cache confidential client certificate"))
     {
-        $script:clientId = $ClientId
+        $script:certificateIdentity.certificate = $Certificate
+    }
+
+    if ($PSCmdlet.ShouldProcess("", "Cache confidential client clientId"))
+    {
+        $script:certificateIdentity.clientId = $ClientId
     }
 
     if ($PSCmdlet.ShouldProcess("", "Clear cached access token"))
@@ -426,12 +507,12 @@ function Clear-StoreBrokerAuthentication
 {
 <#
     .SYNOPSIS
-        Clears out any cached tenantId, client id, and client secret credential from this PowerShell session.
+        Clears out any cached identities from this PowerShell session.
         Also disables usage of the proxy server if that had been previously enabled.
         All future remote commands from this module will once again prompt for credentials.
 
     .DESCRIPTION
-        Clears out any cached tenantId, client id, and client secret credential from this PowerShell session.
+        Clears out any cached identities from this PowerShell session.
         Also disables usage of the proxy server if that had been previously enabled.
         All future remote commands from this module will once again prompt for credentials.
 
@@ -451,29 +532,24 @@ function Clear-StoreBrokerAuthentication
 
     Write-InvocationLog
 
-    if ($PSCmdlet.ShouldProcess("", "Clear tenantId"))
+    if ($PSCmdlet.ShouldProcess("", "Clear cached managed identity"))
     {
-        $script:authTenantId = $null
+        $script:managedIdentity = $null
     }
 
-    if ($PSCmdlet.ShouldProcess("", "Clear credential"))
+    if ($PSCmdlet.ShouldProcess("", "Clear cached certificate identity"))
     {
-        $script:authCredential = $null
+        $script:certificateIdentity = $null
     }
 
-    if ($PSCmdlet.ShouldProcess("", "Clear certificate"))
+    if ($PSCmdlet.ShouldProcess("", "Clear cached credential identity"))
     {
-        $script:certificate = $null
+        $script:credentialIdentity = $null
     }
 
-    if ($PSCmdlet.ShouldProcess("", "Clear proxy"))
+    if ($PSCmdlet.ShouldProcess("", "Clear cached proxy identity"))
     {
-        $script:proxyEndpoint = $null
-    }
-
-    if ($PSCmdlet.ShouldProcess("", "Clear tenantName"))
-    {
-        $script:tenantName = $null
+        $script:proxyIdentity = $null
     }
 
     if ($PSCmdlet.ShouldProcess("", "Clear cached access token"))
@@ -517,7 +593,7 @@ function Get-AccessToken
 
     # If we have a value for the proxy endpoint, that means we're using the proxy.
     # In that scenario, we don't need to do any work here.
-    if (-not [String]::IsNullOrEmpty($script:proxyEndpoint))
+    if ($script:proxyIdentity)
     {
         # We can technically use any string in this scenario (even a null/empty string)
         # since we don't require an accestoken to authenticate with the REST Proxy, but we'll
@@ -541,22 +617,25 @@ function Get-AccessToken
         throw $newLineOutput
     }
 
-    # Get our client id and secret, either from the cached credential or by prompting for them.
-    $certificate = $script:certificate
-    $credential = $script:authCredential
+    $managedIdentity = $script:managedIdentity
+    $certificateIdentity = $script:certificateIdentity
+    $credentialIdentity = $script:credentialIdentity
 
-    if ($null -eq $certificate)
+    $tempCredential = $null
+
+    # If we don't have a credential, we try to prompt the user for one. The access token will be cached,
+    # but the clientId, clientSecret will not. We prompt the user to use the set auth method commands
+    # as a reminder.
+    if ($null -eq $certificateIdentity -and $null -eq $managedIdentity -and $null -eq $credentialIdentity)
     {
-        if ($null -eq $credential)
-        {
-            Write-Log -Message @(
-                "Prompting for credentials.",
-                "To avoid doing this every time, consider using Set-StoreBrokerAuthentication to cache the values for this session.")
+        
+        Write-Log -Message @(
+            "Prompting for credentials.",
+            "To avoid doing this every time, consider using Set-StoreBrokerAuthentication to cache the values for this session.")
 
-            $credential = Get-Credential -Message "Enter your client id as your username, and your client secret as your password. ***To avoid getting this prompt every time, consider using Set-StoreBrokerAuthentication.***"
-        }
+        $tempCredential = Get-Credential -Message "Enter your client id as your username, and your client secret as your password. ***To avoid getting this prompt every time, consider using Set-StoreBrokerAuthentication.***"
 
-        if ($null -eq $credential)
+        if ($null -eq $tempCredential)
         {
             $output = "You must supply valid credentials (client id and secret) to use this module."
             Write-Log -Message  $output -Level Error
@@ -572,11 +651,92 @@ function Get-AccessToken
         return $script:lastAccessToken
     }
 
-    if ($null -ne $certificate)
+    if ($null -ne $managedIdentity)
+    {
+        Write-Log -Message "Getting access token using Managed Identity..." -Level Verbose
+
+        $resource = "https://api.partner.microsoft.com/.default"
+        $DllPath = Get-MsalDllPath
+        Add-Type -Path $DllPath
+
+        try
+        {
+            if ($managedIdentity.clientId)
+            {
+                $managedIdentityId = [Microsoft.Identity.Client.ManagedIdentityId]::WithUserAssignedClientId($managedIdentity.clientId)
+            } 
+            else 
+            {
+                $managedIdentityId = [Microsoft.Identity.Client.ManagedIdentityId]::SystemAssigned
+            }
+            
+            $appBuilder = [Microsoft.Identity.Client.ManagedIdentityApplicationBuilder]::Create($managedIdentityId)
+            $app = $appBuilder.Build()
+
+            $authResultBuilder = $app.AcquireTokenForManagedIdentity($resource)
+            $null = $authResultBuilder.WithSendX5C($true)
+            $authResultTask = $authResultBuilder.ExecuteAsync()
+            $null = $authResultTask.GetAwaiter().GetResult()
+            $authResult = $authResultTask.Result
+
+            if ($null -ne $authResult)
+            {
+                # Keep track of how long this token will be valid for, to enable logic that re-uses
+                # the same token across multiple commands to know when a new one is necessary.
+                $script:lastAccessTokenExpirationDate = $authResult.ExpiresOn
+                $script:lastAccessToken = $authResult.AccessToken
+                Write-Log -Message "Access Token has been cached for future use. Will expire on $($authResult.ExpiresOn)." -Level Verbose
+            }
+
+            return $authResult.AccessToken;
+        }
+        catch [System.InvalidOperationException]
+        {
+            # This type of exception occurs when using -NoStatus
+
+            # Dig into the exception to get the Response details.
+            # Note that value__ is not a typo.
+            $output = @()
+            $output += "Be sure to check that your managed identity is valid."
+            $output += "StatusCode: $($_.Exception.Response.StatusCode.value__)"
+            $output += "StatusDescription: $($_.Exception.Response.StatusDescription)"
+            $output += "Message: $($_.Exception.Message)"
+            if (-not [String]::IsNullOrWhiteSpace($_.ErrorDetails))
+            {
+                $output += ($_.ErrorDetails | ConvertFrom-Json | Out-String)
+            }
+
+            $newLineOutput = ($output -join [Environment]::NewLine)
+            Write-Log -Message $newLineOutput -Level Error
+            throw $newLineOutput
+        }
+        catch [System.Management.Automation.RuntimeException]
+        {
+            # This type of exception occurs when NOT using -NoStatus
+            $output = @()
+            $output += "Be sure to check that your managed identity is valid."
+            $output += $_.Exception.Message
+            if (-not [String]::IsNullOrWhiteSpace($_.ErrorDetails.Message))
+            {
+                $message = ($_.ErrorDetails.Message | ConvertFrom-Json)
+                $output += "$($message.code) : $($message.message)"
+                if ($message.details)
+                {
+                    $output += "$($message.details | Format-Table | Out-String)"
+                }
+            }
+
+            $newLineOutput = ($output -join [Environment]::NewLine)
+            Write-Log -Message $newLineOutput -Level Error
+            throw $newLineOutput
+        }
+    }
+    elseif ($null -ne $certificateIdentity)
     {
         Write-Log -Message "Getting access token using Certificate..." -Level Verbose
 
-        $clientId = $script:clientId
+        $clientId = $script:certificateIdentity.clientId
+        $certificate = $script:certificateIdentity.certificate
 
         $scopes = [string[]]@("https://api.partner.microsoft.com/.default")
         $DllPath = Get-MsalDllPath
@@ -585,10 +745,10 @@ function Get-AccessToken
         try
         {
             $appBuilder = [Microsoft.Identity.Client.ConfidentialClientApplicationBuilder]::Create($clientId)
-            $null = $appBuilder.WithCertificate($Certificate)
+            $null = $appBuilder.WithCertificate($certificate)
 
             $authorityUrlTemplate = "https://login.windows.net/{0}"
-            $tenantId = $script:authTenantId
+            $tenantId = $script:certificateIdentity.tenantId
             $authorityUrl = $authorityUrlTemplate -f $tenantId
 
             $null = $appBuilder.WithAuthority($authorityUrl, $tenantId)
@@ -658,12 +818,24 @@ function Get-AccessToken
     }
     else
     {
+        # This case is expected to handle if the user has cached credentials or
+        # temporary provided credentials via prompt.
+
+        if ($script:credentialIdentity) 
+        {
+            $tenantId = $script:credentialIdentity.tenantId
+            $clientId = $script:credentialIdentity.clientId
+            $clientSecret = $script:credentialIdentity.clientSecret
+        }
+        else
+        {
+            $tenantId = $script:authTenantId
+            $clientId = $tempCredential.UserName
+            $clientSecret = $tempCredential.GetNetworkCredential().Password
+        }
+
         $tokenUrlFormat = "https://login.windows.net/{0}/oauth2/token"
-        $tenantId = $script:authTenantId
         $url = $tokenUrlFormat -f $tenantId
-        
-        $clientId = $credential.UserName
-        $clientSecret = $credential.GetNetworkCredential().Password
 
         # Constants
         $authBodyFormat = "grant_type=client_credentials&client_id={0}&client_secret={1}&resource={2}"
@@ -2098,7 +2270,7 @@ function Invoke-SBRestMethod
         }
 
         # Add any special headers when using the proxy.
-        if ($serviceEndpoint -eq $script:proxyEndpoint)
+        if ($serviceEndpoint -eq $script:proxyIdentity.endpoint)
         {
             if ($global:SBUseInt)
             {

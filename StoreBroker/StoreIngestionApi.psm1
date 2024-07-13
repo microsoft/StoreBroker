@@ -1049,8 +1049,8 @@ function Import-Msal
     Add-Type -Path $dllPath
 
     $nugetPackageName = "Microsoft.Identity.Client"
-    $nugetPackageVersion = "4.8.2"
-    $assemblyPackageTailDir = "Microsoft.Identity.Client.4.8.2\lib\netstandard2.0\"
+    $nugetPackageVersion = "4.61.3"
+    $assemblyPackageTailDir = "Microsoft.Identity.Client.4.61.3\lib\netstandard2.0\"
     $assemblyName = "Microsoft.Identity.Client.dll"
 
     $dllPath = Get-NugetPackageDllPath -NugetPackageName $nugetPackageName -NugetPackageVersion $nugetPackageVersion -AssemblyPackageTailDirectory $assemblyPackageTailDir -AssemblyName $assemblyName -NoStatus:$NoStatus

@@ -601,22 +601,6 @@ function Get-AccessToken
         return "PROXY"
     }
 
-    if ([String]::IsNullOrEmpty($script:authTenantId))
-    {
-        $output = @()
-        $output += "You must call Set-StoreBrokerAuthentication to provide the tenantId"
-        $output += "before any of these cmdlets can be used.  It will also cache your"
-        $output += "clientId and clientSecret as well.  If you prefer to always be"
-        $output += "prompted for the client id and secret, use the -OnlyCacheTenantId switch"
-        $output += "when you call Set-StoreBrokerAuthentication."
-        $output += "To learn more on how to get these values, go to 'Installation and Setup' here:"
-        $output += "   http://aka.ms/StoreBroker"
-
-        $newLineOutput = ($output -join [Environment]::NewLine)
-        Write-Log -Message $newLineOutput -Level Error
-        throw $newLineOutput
-    }
-
     $managedIdentity = $script:managedIdentity
     $certificateIdentity = $script:certificateIdentity
     $credentialIdentity = $script:credentialIdentity
@@ -656,25 +640,27 @@ function Get-AccessToken
         Write-Log -Message "Getting access token using Managed Identity..." -Level Verbose
 
         $resource = "https://api.partner.microsoft.com/.default"
-        $DllPath = Get-MsalDllPath
-        Add-Type -Path $DllPath
+        # $DllPath = Get-MsalDllPath
+        # Add-Type -Path $DllPath
+
+        Add-Type -Path "C:\Users\adstep\Desktop\Microsoft.IdentityModel.Abstractions.6.35.0\lib\netstandard2.0\Microsoft.IdentityModel.Abstractions.dll"
+        Add-Type -Path "C:\Users\adstep\Desktop\Microsoft.Identity.Client.4.61.3\lib\netstandard2.0\Microsoft.Identity.Client.dll"
 
         try
         {
             if ($managedIdentity.clientId)
             {
-                $managedIdentityId = [Microsoft.Identity.Client.ManagedIdentityId]::WithUserAssignedClientId($managedIdentity.clientId)
+                $managedIdentityId = [Microsoft.Identity.Client.AppConfig.ManagedIdentityId]::WithUserAssignedClientId($managedIdentity.clientId)
             } 
             else 
             {
-                $managedIdentityId = [Microsoft.Identity.Client.ManagedIdentityId]::SystemAssigned
+                $managedIdentityId = [Microsoft.Identity.Client.AppConfig.ManagedIdentityId]::SystemAssigned
             }
             
             $appBuilder = [Microsoft.Identity.Client.ManagedIdentityApplicationBuilder]::Create($managedIdentityId)
             $app = $appBuilder.Build()
 
             $authResultBuilder = $app.AcquireTokenForManagedIdentity($resource)
-            $null = $authResultBuilder.WithSendX5C($true)
             $authResultTask = $authResultBuilder.ExecuteAsync()
             $null = $authResultTask.GetAwaiter().GetResult()
             $authResult = $authResultTask.Result

@@ -391,10 +391,10 @@ function Set-StoreBrokerManagedIdentityAuthentication
 {
 <#
     .SYNOPSIS
-        Sets the certificate that will be used to authenticate with Store APIs.
+        Sets the managed identity that will be used to authenticate with Store APIs.
 
     .DESCRIPTION
-        Sets the certificate that will be used to authenticate with Store APIs.
+        Sets the managed identity that will be used to authenticate with Store APIs.
         The cached credential can always be cleared by calling Clear-StoreBrokerAuthentication.
 
         The Git repo for this module can be found here: http://aka.ms/StoreBroker
@@ -403,16 +403,15 @@ function Set-StoreBrokerManagedIdentityAuthentication
         Client ID of the user assigned managed identity assigned to the azure resource.
 
     .EXAMPLE
-        Set-StoreBrokerAuthentication -TenantId "abcdef01-2345-6789-0abc-def123456789" -ClientId "abcdef01-2345-6789-0abc-def123456789" -Certificate $certificate
+        Set-StoreBrokerAuthentication -ClientId "abcdef01-2345-6789-0abc-def123456789"
 
-        Caches the tenantId and clientId for the duration of the
-        PowerShell session.  Caches the certificate to be used for authentication.
+        Caches the  clientId for the duration of the
+        PowerShell session.
         These values will be cached for the duration of this PowerShell session.
         They can be cleared by calling Clear-StoreBrokerAuthentication.
 #>
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars", "", Justification="We use global variables sparingly and intentionally for module configuration, and employ a consistent naming convention.")]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUsePSCredentialType", "", Justification="The System.Management.Automation.Credential() attribute does not appear to work in PowerShell v4 which we need to support.")]
     param(
         [string] $ClientId = $null
 

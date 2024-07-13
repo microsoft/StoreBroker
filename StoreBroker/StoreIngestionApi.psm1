@@ -640,11 +640,7 @@ function Get-AccessToken
         Write-Log -Message "Getting access token using Managed Identity..." -Level Verbose
 
         $resource = "https://api.partner.microsoft.com/.default"
-        # $DllPath = Get-MsalDllPath
-        # Add-Type -Path $DllPath
-
-        Add-Type -Path "C:\Users\adstep\Desktop\Microsoft.IdentityModel.Abstractions.6.35.0\lib\netstandard2.0\Microsoft.IdentityModel.Abstractions.dll"
-        Add-Type -Path "C:\Users\adstep\Desktop\Microsoft.Identity.Client.4.61.3\lib\netstandard2.0\Microsoft.Identity.Client.dll"
+        Import-Msal
 
         try
         {
@@ -725,8 +721,7 @@ function Get-AccessToken
         $certificate = $script:certificateIdentity.certificate
 
         $scopes = [string[]]@("https://api.partner.microsoft.com/.default")
-        $DllPath = Get-MsalDllPath
-        Add-Type -Path $DllPath
+        Import-Msal
 
         try
         {
@@ -999,18 +994,17 @@ function Get-ServiceEndpoint
     }
 }
 
-function Get-MsalDllPath
+function Import-Msal
 {
     <#
     .SYNOPSIS
+        Imports the necessary libraries for the Microsoft Authentication Library.
+
+    .DESCRIPTION
         Makes sure that the Microsoft Authentication Library is available
         on the machine, and returns the path to it.
 
-    .DESCRIPTION
-       Makes sure that the Microsoft Authentication Library is available
-        on the machine, and returns the path to it.
-
-        This will first look for the assembly in the module's script directory.
+        This will first look for the necessary assemblies in the module's script directory.
 
         Next it will look for the assembly in the location defined by
         $SBAlternateAssemblyDir.  This value would have to be defined by the user
@@ -1030,21 +1024,16 @@ function Get-MsalDllPath
         the background, enabling the command prompt to provide status information.
 
     .EXAMPLE
-        Get-MsalDllPath
+        Import-Msal
 
-        Returns back the path to the assembly as found.  If the package has to
-        be downloaded via nuget, the command prompt will show a time duration
-        status counter while the package is being downloaded.
+        If it returns successfully, then you can use the Microsoft Authentication Library.
 
     .EXAMPLE
-        Get-MsalDllPath -NoStatus
+        Import-Msal -NoStatus
 
-        Returns back the path to the assembly as found.  If the package has to
-        be downloaded via nuget, the command prompt will appear to hang during
-        this time.
-
-    .OUTPUTS
-        System.String - The path to the Microsoft Authentication Library.
+        If it returns successfully, then you can use the Microsoft Authentication Library.  
+        If the package has to be downloaded via nuget, the command prompt will appear to 
+        hang during this time.
 #>
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
@@ -1052,12 +1041,21 @@ function Get-MsalDllPath
     [switch] $NoStatus
 )
 
+    $nugetPackageName = "Microsoft.IdentityModel.Abstractions"
+    $nugetPackageVersion = "6.35.0"
+    $assemblyPackageTailDir = "Microsoft.IdentityModel.Abstractions.6.35.0\lib\netstandard2.0\"
+    $assemblyName = "Microsoft.IdentityModel.Abstractions.dll"
+
+    $dllPath = Get-NugetPackageDllPath -NugetPackageName $nugetPackageName -NugetPackageVersion $nugetPackageVersion -AssemblyPackageTailDirectory $assemblyPackageTailDir -AssemblyName $assemblyName -NoStatus:$NoStatus
+    Add-Type -Path $dllPath
+
     $nugetPackageName = "Microsoft.Identity.Client"
     $nugetPackageVersion = "4.8.2"
-    $assemblyPackageTailDir = "Microsoft.Identity.Client.4.8.2\lib\net45\"
+    $assemblyPackageTailDir = "Microsoft.Identity.Client.4.8.2\lib\netstandard2.0\"
     $assemblyName = "Microsoft.Identity.Client.dll"
 
-    return Get-NugetPackageDllPath -NugetPackageName $nugetPackageName -NugetPackageVersion $nugetPackageVersion -AssemblyPackageTailDirectory $assemblyPackageTailDir -AssemblyName $assemblyName -NoStatus:$NoStatus
+    $dllPath = Get-NugetPackageDllPath -NugetPackageName $nugetPackageName -NugetPackageVersion $nugetPackageVersion -AssemblyPackageTailDirectory $assemblyPackageTailDir -AssemblyName $assemblyName -NoStatus:$NoStatus
+    Add-Type -Path $dllPath
 }
 
 function Get-AzureStorageDllPath

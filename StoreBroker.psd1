@@ -142,6 +142,7 @@
         'Open-Store',
         'Set-StoreBrokerAuthentication',
         'Set-StoreBrokerCertificateAuthentication',
+        'Set-StoreBrokerManagedIdentityAuthentication',
         'Set-StoreFile',
         'Start-ApplicationFlightSubmissionMonitor',
         'Start-InAppProductSubmissionMonitor',

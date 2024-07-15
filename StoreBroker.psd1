@@ -143,7 +143,6 @@
         'Set-StoreBrokerAuthentication',
         'Set-StoreBrokerCertificateAuthentication',
         'Set-StoreBrokerManagedIdentityAuthentication',
-        'Get-AccessToken',
         'Set-StoreFile',
         'Start-ApplicationFlightSubmissionMonitor',
         'Start-InAppProductSubmissionMonitor',

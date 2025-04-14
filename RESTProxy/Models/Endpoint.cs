@@ -333,11 +333,17 @@ namespace Microsoft.Windows.Source.StoreBroker.RestProxy.Models
             }
             catch (WebException ex)
             {
-                // Even though WebException stores the response as a simple WebResponse, in our scenario
-                // it should actually be an HttpWebResponse.  We'd prefer that one, since HttpWebResponse
-                // exposes a StatusCode property.
                 HttpWebResponse httpResponse = ex.Response as HttpWebResponse;
-                return this.GetResponseMessage(httpResponse);
+
+                // Get just the status code; don't expose internal headers or other raw info.
+                HttpStatusCode statusCode = httpResponse?.StatusCode 
+                                            ?? HttpStatusCode.InternalServerError;
+
+                // Return or log only sanitized information.
+                return new HttpResponseMessage(statusCode)
+                {
+                    ReasonPhrase = "An error occurred while calling the web service." 
+                };
             }
         }
 

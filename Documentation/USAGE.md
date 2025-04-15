@@ -105,7 +105,7 @@ values of these variables will be honored if they already exist, otherwise they 
 
  **`$global:SBAutoRetryErrorCodes`** - [int[]] Some error status codes indicate that a retry is
    likely to be met with success.  StoreBroker will use an exponential back-off strategy for
-   the status codes contained within this list of values.  Defaults to `@(429, 503)`.
+   the status codes contained within this list of values.  Defaults to `@()`. Possible useful values:
 
   * `429` - The Submission API limits a Tenant to 20 requests per minute.  Any requests exceeding
        that will receive this error code until that minute has expired.

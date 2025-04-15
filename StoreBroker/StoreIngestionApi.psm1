@@ -149,32 +149,76 @@ function Initialize-StoreIngestionApiGlobalVariables
     # SilentlyContinue would cause it to go into the global $Error array, Ignore prevents that as well.
     if (!(Get-Variable -Name SBDefaultProxyEndpoint -Scope Global -ValueOnly -ErrorAction Ignore))
     {
-        $global:SBDefaultProxyEndpoint = $null
+        if ($env:SBDefaultProxyEndpoint)
+        {
+            $global:SBDefaultProxyEndpoint = [string]$env:SBDefaultProxyEndpoint
+        }
+        else
+        {
+            $global:SBDefaultProxyEndpoint = $null
+        }
+        
     }
 
     if (!(Get-Variable -Name SBAutoRetryErrorCodes -Scope Global -ValueOnly -ErrorAction Ignore))
     {
-        $global:SBAutoRetryErrorCodes = @()
+        if ($env:SBAutoRetryErrorCodes)
+        {
+            $global:SBAutoRetryErrorCodes = $env:SBAutoRetryErrorCodes.Split(',') | ForEach-Object { [int]$_ }
+        }
+        else
+        {
+            $global:SBAutoRetryErrorCodes = @()
+        }
     }
 
     if (!(Get-Variable -Name SBGetRequestAutoRetryErrorCodes -Scope Global -ValueOnly -ErrorAction Ignore))
     {
-        $global:SBGetRequestAutoRetryErrorCodes = @(429, 500, 502, 503)
+        if ($env:SBGetRequestAutoRetryErrorCodes)
+        {
+            $global:SBGetRequestAutoRetryErrorCodes = `
+                $env:SBGetRequestAutoRetryErrorCodes.Split(',') | ForEach-Object { [int]$_ }
+        }
+        else
+        {
+            $global:SBGetRequestAutoRetryErrorCodes = @(429, 500, 502, 503)
+        }
     }
 
     if (!(Get-Variable -Name SBMaxAutoRetries -Scope Global -ValueOnly -ErrorAction Ignore))
     {
-        $global:SBMaxAutoRetries = 5
+        if ($env:SBMaxAutoRetries)
+        {
+            $global:SBMaxAutoRetries = [int]$env:SBMaxAutoRetries
+        }
+        else
+        {
+            $global:SBMaxAutoRetries = 5
+        }
     }
 
     if (!(Get-Variable -Name SBStoreBrokerClientName -Scope Global -ValueOnly -ErrorAction Ignore))
     {
-        $global:SBStoreBrokerClientName = $null
+        if ($env:SBStoreBrokerClientName)
+        {
+            $global:SBStoreBrokerClientName = [string]$env:SBStoreBrokerClientName
+        }
+        else
+        {
+            $global:SBStoreBrokerClientName = $null
+        }
     }
 
     if (!(Get-Variable -Name SBDefaultTransferConnectionLimit -Scope Global -ValueOnly -ErrorAction Ignore))
     {
-        $global:SBDefaultTransferConnectionLimit = [Environment]::ProcessorCount * 8
+        if ($env:SBDefaultTransferConnectionLimit)
+        {
+            $global:SBDefaultTransferConnectionLimit = [int]$env:SBDefaultTransferConnectionLimit
+        }
+        else
+        {
+            $global:SBDefaultTransferConnectionLimit = [Environment]::ProcessorCount * 8
+        }
     }
 }
 

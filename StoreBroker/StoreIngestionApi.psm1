@@ -673,10 +673,10 @@ function Get-AzureStorageDllPath
         [switch] $NoStatus
     )
 
-    $nugetPackageName = "WindowsAzure.Storage"
-    $nugetPackageVersion = "8.1.1"
-    $assemblyPackageTailDir = "WindowsAzure.Storage.8.1.1\lib\net45\"
-    $assemblyName = "Microsoft.WindowsAzure.Storage.dll"
+    $nugetPackageName = "Microsoft.Azure.Storage.Blob"
+    $nugetPackageVersion = "11.2.3"
+    $assemblyPackageTailDir = "Microsoft.Azure.Storage.Blob.11.2.3\lib\net452\"
+    $assemblyName = "Microsoft.Azure.Storage.Blob.dll"
 
     return Get-NugetPackageDllPath -NugetPackageName $nugetPackageName -NugetPackageVersion $nugetPackageVersion -AssemblyPackageTailDirectory $assemblyPackageTailDir -AssemblyName $assemblyName -NoStatus:$NoStatus
 }
@@ -734,9 +734,9 @@ function Get-AzureStorageDataMovementDllPath {
     )
 
     $nugetPackageName = "Microsoft.Azure.Storage.DataMovement"
-    $nugetPackageVersion = "0.5.1"
-    $assemblyPackageTailDir = "Microsoft.Azure.Storage.DataMovement.0.5.1\lib\net45\"
-    $assemblyName = "Microsoft.WindowsAzure.Storage.DataMovement.dll"
+    $nugetPackageVersion = "2.0.5"
+    $assemblyPackageTailDir = "Microsoft.Azure.Storage.DataMovement.2.0.5\lib\net452\"
+    $assemblyName = "Microsoft.Azure.Storage.DataMovement.dll"
 
     return Get-NugetPackageDllPath -NugetPackageName $nugetPackageName -NugetPackageVersion $nugetPackageVersion -AssemblyPackageTailDirectory $assemblyPackageTailDir -AssemblyName $assemblyName -NoStatus:$NoStatus
 }
@@ -833,12 +833,12 @@ function Set-SubmissionPackage
             [System.Reflection.Assembly]::LoadFrom($azureStorageDataMovementDll) | Out-Null
 
             $uri = New-Object -TypeName System.Uri -ArgumentList $UploadUrl
-            $cloudBlockBlob = New-Object -TypeName Microsoft.WindowsAzure.Storage.Blob.CloudBlockBlob -ArgumentList $uri
+            $cloudBlockBlob = New-Object -TypeName Microsoft.Azure.Storage.Blob.CloudBlockBlob -ArgumentList $uri
 
             if ($PSCmdlet.ShouldProcess($PackagePath, "CloudBlockBlob.UploadFromFile"))
             {
                 # We will run this async command synchronously within the console.
-                $task = [Microsoft.WindowsAzure.Storage.DataMovement.TransferManager]::UploadAsync($packagePath, $cloudBlockBlob, $null, $null)
+                $task = [Microsoft.Azure.Storage.DataMovement.TransferManager]::UploadAsync($packagePath, $cloudBlockBlob, $null, $null)
                 $task.GetAwaiter().GetResult() | Out-Null
             }
         }
@@ -859,10 +859,10 @@ function Set-SubmissionPackage
                     [System.Reflection.Assembly]::LoadFrom($AzureStorageDataMovementDll) | Out-Null
 
                     $uri = New-Object -TypeName System.Uri -ArgumentList $UploadUrl
-                    $cloudBlockBlob = New-Object -TypeName Microsoft.WindowsAzure.Storage.Blob.CloudBlockBlob -ArgumentList $uri
+                    $cloudBlockBlob = New-Object -TypeName Microsoft.Azure.Storage.Blob.CloudBlockBlob -ArgumentList $uri
 
                     # We will run this async command synchronously within the console.
-                    $task = [Microsoft.WindowsAzure.Storage.DataMovement.TransferManager]::UploadAsync($PackagePath, $cloudBlockBlob, $null, $null)
+                    $task = [Microsoft.Azure.Storage.DataMovement.TransferManager]::UploadAsync($PackagePath, $cloudBlockBlob, $null, $null)
                     $task.GetAwaiter().GetResult() | Out-Null
                 }
 
@@ -1023,12 +1023,12 @@ function Get-SubmissionPackage
             [System.Reflection.Assembly]::LoadFrom($azureStorageDataMovementDll) | Out-Null
 
             $uri = New-Object -TypeName System.Uri -ArgumentList $UploadUrl
-            $cloudBlockBlob = New-Object -TypeName Microsoft.WindowsAzure.Storage.Blob.CloudBlockBlob -ArgumentList $uri
+            $cloudBlockBlob = New-Object -TypeName Microsoft.Azure.Storage.Blob.CloudBlockBlob -ArgumentList $uri
 
             if ($PSCmdlet.ShouldProcess($PackagePath, "CloudBlockBlob.DownloadToFile"))
             {
                 # We will run this async command synchronously within the console.
-                $task = [Microsoft.WindowsAzure.Storage.DataMovement.TransferManager]::DownloadAsync($cloudBlockBlob, $PackagePath)
+                $task = [Microsoft.Azure.Storage.DataMovement.TransferManager]::DownloadAsync($cloudBlockBlob, $PackagePath)
                 $task.GetAwaiter().GetResult() | Out-Null
             }
         }
@@ -1049,10 +1049,10 @@ function Get-SubmissionPackage
                     [System.Reflection.Assembly]::LoadFrom($AzureStorageDataMovementDll) | Out-Null
 
                     $uri = New-Object -TypeName System.Uri -ArgumentList $UploadUrl
-                    $cloudBlockBlob = New-Object -TypeName Microsoft.WindowsAzure.Storage.Blob.CloudBlockBlob -ArgumentList $uri
+                    $cloudBlockBlob = New-Object -TypeName Microsoft.Azure.Storage.Blob.CloudBlockBlob -ArgumentList $uri
 
                     # We will run this async command synchronously within the console.
-                    $task = [Microsoft.WindowsAzure.Storage.DataMovement.TransferManager]::DownloadAsync($cloudBlockBlob, $PackagePath)
+                    $task = [Microsoft.Azure.Storage.DataMovement.TransferManager]::DownloadAsync($cloudBlockBlob, $PackagePath)
                     $task.GetAwaiter().GetResult() | Out-Null
                 }
 

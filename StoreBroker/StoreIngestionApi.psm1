@@ -620,50 +620,87 @@ function Get-ServiceEndpoint
     }
 }
 
-function Get-AzureStorageDllPath
+function Get-AzureStorageCommonDllPath
 {
 <#
     .SYNOPSIS
-        Makes sure that the Microsoft.AzureStorage.dll assembly is available
+        Makes sure that the Microsoft.Azure.Storage.Common.dll assembly is available
         on the machine, and returns the path to it.
-
     .DESCRIPTION
-        Makes sure that the Microsoft.AzureStorage.dll assembly is available
+        Makes sure that the Microsoft.Azure.Storage.Common.dll assembly is available
         on the machine, and returns the path to it.
-
         This will first look for the assembly in the module's script directory.
-
         Next it will look for the assembly in the location defined by
         $SBAlternateAssemblyDir.  This value would have to be defined by the user
         prior to execution of this cmdlet.
-
         If not found there, it will look in a temp folder established during this
         PowerShell session.
-
         If still not found, it will download the nuget package
         for it to a temp folder accessible during this PowerShell session.
-
         The Git repo for this module can be found here: http://aka.ms/StoreBroker
-
     .PARAMETER NoStatus
         If this switch is specified, long-running commands will run on the main thread
         with no commandline status update.  When not specified, those commands run in
         the background, enabling the command prompt to provide status information.
-
     .EXAMPLE
-        Get-AzureStorageDllPath
-
+        Get-AzureStorageCommonDllPath
         Returns back the path to the assembly as found.  If the package has to
         be downloaded via nuget, the command prompt will show a time duration
         status counter while the package is being downloaded.
-
     .EXAMPLE
-        Get-AzureStorageDllPath -NoStatus
-
+        Get-AzureStorageCommonDllPath -NoStatus
         Returns back the path to the assembly as found.  If the package has to
         be downloaded via nuget, the command prompt will appear to hang during
         this time.
+    .OUTPUTS
+        System.String - The path to the Microsoft.WindowsStorage.dll assembly.
+#>
+    [CmdletBinding(SupportsShouldProcess)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
+    param(
+        [switch] $NoStatus
+    )
 
+    $nugetPackageName = "Microsoft.Azure.Storage.Common"
+    $nugetPackageVersion = "11.2.3"
+    $assemblyPackageTailDir = "Microsoft.Azure.Storage.Common.11.2.3\lib\net452\"
+    $assemblyName = "Microsoft.Azure.Storage.Common.dll"
+
+    return Get-NugetPackageDllPath -NugetPackageName $nugetPackageName -NugetPackageVersion $nugetPackageVersion -AssemblyPackageTailDirectory $assemblyPackageTailDir -AssemblyName $assemblyName -NoStatus:$NoStatus
+}
+
+function Get-AzureStorageBlobDllPath
+{
+<#
+    .SYNOPSIS
+        Makes sure that the Microsoft.Azure.Storage.Blob.dll assembly is available
+        on the machine, and returns the path to it.
+    .DESCRIPTION
+        Makes sure that the Microsoft.Azure.Storage.Blob.dll assembly is available
+        on the machine, and returns the path to it.
+        This will first look for the assembly in the module's script directory.
+        Next it will look for the assembly in the location defined by
+        $SBAlternateAssemblyDir.  This value would have to be defined by the user
+        prior to execution of this cmdlet.
+        If not found there, it will look in a temp folder established during this
+        PowerShell session.
+        If still not found, it will download the nuget package
+        for it to a temp folder accessible during this PowerShell session.
+        The Git repo for this module can be found here: http://aka.ms/StoreBroker
+    .PARAMETER NoStatus
+        If this switch is specified, long-running commands will run on the main thread
+        with no commandline status update.  When not specified, those commands run in
+        the background, enabling the command prompt to provide status information.
+    .EXAMPLE
+        Get-AzureStorageDllPath
+        Returns back the path to the assembly as found.  If the package has to
+        be downloaded via nuget, the command prompt will show a time duration
+        status counter while the package is being downloaded.
+    .EXAMPLE
+        Get-AzureStorageDllPath -NoStatus
+        Returns back the path to the assembly as found.  If the package has to
+        be downloaded via nuget, the command prompt will appear to hang during
+        this time.
     .OUTPUTS
         System.String - The path to the Microsoft.WindowsStorage.dll assembly.
 #>
@@ -677,6 +714,55 @@ function Get-AzureStorageDllPath
     $nugetPackageVersion = "11.2.3"
     $assemblyPackageTailDir = "Microsoft.Azure.Storage.Blob.11.2.3\lib\net452\"
     $assemblyName = "Microsoft.Azure.Storage.Blob.dll"
+
+    return Get-NugetPackageDllPath -NugetPackageName $nugetPackageName -NugetPackageVersion $nugetPackageVersion -AssemblyPackageTailDirectory $assemblyPackageTailDir -AssemblyName $assemblyName -NoStatus:$NoStatus
+}
+
+function Get-AzureStorageFileDllPath
+{
+<#
+    .SYNOPSIS
+        Makes sure that the Microsoft.Azure.Storage.File.dll assembly is available
+        on the machine, and returns the path to it.
+    .DESCRIPTION
+        Makes sure that the Microsoft.Azure.Storage.File.dll assembly is available
+        on the machine, and returns the path to it.
+        This will first look for the assembly in the module's script directory.
+        Next it will look for the assembly in the location defined by
+        $SBAlternateAssemblyDir.  This value would have to be defined by the user
+        prior to execution of this cmdlet.
+        If not found there, it will look in a temp folder established during this
+        PowerShell session.
+        If still not found, it will download the nuget package
+        for it to a temp folder accessible during this PowerShell session.
+        The Git repo for this module can be found here: http://aka.ms/StoreBroker
+    .PARAMETER NoStatus
+        If this switch is specified, long-running commands will run on the main thread
+        with no commandline status update.  When not specified, those commands run in
+        the background, enabling the command prompt to provide status information.
+    .EXAMPLE
+        Get-AzureStorageDllPath
+        Returns back the path to the assembly as found.  If the package has to
+        be downloaded via nuget, the command prompt will show a time duration
+        status counter while the package is being downloaded.
+    .EXAMPLE
+        Get-AzureStorageDllPath -NoStatus
+        Returns back the path to the assembly as found.  If the package has to
+        be downloaded via nuget, the command prompt will appear to hang during
+        this time.
+    .OUTPUTS
+        System.String - The path to the Microsoft.WindowsStorage.dll assembly.
+#>
+    [CmdletBinding(SupportsShouldProcess)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "", Justification="Methods called within here make use of PSShouldProcess, and the switch is passed on to them inherently.")]
+    param(
+        [switch] $NoStatus
+    )
+
+    $nugetPackageName = "Microsoft.Azure.Storage.File"
+    $nugetPackageVersion = "11.2.3"
+    $assemblyPackageTailDir = "Microsoft.Azure.Storage.File.11.2.3\lib\net452\"
+    $assemblyName = "Microsoft.Azure.Storage.File.dll"
 
     return Get-NugetPackageDllPath -NugetPackageName $nugetPackageName -NugetPackageVersion $nugetPackageVersion -AssemblyPackageTailDirectory $assemblyPackageTailDir -AssemblyName $assemblyName -NoStatus:$NoStatus
 }
@@ -813,7 +899,9 @@ function Set-SubmissionPackage
 
     Write-Log -Message "Attempting to upload the package ($PackagePath) for the submission..." -Level Verbose
 
-    $azureStorageDll = Get-AzureStorageDllPath -NoStatus:$NoStatus
+    $azureStorageCommonDll = Get-AzureStorageCommonDllPath -NoStatus:$NoStatus
+    $azureStorageBlobDll = Get-AzureStorageBlobDllPath -NoStatus:$NoStatus
+    $azureStorageFileDll = Get-AzureStorageFileDllPath -NoStatus:$NoStatus
     $azureStorageDataMovementDll = Get-AzureStorageDataMovementDllPath -NoStatus:$NoStatus
 
     # We're going to be changing these, so we want to capture the current values so that we
@@ -829,7 +917,9 @@ function Set-SubmissionPackage
             [System.Net.ServicePointManager]::DefaultConnectionLimit = [Environment]::ProcessorCount * 8
             [System.Net.ServicePointManager]::Expect100Continue = $false
 
-            [System.Reflection.Assembly]::LoadFrom($azureStorageDll) | Out-Null
+            [System.Reflection.Assembly]::LoadFrom($azureStorageCommonDll) | Out-Null
+            [System.Reflection.Assembly]::LoadFrom($azureStorageBlobDll) | Out-Null
+            [System.Reflection.Assembly]::LoadFrom($azureStorageFileDll) | Out-Null
             [System.Reflection.Assembly]::LoadFrom($azureStorageDataMovementDll) | Out-Null
 
             $uri = New-Object -TypeName System.Uri -ArgumentList $UploadUrl
@@ -849,13 +939,15 @@ function Set-SubmissionPackage
             if ($PSCmdlet.ShouldProcess($jobName, "Start-Job"))
             {
                 [scriptblock]$scriptBlock = {
-                    param($UploadUrl, $PackagePath, $AzureStorageDll, $AzureStorageDataMovementDll)
+                    param($UploadUrl, $PackagePath, $AzureStorageCommonDll, $AzureStorageBlobDll, $AzureStorageFileDll, $AzureStorageDataMovementDll)
 
                     # Recommendations per https://github.com/Azure/azure-storage-net-data-movement#best-practice
                     [System.Net.ServicePointManager]::DefaultConnectionLimit = [Environment]::ProcessorCount * 8
                     [System.Net.ServicePointManager]::Expect100Continue = $false
 
-                    [System.Reflection.Assembly]::LoadFrom($AzureStorageDll) | Out-Null
+                    [System.Reflection.Assembly]::LoadFrom($AzureStorageCommonDll) | Out-Null
+                    [System.Reflection.Assembly]::LoadFrom($AzureStorageBlobDll) | Out-Null
+                    [System.Reflection.Assembly]::LoadFrom($AzureStorageFileDll) | Out-Null
                     [System.Reflection.Assembly]::LoadFrom($AzureStorageDataMovementDll) | Out-Null
 
                     $uri = New-Object -TypeName System.Uri -ArgumentList $UploadUrl
@@ -866,7 +958,7 @@ function Set-SubmissionPackage
                     $task.GetAwaiter().GetResult() | Out-Null
                 }
 
-                $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($UploadUrl, $PackagePath, $azureStorageDll, $azureStorageDataMovementDll)
+                $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($UploadUrl, $PackagePath, $azureStorageCommonDll, $azureStorageBlobDll, $azureStorageFileDll, $azureStorageDataMovementDll)
 
                 if ($PSCmdlet.ShouldProcess($jobName, "Wait-JobWithAnimation"))
                 {
@@ -1003,7 +1095,9 @@ function Get-SubmissionPackage
 
     Write-Log -Message "Attempting to download the contents to $PackagePath..." -Level Verbose
 
-    $azureStorageDll = Get-AzureStorageDllPath -NoStatus:$NoStatus
+    $azureStorageCommonDll = Get-AzureStorageCommonDllPath -NoStatus:$NoStatus
+    $azureStorageBlobDll = Get-AzureStorageBlobDllPath -NoStatus:$NoStatus
+    $azureStorageFileDll = Get-AzureStorageFileDllPath -NoStatus:$NoStatus
     $azureStorageDataMovementDll = Get-AzureStorageDataMovementDllPath -NoStatus:$NoStatus
 
     # We're going to be changing these, so we want to capture the current values so that we
@@ -1019,7 +1113,9 @@ function Get-SubmissionPackage
             [System.Net.ServicePointManager]::DefaultConnectionLimit = [Environment]::ProcessorCount * 8
             [System.Net.ServicePointManager]::Expect100Continue = $false
 
-            [System.Reflection.Assembly]::LoadFrom($azureStorageDll) | Out-Null
+            [System.Reflection.Assembly]::LoadFrom($azureStorageCommonDll) | Out-Null
+            [System.Reflection.Assembly]::LoadFrom($azureStorageBlobDll) | Out-Null
+            [System.Reflection.Assembly]::LoadFrom($azureStorageFileDll) | Out-Null
             [System.Reflection.Assembly]::LoadFrom($azureStorageDataMovementDll) | Out-Null
 
             $uri = New-Object -TypeName System.Uri -ArgumentList $UploadUrl
@@ -1039,13 +1135,15 @@ function Get-SubmissionPackage
             if ($PSCmdlet.ShouldProcess($jobName, "Start-Job"))
             {
                 [scriptblock]$scriptBlock = {
-                    param($UploadUrl, $PackagePath, $AzureStorageDll, $AzureStorageDataMovementDll)
+                    param($UploadUrl, $PackagePath, $AzureStorageCommonDll, $AzureStorageBlobDll, $AzureStorageFileDll, $AzureStorageDataMovementDll)
 
                     # Recommendations per https://github.com/Azure/azure-storage-net-data-movement#best-practice
                     [System.Net.ServicePointManager]::DefaultConnectionLimit = [Environment]::ProcessorCount * 8
                     [System.Net.ServicePointManager]::Expect100Continue = $false
 
-                    [System.Reflection.Assembly]::LoadFrom($AzureStorageDll) | Out-Null
+                    [System.Reflection.Assembly]::LoadFrom($AzureStorageCommonDll) | Out-Null
+                    [System.Reflection.Assembly]::LoadFrom($AzureStorageBlobDll) | Out-Null
+                    [System.Reflection.Assembly]::LoadFrom($AzureStorageFileDll) | Out-Null
                     [System.Reflection.Assembly]::LoadFrom($AzureStorageDataMovementDll) | Out-Null
 
                     $uri = New-Object -TypeName System.Uri -ArgumentList $UploadUrl
@@ -1056,7 +1154,7 @@ function Get-SubmissionPackage
                     $task.GetAwaiter().GetResult() | Out-Null
                 }
 
-                $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($UploadUrl, $PackagePath, $azureStorageDll, $azureStorageDataMovementDll)
+                $null = Start-Job -Name $jobName -ScriptBlock $scriptBlock -Arg @($UploadUrl, $PackagePath, $azureStorageCommonDll, $azureStorageBlobDll, $azureStorageFileDll, $azureStorageDataMovementDll)
 
                 if ($PSCmdlet.ShouldProcess($jobName, "Wait-JobWithAnimation"))
                 {

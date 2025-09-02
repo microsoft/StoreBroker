@@ -1,6 +1,18 @@
 # StoreBroker PowerShell Module
 ## Changelog
 
+## [2.1.23](https://github.com/Microsoft/StoreBroker/tree/2.1.23) - (2024/06/11)
+
+### Fixes
+
+- Revert deep-copy fix [[pr]](https://github.com/microsoft/StoreBroker/pull/263) | [[cl]](https://github.com/microsoft/StoreBroker/commit/bf82d52db6ec2632a2304b52830ac7954656080b)
+- Add Managed Identity Auth [[pr]](https://github.com/microsoft/StoreBroker/pull/267) | [[cl]](https://github.com/microsoft/StoreBroker/commit/30c6109a96109d5c26feee0730a8ba83b3ca3b3e)
+
+Author:
+
+- [**@joseartrivera**](https://github.com/joseartrivera)
+- [**@adstep**](https://github.com/adstep)
+
 ## [2.1.21](https://github.com/Microsoft/StoreBroker/tree/2.1.21) - (2024/06/11)
 
 ### Fixes

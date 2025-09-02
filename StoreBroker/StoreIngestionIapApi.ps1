@@ -774,9 +774,7 @@ function Format-InAppProductSubmission
             $output += "Publish Date                        : $(Get-Date -Date $IapSubmissionData.targetPublishDate -Format R)"
         }
 
-        $output += "File Upload Url                     : {0}" -f $(if ($IapSubmissionData.fileUploadUrl) { $IapSubmissionData.fileUploadUrl } else { "<None>" })
         $output += ""
-
         $output += "Pricing                             : $($IapSubmissionData.pricing.priceId)"
 
         $marketSpecificPricings = $IapSubmissionData.pricing.marketSpecificPricings
@@ -1424,7 +1422,8 @@ function Update-InAppProductSubmission
         {
             Write-Log -Message @(
                 "Your next step is to upload the package using:",
-                "  Upload-SubmissionPackage -PackagePath <package> -UploadUrl `"$uploadUrl`"")
+                "  `$newSubmission = Get-InAppProductSubmission -IapId $IapId -SubmissionId $submissionId",
+                "  Upload-SubmissionPackage -PackagePath <package> -UploadUrl `$(`$newSubmission.fileUploadUrl)")
         }
 
         if ($AutoCommit)

@@ -1,7 +1,18 @@
 # StoreBroker PowerShell Module
 ## Changelog
 
-## [1.21.3](https://github.com/Microsoft/StoreBroker/tree/1.21.2) - (2024/06/07)
+## [1.21.24](https://github.com/Microsoft/StoreBroker/tree/1.21.24) - (2025/09/03)
+
+### Fixes
+
+- Remove unused RestProxy folder [[pr]](https://github.com/microsoft/StoreBroker/pull/282) | [[cl]](https://github.com/microsoft/StoreBroker/commit/09eef5947e7e34703f60748eec3987c826542999)
+- Update Azure Storage nuget packages [[pr]](https://github.com/microsoft/StoreBroker/pull/284) | [[cl]](https://github.com/microsoft/StoreBroker/commit/94fb7bb0b292924acb9274bf4b27ae9a218bde0e)
+
+Author:
+
+- [**@joseartrivera**](https://github.com/joseartrivera)
+
+## [1.21.23](https://github.com/Microsoft/StoreBroker/tree/1.21.23) - (2024/06/11)
 
 ### Fixes
 

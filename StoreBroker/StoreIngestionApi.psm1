@@ -841,7 +841,6 @@ function Get-AccessToken
             {
                 if ($PSCmdlet.ShouldProcess($url, "Invoke-RestMethod"))
                 {
-                    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
                     $response = Invoke-RestMethod $url -Method Post -Body $body
                 }
             }
@@ -853,7 +852,6 @@ function Get-AccessToken
                     [scriptblock]$scriptBlock = {
                         param($url, $body)
 
-                        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
                         Invoke-RestMethod $url -Method Post -Body $body
                     }
 
@@ -1410,7 +1408,6 @@ function Set-StoreFile
             if ($PSCmdlet.ShouldProcess($FilePath, "CloudBlockBlob.UploadFromFile"))
             {
                 # We will run this async command synchronously within the console.
-                [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
                 $task = [Microsoft.Azure.Storage.DataMovement.TransferManager]::UploadAsync($FilePath, $cloudBlockBlob, $null, $null)
                 $task.GetAwaiter().GetResult() | Out-Null
             }
@@ -1444,7 +1441,6 @@ function Set-StoreFile
                     $cloudBlockBlob = New-Object -TypeName Microsoft.Azure.Storage.Blob.CloudBlockBlob -ArgumentList $uri
 
                     # We will run this async command synchronously within the console.
-                    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
                     $task = [Microsoft.Azure.Storage.DataMovement.TransferManager]::UploadAsync($FilePath, $cloudBlockBlob, $null, $null)
                     $task.GetAwaiter().GetResult() | Out-Null
                 }
@@ -1618,15 +1614,16 @@ function Get-StoreFile
             $uri = New-Object -TypeName System.Uri -ArgumentList $SasUri
             $cloudBlockBlob = New-Object -TypeName Microsoft.Azure.Storage.Blob.CloudBlockBlob -ArgumentList $uri
 
-            # Unfortunately, due to the fact that the files are processed/modified by the API after Azure
-            # has stored the MD5 hash, when we later download them, the files simply won't match the MD5 that was stored.
             $downloadOptions = New-Object -TypeName Microsoft.Azure.Storage.DataMovement.DownloadOptions
-            $downloadOptions.DisableContentMD5Validation = $true
+
+            # Azure Storage automatically stores a content hash at upload time.
+            # Files are later modified by the Store ingestion API, making validation unreliable.
+            # Validation is disabled to prevent SDK-level download failure.
+            $downloadOptions.DisableContentMD5Validation = $true # devskim: ignore DS126858
 
             if ($PSCmdlet.ShouldProcess($FilePath, "CloudBlockBlob.DownloadToFile"))
             {
                 # We will run this async command synchronously within the console.
-                [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
                 $task = [Microsoft.Azure.Storage.DataMovement.TransferManager]::DownloadAsync($cloudBlockBlob, $FilePath, $downloadOptions, $null)
                 $task.GetAwaiter().GetResult() | Out-Null
             }
@@ -1659,13 +1656,14 @@ function Get-StoreFile
                     $uri = New-Object -TypeName System.Uri -ArgumentList $SasUri
                     $cloudBlockBlob = New-Object -TypeName Microsoft.Azure.Storage.Blob.CloudBlockBlob -ArgumentList $uri
 
-                    # Unfortunately, due to the fact that the files are processed/modified by the API after Azure
-                    # has stored the MD5 hash, when we later download them, the files simply won't match the MD5 that was stored.
                     $downloadOptions = New-Object -TypeName Microsoft.Azure.Storage.DataMovement.DownloadOptions
-                    $downloadOptions.DisableContentMD5Validation = $true
+
+                    # Azure Storage automatically stores a content hash at upload time.
+                    # Files are later modified by the Store ingestion API, making validation unreliable.
+                    # Validation is disabled to prevent SDK-level download failure.
+                    $downloadOptions.DisableContentMD5Validation = $true  # devskim: ignore DS126858
 
                     # We will run this async command synchronously within the console.
-                    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
                     $task = [Microsoft.Azure.Storage.DataMovement.TransferManager]::DownloadAsync($cloudBlockBlob, $FilePath, $downloadOptions, $null)
                     $task.GetAwaiter().GetResult() | Out-Null
                 }
@@ -2451,7 +2449,6 @@ function Invoke-SBRestMethod
                         Write-Log -Message "Request includes a body." -Level Verbose
                     }
 
-                    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
                     $result = Invoke-WebRequest @params
                     if ($Method -eq 'delete')
                     {
@@ -2495,7 +2492,6 @@ function Invoke-SBRestMethod
 
                         try
                         {
-                            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
                             Invoke-WebRequest @params
                         }
                         catch [System.Net.WebException]
